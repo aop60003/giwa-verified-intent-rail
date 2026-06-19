@@ -18,6 +18,7 @@ requiredCheckStatuses=absent
 protected CI=absent
 protected artifact manifest=blocked
 protected provenance report=blocked
+protected artifact upload metadata=blocked
 release approval=blocked
 ```
 
@@ -48,6 +49,7 @@ node-syntax-checks
 safe-scans
 workspace-checks
 artifact-provenance
+protected-ci-gate
 ```
 
 The command-boundary guard may be a standalone required check or a required step inside a required job, but the release approval record must identify where it ran.
@@ -69,6 +71,7 @@ The command-boundary guard may be a standalone required check or a required step
 - redacted scan summary
 - artifact manifest
 - provenance report
+- protected artifact upload metadata
 - build tree hash
 
 ## Required Product Gates
@@ -94,6 +97,8 @@ workflowPath=.github/workflows/ci.yml
 ciRunId=<protected-ci-run-id>
 artifactManifestPath=docs/evidence/giwa-staging-artifact-manifest.json
 provenanceReportPath=docs/evidence/giwa-staging-provenance-report.json
+provenanceSidecarPath=docs/evidence/giwa-staging-provenance-report.json.sha256
+artifactUploadMetadataPath=docs/evidence/giwa-staging-artifact-upload-metadata.json
 buildTreeSha256=<computed>
 promotionDecision=approved-or-blocked
 failureTriagePath=docs/implementation/giwa-ci-failure-triage.md
@@ -132,6 +137,7 @@ Release approval remains blocked when any of these are true:
 - required checks not enforced
 - artifact manifest absent
 - provenance report absent
+- protected artifact upload metadata absent
 - local advisory output treated as final
 - unsafe scan output prints matched values
 - public artifact hash mismatch

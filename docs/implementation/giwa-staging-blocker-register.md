@@ -16,6 +16,7 @@ remotePush=blocked
 githubActionsRun=absent
 requiredCheckStatuses=absent
 protectedArtifactGeneration=absent
+protectedArtifactUploadMetadata=absent
 releaseApproval=absent
 rollbackOwner=absent
 protected-ci=blocked
@@ -33,7 +34,7 @@ backup restore drill=absent
 | Blocker | Current status | Required evidence | Sprint 20 impact |
 | --- | --- | --- | --- |
 | Source provenance | partial-local / remote blocked | remote GitHub repository, push approval, immutable remote commit, and branch policy | blocks deployment dry run |
-| Protected CI | blocked | GitHub workflow run id, exact required-check statuses, and protected artifact generation | blocks release provenance |
+| Protected CI | blocked | GitHub workflow run id, exact required-check statuses including `protected-ci-gate`, protected artifact generation, and protected artifact upload metadata | blocks release provenance |
 | Branch protection | blocked | branch protection or ruleset evidence with exact required-check names matching workflow jobs | blocks release provenance |
 | Lockfile and dependency policy | partial | pinned pnpm version, frozen lockfile install, approved drift only | blocks release provenance |
 | Host selection | blocked | approved host, owner, origin policy | blocks public binding |
@@ -250,6 +251,34 @@ authority=local-advisory
 | P1 | local source treated as release authority | local commit or workflow file is used as protected CI evidence | release provenance gate | keep staging promotion blocked |
 | P2 | safe scan enforcement not proven | `safe-scans` has not run as a protected required check | evidence boundary | review blocking behavior before release authority |
 | P2 | rollback owner absent | no rollback owner or protected artifact manifest exists | rollback gate | keep promotion blocked until owner and previous checksums are recorded |
+
+## Sprint 28 GitHub Remote And Protected CI Activation
+
+Sprint 28 plan:
+
+```text
+docs/superpowers/plans/2026-06-19-sprint-28-github-remote-and-protected-ci-activation.md
+```
+
+Sprint 28 keeps external activation blocked until these separate approvals exist:
+
+```text
+git-remote-add
+git-push
+github-actions-observe-or-dispatch
+branch-protection-or-ruleset
+protected-artifact-upload
+```
+
+Current protected evidence remains blocked while remote source, push approval, real Actions run id, required-check statuses, branch protection, and protected artifact upload metadata are absent.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | remote approval missing | no approved GitHub repository URL or remote name | source provenance gate | keep push and Actions blocked |
+| P1 | Actions status absent | `protected-ci-gate` has no real GitHub status | protected CI gate | keep local workflow advisory |
+| P1 | artifact upload too early | staging-named provenance files appear without run id and upload metadata | protected artifact gate | quarantine and keep promotion blocked |
+| P1 | local artifact authority confusion | `local-*` evidence is used to unblock staging | release provenance gate | keep `authority=local-advisory` and block promotion |
+| P2 | package command boundary drift | CI-invoked package script calls deploy, serve, wallet, chain, or hosted actions | workflow command boundary | fail CI before package checks |
 
 ## Sprint 21 Failure Triage
 

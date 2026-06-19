@@ -89,7 +89,7 @@ Sprint 28 execution should:
 - update `.github/workflows/ci.yml` to call guard scripts
 - make safe scans fail on unallowlisted findings while redacting sensitive matched values
 - add package-script command boundary checks for root, web, protocol, and contracts package manifests
-- add artifact drift detection after generator-like artifact checks
+- add artifact drift detection after dry-run/check-only artifact checks
 - add a final `protected-ci-gate` job that depends on the required CI jobs
 - document approval text for remote add, push, Actions activation, branch protection, protected artifact upload, release owner, and rollback owner
 - keep branch protection and staging promotion blocked without real GitHub evidence
@@ -415,7 +415,15 @@ after the workflow text boundary check.
 
 - [ ] **Step 3: Add artifact drift check**
 
-After artifact generation and verification in `artifact-provenance`, add:
+After dry-run artifact generation and verification in `artifact-provenance`, add:
+
+```powershell
+pnpm --filter @giwa/web --fail-if-no-match artifact:local -- --dry-run
+pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check
+pnpm --filter @giwa/web --fail-if-no-match artifact:scan
+```
+
+Then add:
 
 ```powershell
 git diff --exit-code -- docs/evidence/local-artifact-manifest.json docs/evidence/local-command-evidence-report.json docs/evidence/local-provenance-report.json docs/evidence/local-provenance-report.json.sha256 docs/evidence/local-provenance-verification.json apps/web/public/flow-data.json apps/web/public/partner-snapshot.json
@@ -424,7 +432,7 @@ git diff --exit-code -- docs/evidence/local-artifact-manifest.json docs/evidence
 Expected:
 
 ```text
-Protected CI fails if checked-in generated artifacts drift.
+Protected CI fails if checked-in generated artifacts drift without relying on timestamped write-mode output.
 ```
 
 - [ ] **Step 4: Add protected gate job**

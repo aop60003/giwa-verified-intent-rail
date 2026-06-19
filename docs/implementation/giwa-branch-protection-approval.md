@@ -10,7 +10,7 @@ This document is the Sprint 24 approval checklist for future branch protection a
 .git=True
 .github=True
 .github/workflows=True
-scripts/ci=False
+scripts/ci=True
 branch-protection=blocked
 required-checks=blocked
 protected-ci=blocked
@@ -58,6 +58,7 @@ node-syntax-checks
 safe-scans
 workspace-checks
 artifact-provenance
+protected-ci-gate
 ```
 
 Do not configure branch protection with approximate names. The required status check names must match actual workflow job names.

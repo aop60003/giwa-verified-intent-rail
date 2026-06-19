@@ -42,6 +42,10 @@ protectedProvenance=blocked
 
 No remote was created, no push was attempted, no GitHub Actions workflow was dispatched, no repository settings were changed, and no branch protection rule was configured.
 
+## Sprint 28 Local Hardening Update
+
+Sprint 28 adds local CI guard scripts under `scripts/ci`, routes `.github/workflows/ci.yml` through those guards, and adds `protected-ci-gate` as a future required-check candidate. This update does not create protected CI authority because no remote, push, real Actions run id, required-check status, branch protection rule, or protected artifact upload metadata exists.
+
 ## Required Check Names
 
 The current workflow defines these job names:
@@ -56,6 +60,7 @@ node-syntax-checks
 safe-scans
 workspace-checks
 artifact-provenance
+protected-ci-gate
 ```
 
 These are required-check candidates only. They cannot become protected checks until a GitHub repository exists, the workflow has run from pushed source, and matching GitHub status checks are visible.
@@ -109,6 +114,27 @@ Branch protection is blocked because:
 - branch protection requires exact status check names from a real workflow run
 
 If a future sprint receives remote, push, and settings authority, it must record repository URL, protected branch, reviewer policy, merge policy, required checks, release owner, rollback owner, and repository settings evidence before treating protected CI as authoritative.
+
+## Sprint 28 Approval Gates
+
+Future external activation remains split into these explicit gates:
+
+```text
+git-remote-add
+git-push
+github-actions-observe-or-dispatch
+branch-protection-or-ruleset
+protected-artifact-upload
+```
+
+The protected artifact upload gate must record:
+
+```text
+docs/evidence/giwa-staging-artifact-manifest.json
+docs/evidence/giwa-staging-provenance-report.json
+docs/evidence/giwa-staging-provenance-report.json.sha256
+docs/evidence/giwa-staging-artifact-upload-metadata.json
+```
 
 ## Safety Confirmation
 

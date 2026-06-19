@@ -81,6 +81,7 @@ jobs:
             $hits | ForEach-Object { Write-Host $_ }
             exit 1
           }
+          pwsh -NoProfile -File scripts\ci\check-package-script-boundary.ps1
 
   web-checks:
     runs-on: windows-latest
@@ -204,25 +205,7 @@ jobs:
       - name: Run safe scans
         shell: pwsh
         run: |
-          function Invoke-RgScan {
-            param(
-              [string] $Pattern,
-              [string[]] $Paths,
-              [string[]] $Globs
-            )
-            & rg -n $Pattern @Paths @Globs
-            if ($LASTEXITCODE -eq 1) {
-              return
-            }
-            if ($LASTEXITCODE -ne 0) {
-              exit $LASTEXITCODE
-            }
-          }
-
-          $placeholderPattern = ("TO" + "DO") + "|" + ("FIX" + "ME") + "|" + ("T" + "BD")
-          Invoke-RgScan $placeholderPattern @("docs\implementation", "docs\superpowers\plans", "README.md", ".github") @("-g", "*.md", "-g", "*.yml", "-g", "*.yaml")
-          Invoke-RgScan "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|real yield|real funds|settlement" @("docs\implementation", "docs\superpowers\plans", "README.md", "apps\web\public", "apps\web\src", "apps\web\scripts", ".github") @("-g", "*.md", "-g", "*.html", "-g", "*.js", "-g", "*.ts", "-g", "*.mjs", "-g", "*.yml", "-g", "*.yaml")
-          Invoke-RgScan "private key|mnemonic|bearer|api key|secret" @("docs\implementation", "docs\superpowers\plans", "README.md", "apps\web\public", "apps\web\src", "apps\web\scripts", ".github") @("-g", "*.md", "-g", "*.html", "-g", "*.js", "-g", "*.ts", "-g", "*.mjs", "-g", "*.yml", "-g", "*.yaml")
+          pwsh -NoProfile -File scripts\ci\check-safe-scans.ps1
 
   workspace-checks:
     runs-on: windows-latest
@@ -275,7 +258,27 @@ jobs:
         shell: pwsh
         run: |
           pnpm --filter @giwa/web --fail-if-no-match test -- provenance
-          pnpm --filter @giwa/web --fail-if-no-match artifact:local
+          pnpm --filter @giwa/web --fail-if-no-match artifact:local -- --dry-run
           pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check
           pnpm --filter @giwa/web --fail-if-no-match artifact:scan
           pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check
+          git diff --exit-code -- docs/evidence/local-artifact-manifest.json docs/evidence/local-command-evidence-report.json docs/evidence/local-provenance-report.json docs/evidence/local-provenance-report.json.sha256 docs/evidence/local-provenance-verification.json apps/web/public/flow-data.json apps/web/public/partner-snapshot.json
+
+  protected-ci-gate:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    needs:
+      - source-provenance
+      - workflow-command-boundary
+      - web-checks
+      - protocol-checks
+      - contracts-checks
+      - node-syntax-checks
+      - safe-scans
+      - workspace-checks
+      - artifact-provenance
+    steps:
+      - name: Confirm protected CI gate
+        shell: pwsh
+        run: |
+          Write-Host "protected_ci_gate=pass"
