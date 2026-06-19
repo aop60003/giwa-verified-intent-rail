@@ -568,3 +568,33 @@ protectedArtifactUploadMetadata=blocked
 ```
 
 Protected artifact generation and upload metadata are downstream of successful GitHub job/check contexts. Public source visibility allowed diagnostic check runs to be created, but the first diagnostic job was not started because the GitHub account is locked due to a billing issue. The diagnostic workflow cannot substitute for the protected `ci-source-provenance` required-check set or release approval.
+
+## Sprint 33 Staging Dry-Run Preparation Boundary
+
+Sprint 33 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Sprint 33 preparation record:
+
+```text
+docs/implementation/giwa-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Sprint 33 does not change release authority:
+
+```text
+latestProtectedRunId=27849769064
+latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=account-locked-due-to-billing
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+The staging dry-run packet is prepared for post-billing review only. It cannot supersede protected CI, cannot create release-grade provenance, and cannot authorize public hosting or deployment. After billing is resolved, the next sprint must rerun `ci-source-provenance`, verify all ten required checks, inspect protected artifact metadata, and update this record with run id, source commit, check results, artifact names, hash values, owner, and timestamp before any staging dry-run execution sprint.

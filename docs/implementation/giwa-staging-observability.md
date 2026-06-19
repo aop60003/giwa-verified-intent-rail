@@ -86,3 +86,20 @@ Before staging dry run, table-drill at least:
 - log redaction failure
 
 Each drill records only public or redacted fields: alert name, severity, owner role, request ids, affected mode, bounded event names, affected run/receipt/transaction hashes, readiness state, fallback posture, lock criteria, and follow-up owner.
+
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 may review observability requirements, but public staging execution remains blocked until protected CI passes.
+
+Before staging execution, record:
+
+| Gate | Required evidence |
+| --- | --- |
+| `/healthz` | cheap liveness only |
+| `/readyz` | redacted response and HTTP 503 for any red gate |
+| Request id | every `/api/*` success and error path includes `requestId` |
+| Log redaction | no raw bodies, headers, env values, credential values, tokenized URLs, provider text, stack traces, or manifest signatures |
+| Metric labels | no wallet, tx hash, run id, or request id as metric labels |
+| Alert owners | named owner for receipt gate, wrong chain, mock mode, redaction, backup, verifier, DB write, auth, readiness, and rate-limit alerts |
+
+The billing lock keeps `stagingDryRunExecution=blocked-protected-ci`; local observability checks are advisory only.

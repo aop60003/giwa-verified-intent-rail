@@ -139,6 +139,20 @@ Do not add queued third-party app check suites as required checks. Only stable, 
 
 After Sprint 31, repository visibility is public and branch protection is configured for `main` with the canonical required checks. Release approval remains blocked because the GitHub account billing lock prevents required checks from starting successfully. Retry protected CI only after the billing lock is resolved and the protected required-check names have passing GitHub check contexts.
 
+Sprint 33 keeps this boundary unchanged:
+
+```text
+latestProtectedRunId=27849769064
+latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=account-locked-due-to-billing
+branchProtected=true
+requiredChecks=10
+stagingDryRunExecution=blocked-protected-ci
+```
+
+Branch protection is configured evidence only. It does not authorize staging while the required checks are failing or skipped.
+
 ## Exit Gate
 
 Branch protection approval is ready only when:

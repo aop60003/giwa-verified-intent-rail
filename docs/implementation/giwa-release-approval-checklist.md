@@ -206,6 +206,20 @@ billingLockResolution=external-required
 releaseApproval=blocked
 ```
 
+Sprint 33 dry-run preparation state:
+
+```text
+plan=docs/superpowers/plans/2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md
+preparationRecord=docs/implementation/giwa-staging-dry-run-preparation-under-billing-lock.md
+latestProtectedRunId=27849769064
+latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=account-locked-due-to-billing
+stagingDryRunPreparation=ready-for-post-billing-review
+stagingDryRunExecution=blocked-protected-ci
+releaseApproval=blocked
+```
+
 Release approval remains blocked until:
 
 - GitHub Actions creates real job/check contexts.
@@ -230,7 +244,7 @@ Sprint 27 confirms local git and workflow state, but release approval remains bl
 Under the current remote-pushed but protected-CI-blocked state, the safe next sprint is:
 
 ```text
-docs/superpowers/plans/2026-06-20-sprint-30-protected-ci-startup-and-branch-policy-unblock.md
+docs/superpowers/plans/2026-06-20-sprint-34-post-billing-protected-ci-rerun-and-artifact-handoff.md
 ```
 
-Hosted adapter and staging dry-run paths remain blocked until protected source, workflow, and provenance gates exist.
+Hosted adapter and staging dry-run execution paths remain blocked until protected source, workflow, artifact, release-owner, rollback-owner, and provenance gates exist.

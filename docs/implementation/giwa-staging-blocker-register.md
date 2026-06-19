@@ -9,12 +9,12 @@ Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local gi
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-sourceCommit=7858b34cbac7d7141254b03051c4516048225de1
+sourceCommit=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=public
 remotePushApproval=approved-2026-06-20
 remotePush=complete
-githubActionsRun=27849499574
+githubActionsRun=27849769064
 githubActionsConclusion=failure
 githubActionsFirstJobAnnotation=account-locked-due-to-billing
 requiredCheckStatuses=created-but-failing
@@ -396,6 +396,50 @@ stagingPromotion=blocked
 ```
 
 The latest rerun attempt also failed before runner steps with the same billing-lock annotation. The next executable step is outside the repository: resolve the GitHub account billing lock. After that, rerun the protected workflow and record whether checks pass, fail by command, or fail by artifact gate.
+
+## Sprint 33 Staging Dry-Run Preparation Under Billing Lock
+
+Sprint 33 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Sprint 33 preparation record:
+
+```text
+docs/implementation/giwa-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Current Sprint 33 blocker state:
+
+```text
+repositoryVisibility=public
+branchProtected=true
+requiredChecks=10
+latestProtectedRunId=27849769064
+latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=account-locked-due-to-billing
+protectedCI=blocked-billing-lock
+stagingDryRunPreparation=ready-for-post-billing-review
+stagingDryRunExecution=blocked-protected-ci
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+releaseApproval=blocked
+publicHosting=blocked
+deployment=blocked
+```
+
+Sprint 33 may prepare the dry-run packet only. It cannot authorize public hosting, deployment, managed infrastructure, protected artifact promotion, or staging execution while GitHub billing prevents required checks from running.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | staging dry-run starts under billing lock | protected CI is failing or unstarted | release provenance gate | stop dry-run execution and keep packet as preparation only |
+| P1 | local advisory evidence promoted | `local-*` files are used as release authority | provenance gate | keep local evidence advisory until protected CI regenerates it |
+| P1 | host selected before protection passes | staging host owner exists while protected CI is red | hosted ops gate | record host as proposed only and block execution |
+| P2 | storage drill absent | no approved adapter, backup catalog, or restore evidence | storage gate | keep dry-run no-go |
+| P2 | rollback path incomplete | static fallback, owner, or artifact manifest is missing | rollback gate | block dry-run execution until fallback smoke and owner are recorded |
 
 ## Sprint 21 Failure Triage
 

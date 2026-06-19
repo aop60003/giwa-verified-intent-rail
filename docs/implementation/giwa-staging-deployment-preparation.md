@@ -101,3 +101,26 @@ docs/implementation/giwa-ci-failure-triage.md
 ```
 
 These documents keep staging deployment blocked until repository transition, workflow-file creation, branch protection, required checks, artifact manifest generation, provenance report generation, and release approval are proven by protected CI.
+
+## Sprint 33 Dry-Run Preparation Under Billing Lock
+
+Sprint 33 records a preparation-only staging dry-run packet:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md
+docs/implementation/giwa-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Current state:
+
+```text
+protectedCI=blocked-billing-lock
+stagingDryRunPreparation=ready-for-post-billing-review
+stagingDryRunExecution=blocked-protected-ci
+protectedArtifactGeneration=blocked
+releaseApproval=blocked
+publicHosting=blocked
+deployment=blocked
+```
+
+The packet can be reviewed locally, but it cannot be executed as a staging dry run until GitHub billing is resolved outside the repository, all required checks pass from the intended source commit, protected artifact metadata is recorded, and host/runtime/storage/security/rollback/partner gates are approved.

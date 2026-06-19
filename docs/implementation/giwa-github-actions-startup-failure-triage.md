@@ -154,6 +154,20 @@ rerunFirstJobCheckRun=82426286887
 rerunAnnotation=The job was not started because your account is locked due to a billing issue.
 ```
 
+Sprint 33 preparation observes the latest protected workflow state after the documentation update push:
+
+```text
+latestProtectedRunId=27849769064
+latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=The job was not started because your account is locked due to a billing issue.
+rootCauseClass=github-account-billing-lock
+protectedCI=blocked-billing-lock
+stagingDryRunExecution=blocked-protected-ci
+```
+
+This does not change the root cause. Repository edits, branch-policy changes, or local advisory checks cannot clear the billing lock. The next execution that can produce protected CI authority remains a post-billing rerun or workflow dispatch from the intended source commit.
+
 ## Branch Protection After Public Visibility
 
 After public source visibility and creation of real check contexts, branch protection was configured for `main`:

@@ -241,6 +241,36 @@ releaseApproval=blocked
 
 After the GitHub account billing lock is resolved outside the repository, rerun the protected workflow before any staging artifact or release approval work. Do not treat admin-bypassed pushes as protected merge evidence.
 
+## Sprint 33 Staging Dry-Run Preparation State
+
+Sprint 33 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Sprint 33 preparation record:
+
+```text
+docs/implementation/giwa-staging-dry-run-preparation-under-billing-lock.md
+```
+
+Latest protected CI state:
+
+```text
+latestProtectedRunId=27849769064
+latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=account-locked-due-to-billing
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 33 prepares the dry-run packet for post-billing review only. It does not create protected CI provenance, protected artifacts, release approval, public hosting, deployment, managed infrastructure, wallet actions, or chain-operation commands.
+
 ## Safety Confirmation
 
 Sprint 27 did not:

@@ -51,3 +51,14 @@ The promotion packet must link:
 
 External partner signoff is not present in the current Sprint 19 state, so promotion remains blocked.
 
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 adds one automatic no-go:
+
+```text
+protectedCI=blocked-billing-lock
+```
+
+Partner beta or staging promotion remains blocked while protected CI is red, skipped, or blocked before runner steps. Sprint 33 can rehearse partner review controls locally, but it cannot route partner traffic to a public staging host or present local advisory output as release authority.
+
+Post-billing promotion still requires one partner, one campaign, one mission, one GIWA Sepolia mock vault action, one evidence packet, reviewer signoff, incident owner, retention owner, protected artifact metadata, and an updated blocker register.

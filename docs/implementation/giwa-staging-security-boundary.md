@@ -70,3 +70,21 @@ Current Sprint 19 blockers:
 - live snapshot export selects latest matched local run and is not a tenant-scoped staging export
 - staging export needs an allowlisted schema plus artifact checksums
 - public artifact guard remains a scan layer, not the only boundary
+
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 can prepare security gate evidence, but it cannot promote a public staging surface while protected CI is blocked.
+
+Required before staging execution:
+
+| Gate | Required evidence |
+| --- | --- |
+| Auth mapping | credential hash maps to actor id, tenant id, and scopes |
+| Tenant source | tenant id comes from auth context only |
+| Origin policy | same-origin or exact allowlisted CORS, no wildcard |
+| Request gate | JSON content type, bounded body, malformed JSON fail-closed behavior |
+| Rate gate | source, credential, tenant, wallet, and verification buckets |
+| Receipt gate | run status and verifier decision are both `matched`; hashes recompute; tenant access passes |
+| Public artifact gate | allowlisted schema and checksums for partner-facing exports |
+
+Local in-memory rate limits and local tenant defaults remain local-only. Missing protected CI, missing tenant mapping, wildcard origin, or non-matched receipt access is a staging no-go.

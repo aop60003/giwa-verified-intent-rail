@@ -51,3 +51,18 @@ Staging cannot run with implicit schema repair. The startup gate must show:
 Shared evidence uses sanitized public fields only. Raw local rows, local logs, browser state, and credential-bearing provider data stay private and retention-bound.
 
 Staging promotion stays blocked until retention owner, archive manifest shape, delete limits, and public chain-data limitations are acknowledged in the partner closeout packet.
+
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 does not connect a production, managed, or cloud database. It prepares the storage evidence shape only:
+
+| Gate | Sprint 33 state | Required before staging execution |
+| --- | --- | --- |
+| Adapter decision | blocked | approved non-production staging adapter and owner |
+| Migration marker review | prepared | `001_live_base`, `002_nullable_decision_tx_hash`, and `003_verification_jobs` checked with reviewed marker provenance |
+| Hosted probe | absent | real adapter probe with redacted result |
+| Backup catalog | absent | isolated staging backup catalog with owner |
+| Restore drill | absent | restore duration, row-count comparison, snapshot hash comparison, and receipt hash recomputation |
+| Rate and queue state | local-only | approved multi-instance behavior or explicit rehearsal limitation |
+
+Local SQLite, local snapshots, and local live rehearsal databases remain advisory and cannot unblock staging while `protectedCI=blocked-billing-lock`.

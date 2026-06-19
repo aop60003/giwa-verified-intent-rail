@@ -59,6 +59,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 30 | `2026-06-20-sprint-30-protected-ci-startup-and-branch-policy-unblock.md` | GitHub Actions startup failure triage, minimal diagnostic workflow, branch policy blocker routing, third-party check-suite classification, and protected CI blocker updates | Sprint 29 approval |
 | 31 | `2026-06-20-sprint-31-source-visibility-and-actions-runner-gate.md` | source visibility safety review, public repository conversion if safe, diagnostic workflow rerun, protected workflow rerun, and branch protection retry routing without public app hosting or deployment | Sprint 30 approval |
 | 32 | `2026-06-20-sprint-32-github-billing-lock-and-protected-ci-rerun.md` | GitHub billing-lock evidence, post-billing protected CI rerun procedure, branch policy verification, protected artifact handoff gate, and staging blocker updates | Sprint 31 approval |
+| 33 | `2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md` | staging dry-run preparation packet under GitHub billing lock, host/runtime/storage/security/rollback gate alignment, and post-billing handoff without public hosting or deployment | Sprint 32 blocked-billing-lock |
 
 ## Sprint 0 Execution Artifacts
 
@@ -155,6 +156,8 @@ Sprint 30 diagnoses the GitHub Actions `startup_failure` state observed after Sp
 Sprint 31 tests whether source repository visibility is the remaining Actions and branch-protection gate. It may convert the GitHub source repository to public only after source-safety scans pass. Public source visibility is not public app hosting or deployment. Sprint 31 still does not deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI provenance before real GitHub checks pass.
 
 Sprint 32 records the GitHub account billing lock as the remaining protected CI blocker and defines the exact rerun procedure for after billing is resolved outside the repository. Sprint 32 keeps branch protection configured, keeps staging promotion blocked while checks fail, and does not deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI before required checks pass.
+
+Sprint 33 prepares the staging dry-run packet while the GitHub account billing lock remains open. It records host/runtime/storage/security/rollback/partner go/no-go gates, keeps local static and live rehearsal evidence advisory only, and defines the post-billing protected CI and artifact handoff before any public hosting or deployment. Sprint 33 does not deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI before required checks pass.
 
 ## Global Stop Conditions
 

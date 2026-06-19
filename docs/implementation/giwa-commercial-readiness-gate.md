@@ -315,3 +315,16 @@ docs/implementation/giwa-hosted-ops-runbook.md
 ```
 
 The release gate must not include verifier-chain, deploy, fund, anchor, mint, or wallet-action commands.
+
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 does not change commercial readiness. The dry-run preparation packet is advisory while:
+
+```text
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+releaseApproval=blocked
+stagingDryRunExecution=blocked-protected-ci
+```
+
+Any manual local rehearsal under Sprint 33 is a control rehearsal only. It is not commercial readiness, not a public staging launch, not release approval, and not protected provenance.

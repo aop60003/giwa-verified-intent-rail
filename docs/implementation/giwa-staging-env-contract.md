@@ -45,3 +45,19 @@ Public outputs may include public addresses, public transaction hashes, block fi
 - origin policy explicit
 - storage readiness green or explicitly blocked
 
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 may prepare the redacted readiness checklist, but it cannot activate a public staging runtime while protected CI is blocked by GitHub billing.
+
+Required post-billing readiness evidence:
+
+| Gate | Evidence required before staging execution |
+| --- | --- |
+| Runtime mode | `GIWA_LIVE_MODE=staging-testnet` from process environment |
+| Env loading | hosted modes do not load local env files |
+| Redaction | startup and `/readyz` show set, missing, invalid, length, format, public address, and probe classes only |
+| Tenant mapping | credential hash maps to actor id, tenant id, and scopes |
+| Origin policy | exact same-origin or allowlisted CORS decision |
+| Storage | approved adapter probe or explicit dry-run block |
+
+Until protected CI passes, all readiness evidence is advisory and `stagingDryRunExecution=blocked-protected-ci`.

@@ -259,3 +259,17 @@ Stop partner beta if:
 - `docs/implementation/giwa-incident-response.md`
 - `docs/implementation/giwa-evidence-retention-policy.md`
 - `docs/implementation/giwa-commercial-readiness-gate.md`
+
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 can rehearse controls and review the evidence packet locally, but partner beta traffic must wait for protected CI or an explicitly approved substitute source-control policy.
+
+Partner-facing wording must stay within:
+
+```text
+GIWA Sepolia testnet mock vault action evidence
+manifest-matched receipt after standard RPC confirmation and verifier match
+Flashblocks as non-final fast feedback only
+```
+
+Do not describe Sprint 33 as a public beta, staging launch, production finance surface, identity service, phishing-prevention service, or safety warranty.

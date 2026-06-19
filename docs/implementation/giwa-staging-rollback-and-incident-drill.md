@@ -58,3 +58,20 @@ Quarantine response:
 5. Rerun scans and snapshot hash checks.
 6. Record owner, time window, and result.
 
+## Sprint 33 Billing-Lock Boundary
+
+Sprint 33 keeps rollback and incident work as preparation only.
+
+Before any staging execution, record:
+
+| Gate | Required evidence |
+| --- | --- |
+| Static fallback smoke | GET checks for `/`, matched receipt route, `/partner`, and `/partner-snapshot.json` |
+| Static fallback hash | current public snapshot hash and expected file path |
+| Rollback owner | named owner and contact route |
+| Partner communications owner | named owner and message path |
+| Artifact manifest | protected-CI artifact manifest, not local advisory output |
+| Prior checksums | prior promoted app artifact checksums |
+| Storage limitation | rollback cannot reverse public chain evidence and cannot assume production restore |
+
+No rollback plan can authorize public hosting or deployment while `protectedCI=blocked-billing-lock`.
