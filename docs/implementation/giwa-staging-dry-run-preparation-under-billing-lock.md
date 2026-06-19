@@ -168,3 +168,31 @@ stagingDryRunExecution=blocked-protected-ci
 ```
 
 Staging dry-run execution remains no-go until current `main` receives a passing protected CI run and protected artifact metadata exists.
+
+## Sprint 37 Dispatch Gate State
+
+Sprint 37 records a protected workflow dispatch that still failed on the billing gate:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-37-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/implementation/giwa-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/evidence/protected-ci-sprint37-dispatch-failure.json
+```
+
+Current decision:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowDispatchExecuted=true
+workflowRunId=27852941488
+workflowRunConclusion=failure
+source-provenance=failure
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+stagingDryRunExecution=blocked-protected-ci
+```
+
+Staging dry-run execution remains no-go because the required checks did not pass and no protected artifact metadata exists.

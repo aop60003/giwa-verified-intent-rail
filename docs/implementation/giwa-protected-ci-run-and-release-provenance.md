@@ -352,6 +352,45 @@ stagingPromotion=blocked
 
 Sprint 36 does not rerun or dispatch the workflow because billing unlock is still not evidenced. The current `main` commit must receive a fresh protected CI run after unlock; stale run `27850867132` cannot prove the current head.
 
+## Sprint 37 Protected CI Dispatch After Reported Billing Unlock State
+
+Sprint 37 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-37-protected-ci-dispatch-after-reported-billing-unlock.md
+```
+
+Sprint 37 handoff record:
+
+```text
+docs/implementation/giwa-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/evidence/protected-ci-sprint37-dispatch-failure.json
+```
+
+Current state:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowDispatchExecuted=true
+workflowRunId=27852941488
+workflowRunUrl=https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27852941488
+workflowRunHeadSha=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowRunConclusion=failure
+sourceProvenanceConclusion=failure
+sourceProvenanceAnnotation=account-locked-due-to-billing
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+billingUnlockClaimedByUser=true
+billingUnlockConfirmedByGitHub=false
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 37 targeted current `main`, but GitHub still blocked the first job before runner steps. The failed dispatch cannot be promoted as protected CI evidence.
+
 ## Safety Confirmation
 
 Sprint 27 did not:

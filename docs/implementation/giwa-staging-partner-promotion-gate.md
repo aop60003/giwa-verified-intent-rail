@@ -111,3 +111,23 @@ partnerPromotion=blocked
 ```
 
 Partner-facing staging or beta handoff remains local/advisory only until current `main` has passing protected CI, protected artifact metadata exists, reviewer signoff exists, incident and retention owners are named, and the blocker register is closed.
+
+## Sprint 37 Dispatch Gate State
+
+Sprint 37 keeps partner promotion blocked:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowDispatchExecuted=true
+workflowRunId=27852941488
+workflowRunConclusion=failure
+source-provenance=failure
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+partnerPromotion=blocked
+```
+
+Partner-facing staging or beta handoff remains local/advisory only until current `main` has passing protected CI, protected artifact metadata exists, reviewer signoff exists, incident and retention owners are named, and the blocker register is closed.

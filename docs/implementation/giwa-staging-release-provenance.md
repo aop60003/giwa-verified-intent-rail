@@ -701,3 +701,39 @@ stagingPromotion=blocked
 ```
 
 Sprint 36 confirms that a `[skip ci]` direct push to `main` is not protected CI evidence. Protected release provenance begins only after a new run on current `main` passes all ten required checks and exposes protected artifact metadata.
+
+## Sprint 37 Protected CI Dispatch Boundary
+
+Sprint 37 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-37-protected-ci-dispatch-after-reported-billing-unlock.md
+```
+
+Sprint 37 record:
+
+```text
+docs/implementation/giwa-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/evidence/protected-ci-sprint37-dispatch-failure.json
+```
+
+Release authority remains blocked:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowRunId=27852941488
+workflowRunHeadSha=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowRunConclusion=failure
+source-provenance=failure
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+billingUnlockClaimedByUser=true
+billingUnlockConfirmedByGitHub=false
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 37 proves source binding for the failed dispatch only. It does not prove protected CI, protected artifact handoff, or release-grade provenance.

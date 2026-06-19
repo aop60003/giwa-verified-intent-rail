@@ -169,3 +169,26 @@ cloudSecretManagerConnection=blocked
 ```
 
 Hosted adapter implementation requires protected CI on current `main`, protected artifact metadata, adapter owner, storage/restore evidence, auth/tenant/origin gates, rollback owner, and release approval.
+
+## Sprint 37 Dispatch Gate State
+
+Sprint 37 keeps hosted adapter implementation blocked:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowDispatchExecuted=true
+workflowRunId=27852941488
+workflowRunConclusion=failure
+source-provenance=failure
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+cloudSecretManagerConnection=blocked
+```
+
+Hosted adapter implementation still requires a passing protected-CI run, protected artifact metadata, adapter owner, storage/restore evidence, auth/tenant/origin gates, rollback owner, and release approval.

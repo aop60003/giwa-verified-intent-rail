@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "1",
+  "authority": "github-actions-dispatch-failed",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "capturedAt": "2026-06-20T08:28:49+09:00",
+  "repository": "https://github.com/aop60003/giwa-verified-intent-rail",
+  "branch": {
+    "name": "main",
+    "protected": true,
+    "currentHeadSha": "b769003e733a83faa70b57b4c0bda6ac26821044",
+    "currentHeadCommitMessage": "docs: record sprint 36 ci unlock blocker [skip ci]",
+    "requiredCheckCount": 10
+  },
+  "billingGate": {
+    "claimedUnlockedByUser": true,
+    "confirmedUnlockedByGitHub": false,
+    "rootCauseClass": "github-account-billing-lock",
+    "annotationMessage": "The job was not started because your account is locked due to a billing issue."
+  },
+  "workflowRun": {
+    "runId": 27852941488,
+    "runUrl": "https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27852941488",
+    "workflowName": "ci-source-provenance",
+    "event": "workflow_dispatch",
+    "headSha": "b769003e733a83faa70b57b4c0bda6ac26821044",
+    "status": "completed",
+    "conclusion": "failure",
+    "createdAt": "2026-06-19T23:26:14Z",
+    "updatedAt": "2026-06-19T23:26:19Z",
+    "logStatus": "failed-job-log-not-found"
+  },
+  "jobs": [
+    {
+      "name": "source-provenance",
+      "databaseId": 82435180522,
+      "conclusion": "failure",
+      "startedAt": "2026-06-19T23:26:15Z",
+      "completedAt": "2026-06-19T23:26:17Z",
+      "steps": [],
+      "annotationCount": 1,
+      "annotationClass": "github-account-billing-lock"
+    },
+    {
+      "name": "workflow-command-boundary",
+      "databaseId": 82435183664,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "contracts-checks",
+      "databaseId": 82435183714,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "node-syntax-checks",
+      "databaseId": 82435183814,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "protocol-checks",
+      "databaseId": 82435183825,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "web-checks",
+      "databaseId": 82435183860,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "safe-scans",
+      "databaseId": 82435183884,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "artifact-provenance",
+      "databaseId": 82435184055,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "protected-ci-gate",
+      "databaseId": 82435184064,
+      "conclusion": "skipped"
+    },
+    {
+      "name": "workspace-checks",
+      "databaseId": 82435184524,
+      "conclusion": "skipped"
+    }
+  ],
+  "requiredChecks": [
+    {
+      "name": "source-provenance",
+      "conclusion": "failure"
+    },
+    {
+      "name": "workflow-command-boundary",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "web-checks",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "protocol-checks",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "contracts-checks",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "node-syntax-checks",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "safe-scans",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "workspace-checks",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "artifact-provenance",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "protected-ci-gate",
+      "conclusion": "skipped"
+    }
+  ],
+  "artifacts": {
+    "api": "repos/aop60003/giwa-verified-intent-rail/actions/runs/27852941488/artifacts",
+    "totalCount": 0,
+    "items": []
+  },
+  "sprint37Decision": {
+    "workflowDispatchExecuted": true,
+    "rerunExecuted": false,
+    "sourceBinding": "run-head-matches-current-main",
+    "protectedCI": "blocked-billing-lock-after-dispatch",
+    "protectedArtifactGeneration": "blocked",
+    "protectedArtifactUpload": "blocked-no-artifacts",
+    "protectedArtifactUploadImplemented": false,
+    "releaseApproval": "blocked",
+    "stagingDryRunExecution": "blocked-protected-ci",
+    "hostedAdapterImplementation": "blocked",
+    "partnerPromotion": "blocked"
+  },
+  "forbiddenActionsObserved": {
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "walletTransaction": false,
+    "chainOperationCommand": false,
+    "dependencyInstall": false,
+    "releaseTag": false
+  }
+}

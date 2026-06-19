@@ -2,20 +2,21 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local git and workflow state, but protected CI and release approval remain absent:
+Sprint 19 preparation is blocked for staging dry run. Sprint 37 dispatched protected CI after a user-reported billing unlock, but GitHub still returned the account billing annotation before runner steps, so protected CI and release approval remain absent:
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
-latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+latestRealActionsRunHeadSha=b769003e733a83faa70b57b4c0bda6ac26821044
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=public
 remotePushApproval=approved-2026-06-20
 remotePush=complete
-githubActionsRun=27850867132
+githubActionsRun=27852941488
+githubActionsEvent=workflow_dispatch
 githubActionsConclusion=failure
 githubActionsFirstJob=source-provenance
 githubActionsDownstreamJobs=9-skipped
@@ -26,7 +27,7 @@ protectedArtifactGeneration=absent
 protectedArtifactUploadMetadata=absent
 releaseApproval=absent
 rollbackOwner=absent
-protected-ci=blocked-billing-lock
+protected-ci=blocked-billing-lock-after-dispatch
 branch-protection=configured-required-checks-failing
 external partner signoff=absent
 public host approval=absent
@@ -587,6 +588,53 @@ Sprint 36 cannot proceed to staging dry-run execution or hosted adapter implemen
 | P1 | artifact upload absent | Actions artifacts API returns zero artifacts | artifact handoff gate | keep protected artifact upload blocked |
 | P1 | billing unlock absent | first job remains account billing locked | GitHub account gate | do not rerun or dispatch |
 | P2 | adapter work starts under blocked CI | hosted adapter implementation begins before protected CI pass | hosted adapter gate | keep implementation advisory-only |
+
+## Sprint 37 Protected CI Dispatch After Reported Billing Unlock
+
+Sprint 37 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-37-protected-ci-dispatch-after-reported-billing-unlock.md
+```
+
+Sprint 37 dispatch record:
+
+```text
+docs/implementation/giwa-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/evidence/protected-ci-sprint37-dispatch-failure.json
+```
+
+Current Sprint 37 blocker state:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowDispatchExecuted=true
+workflowRunId=27852941488
+workflowRunHeadSha=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowRunConclusion=failure
+workflowRunFirstJob=source-provenance
+workflowRunFirstJobAnnotation=account-locked-due-to-billing
+workflowRunDownstreamJobs=9-skipped
+workflowRunArtifactTotalCount=0
+billingUnlockClaimedByUser=true
+billingUnlockConfirmedByGitHub=false
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+releaseApproval=blocked
+stagingDryRunExecution=blocked-protected-ci
+hostedAdapterImplementation=blocked
+partnerPromotion=blocked
+```
+
+Sprint 37 cannot proceed to staging dry-run execution, hosted adapter implementation, or partner promotion while the dispatched required-check set is failing or skipped.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | billing annotation after dispatch | `source-provenance` fails before runner steps | GitHub account gate | resolve account billing outside the repository and dispatch again |
+| P1 | skipped required checks | nine required jobs are skipped | protected CI gate | block release approval |
+| P1 | zero protected artifacts | Actions artifacts total is `0` | artifact handoff gate | block protected artifact upload and staging promotion |
+| P2 | run is used as release authority | run conclusion is failure | provenance gate | record as failed dispatch evidence only |
 
 ## Sprint 21 Failure Triage
 

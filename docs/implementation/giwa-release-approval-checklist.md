@@ -305,3 +305,32 @@ releaseApproval=blocked
 ```
 
 A protected CI run on an older commit cannot approve the current `main` source. A future release approval record must bind run id, run URL, head SHA, all ten check conclusions, protected artifact metadata, release owner, and rollback owner to the same source commit.
+
+## Sprint 37 Release Approval Boundary
+
+Sprint 37 adds:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-37-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/implementation/giwa-protected-ci-dispatch-after-reported-billing-unlock.md
+docs/evidence/protected-ci-sprint37-dispatch-failure.json
+```
+
+Release approval remains blocked:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowDispatchExecuted=true
+workflowRunId=27852941488
+workflowRunConclusion=failure
+source-provenance=failure
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+billingUnlockConfirmedByGitHub=false
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+releaseApproval=blocked
+```
+
+Before release approval can advance, a later run must pass all ten required checks on the intended `main` source and expose protected artifact metadata.

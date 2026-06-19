@@ -192,6 +192,27 @@ sourceBinding=blocked-no-run-for-current-main
 
 The `[skip ci]` head advance is a documented handoff commit only. It cannot satisfy required checks, and it cannot support release or staging provenance until a later protected workflow run targets the same current `main` head.
 
+Sprint 37 dispatches the workflow on current `main` and records the required-check results:
+
+```text
+currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowRunId=27852941488
+workflowRunHeadSha=b769003e733a83faa70b57b4c0bda6ac26821044
+workflowRunConclusion=failure
+source-provenance=failure
+workflow-command-boundary=skipped
+web-checks=skipped
+protocol-checks=skipped
+contracts-checks=skipped
+node-syntax-checks=skipped
+safe-scans=skipped
+workspace-checks=skipped
+artifact-provenance=skipped
+protected-ci-gate=skipped
+```
+
+Branch protection is configured evidence only. The required-check set is present but failing or skipped, so it cannot authorize release or staging provenance.
+
 ## Exit Gate
 
 Branch protection approval is ready only when:
