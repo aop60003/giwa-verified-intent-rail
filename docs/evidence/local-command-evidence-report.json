@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1",
+  "reportKind": "local-command-evidence-report",
+  "authority": "local-advisory",
+  "generatedAt": "2026-06-19T12:52:07.990Z",
+  "claim": "commands-declared-not-executed-by-report-builder",
+  "requiredCommands": [
+    {
+      "command": "pnpm test",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "pnpm build",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match test",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match typecheck",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match build",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "pnpm --filter @giwa/protocol --fail-if-no-match test",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "pnpm --filter @giwa/contracts --fail-if-no-match test",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "node --check apps/web/scripts/export-artifact-manifest.mjs",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    },
+    {
+      "command": "node --check apps/web/scripts/verify-provenance-report.mjs",
+      "expectedResult": "exit-0",
+      "evidenceBoundary": "local-shell-output-not-protected-ci"
+    }
+  ],
+  "forbiddenFields": [
+    "sourceCommit",
+    "ciRunId",
+    "releaseTag",
+    "promotionDecision"
+  ],
+  "recordedResults": [],
+  "decision": "pass"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "giwa-verified-intent-rail",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "build": "pnpm --filter \"./apps/*\" --filter \"./packages/*\" --fail-if-no-match -r run build",
+    "typecheck": "pnpm --filter \"./apps/*\" --filter \"./packages/*\" --fail-if-no-match -r run typecheck",
+    "test": "pnpm --filter \"./apps/*\" --filter \"./packages/*\" --fail-if-no-match -r run test"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  },
+  "dependencies": {
+    "viem": "2.52.2"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "chainId": 91342,
+  "mockTokenAddress": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+  "mockVaultAddress": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+  "intentRailAddress": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+  "intentSubmittedTxHash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+  "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df"
+}

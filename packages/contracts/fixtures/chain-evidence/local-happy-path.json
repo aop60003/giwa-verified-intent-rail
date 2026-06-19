@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "sprint-2-local-chain-evidence-v1",
+  "network": {
+    "name": "Hardhat Local",
+    "chainId": 31337
+  },
+  "roles": {
+    "deployerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "demoUserAddress": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "verifierAddress": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+    "intentSubmitterAddress": "0x90f79bf6eb2c4f870365e785982e1f101e93b906"
+  },
+  "contracts": {
+    "mockTokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+    "mockVaultAddress": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    "intentRailAddress": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+    "mockTokenDeploymentTxHash": "0x36325a2e31c82eccd07cbaa64d52edeeeb4f32dad0e19582432c1fc33f860439",
+    "mockVaultDeploymentTxHash": "0x4ba5725cb8720591b517ce88bda5cdb45838b86ff64bb8e3c7c284c4ceffad70",
+    "intentRailDeploymentTxHash": "0x58c92cc4aec6ec98599d07708efcf2026515b19c5a01091190c85643df967c94"
+  },
+  "transactions": {
+    "approveTxHash": "0x77e3b5bb45eeec0bc5963e1f67a38c9de407fe8a27a914f5745ab82e1d75aed9",
+    "intentSubmittedTxHash": "0x332508e52ebe21f739fa1cd241f5ae2c55cb944631de565409a781e72c4231bf",
+    "depositTxHash": "0xa76ac9d9bcd931651e5a678fbfc11b97d7a44ec609d5db46c30ebec6ca9c820c",
+    "decisionTxHash": "0x902e9252d57d39469252c00abbad0413a5ebf45ea5243fe02022754ad14f3077"
+  },
+  "decodedLogSnapshots": [
+    {
+      "eventName": "IntentSubmitted",
+      "contractAddress": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "logIndex": 0,
+      "args": {
+        "intentHash": "0x5d6c162b1e98d4c81835d269c02fa078786c7119f57cf6248cbb22fc6696a7ce",
+        "campaignIdBytes32": "0x5002945cf23e37d137e9a2c3e13e6e2ab2d580ae1b7359550b8bd74fcaa15ee5",
+        "missionIdBytes32": "0x76a63c18da9e277cea49341a08e7cf65c6f3f8b3781a954a911f00f099a986c1",
+        "wallet": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "target": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "selector": "0x47e7ef24",
+        "asset": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "amountBaseUnits": "1000000000000000000",
+        "spender": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "maxAllowanceBaseUnits": "1000000000000000000",
+        "expiryUnix": "1790000000"
+      }
+    },
+    {
+      "eventName": "Approval",
+      "contractAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "logIndex": 0,
+      "args": {
+        "owner": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "spender": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "amount": "1000000000000000000"
+      }
+    },
+    {
+      "eventName": "Transfer",
+      "contractAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "logIndex": 0,
+      "args": {
+        "from": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "amount": "1000000000000000000"
+      }
+    },
+    {
+      "eventName": "MockDeposit",
+      "contractAddress": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+      "logIndex": 1,
+      "args": {
+        "wallet": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "asset": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "amount": "1000000000000000000"
+      }
+    },
+    {
+      "eventName": "IntentMatched",
+      "contractAddress": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "logIndex": 0,
+      "args": {
+        "intentHash": "0x5d6c162b1e98d4c81835d269c02fa078786c7119f57cf6248cbb22fc6696a7ce",
+        "receiptHash": "0x1704fd0f3d66e113ae4a943f155f600fb9547320e4c533445516417f721ed539",
+        "wallet": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "approveTxHash": "0x77e3b5bb45eeec0bc5963e1f67a38c9de407fe8a27a914f5745ab82e1d75aed9",
+        "depositTxHash": "0xa76ac9d9bcd931651e5a678fbfc11b97d7a44ec609d5db46c30ebec6ca9c820c",
+        "blockNumber": "7",
+        "blockHash": "0x22bcd1d19415ae4a9178bc5621f38b29f4c0f6cc9cd2f38175ca7506393f3d09",
+        "allowanceUsedBaseUnits": "1000000000000000000",
+        "issuedAt": "1790000010"
+      }
+    }
+  ]
+}

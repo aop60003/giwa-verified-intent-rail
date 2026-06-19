@@ -1,0 +1,343 @@
+{
+  "screenKind": "guided-flow",
+  "productName": "GIWA Verified Intent Rail",
+  "source": {
+    "mode": "completed-demo-evidence",
+    "evidenceDraftUntilSprint7": false
+  },
+  "mission": {
+    "campaignId": "gasok-demo",
+    "missionId": "first-mock-vault-deposit",
+    "actionType": "mockVaultDeposit",
+    "networkName": "GIWA Sepolia",
+    "chainId": 91342
+  },
+  "networkGate": {
+    "requiredChainId": 91342,
+    "observedChainId": 91342,
+    "state": "ready",
+    "blocksExecution": false,
+    "message": "Wallet actions are scoped to GIWA Sepolia."
+  },
+  "readiness": {
+    "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+    "network": "GIWA Sepolia ready",
+    "tokenBalanceState": "minted for completed demo",
+    "verifiedState": {
+      "state": "guest",
+      "readOnly": true,
+      "gatesGuestPath": false
+    }
+  },
+  "deployedAddresses": [
+    {
+      "label": "Mock token",
+      "address": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "explorerUrl": "https://sepolia-explorer.giwa.io/address/0x06A26A1182BD40ec38b38ee987A0A16cf572222F"
+    },
+    {
+      "label": "Mock vault",
+      "address": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "explorerUrl": "https://sepolia-explorer.giwa.io/address/0x94C7a4DEB22318fF798CbE8340d7cC3365c405f6"
+    },
+    {
+      "label": "Intent rail",
+      "address": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+      "explorerUrl": "https://sepolia-explorer.giwa.io/address/0x5282325C5B82E9E3fb39050bdD8Ec0f500185597"
+    }
+  ],
+  "manifest": {
+    "target": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+    "selector": "0x47e7ef24",
+    "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+    "amountBaseUnits": "1000000000000000000",
+    "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+    "maxAllowanceBaseUnits": "1000000000000000000",
+    "expiryUnix": 1782218883,
+    "intentHash": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4"
+  },
+  "walletActions": [
+    {
+      "kind": "approve",
+      "from": "0xf3a729973559082260e742ebedf705271ad29476",
+      "to": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "txHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+      "explorerUrl": "https://sepolia-explorer.giwa.io/tx/0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+      "status": "completed",
+      "note": "Limited test token allowance for the mock vault."
+    },
+    {
+      "kind": "deposit",
+      "from": "0xf3a729973559082260e742ebedf705271ad29476",
+      "to": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "txHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+      "explorerUrl": "https://sepolia-explorer.giwa.io/tx/0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+      "status": "completed",
+      "note": "Mock vault deposit covered by the signed manifest."
+    }
+  ],
+  "statusRail": [
+    {
+      "id": "reviewManifest",
+      "label": "Review manifest",
+      "state": "complete",
+      "finalConfirmation": false,
+      "detail": "Target, selector, asset, amount, spender, and allowance are visible before action."
+    },
+    {
+      "id": "walletAction",
+      "label": "Wallet actions",
+      "state": "complete",
+      "finalConfirmation": false,
+      "detail": "Approve and deposit transaction hashes are recorded from wallet execution."
+    },
+    {
+      "id": "fastFeedback",
+      "label": "Fast feedback",
+      "state": "complete",
+      "finalConfirmation": false,
+      "detail": "Flashblocks observation is non-final and separate from verifier match."
+    },
+    {
+      "id": "blockConfirmed",
+      "label": "Block confirmed",
+      "state": "complete",
+      "finalConfirmation": true,
+      "detail": "Standard RPC receipt status is 1 with block number and block hash."
+    },
+    {
+      "id": "verifierChecking",
+      "label": "Verifier checking",
+      "state": "complete",
+      "finalConfirmation": false,
+      "detail": "The Sprint 4 verifier compares confirmed evidence with the signed manifest."
+    },
+    {
+      "id": "matched",
+      "label": "Matched",
+      "state": "complete",
+      "finalConfirmation": false,
+      "detail": "Receipt readiness starts only after verifier decision is matched."
+    },
+    {
+      "id": "viewReceipt",
+      "label": "View receipt",
+      "state": "complete",
+      "finalConfirmation": false,
+      "detail": "Receipt route is enabled only when receiptHash and decisionTxHash exist."
+    }
+  ],
+  "receipt": {
+    "ready": true,
+    "routeEnabled": true,
+    "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+    "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+    "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+    "decisionExplorerUrl": "https://sepolia-explorer.giwa.io/tx/0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+    "depositExplorerUrl": "https://sepolia-explorer.giwa.io/tx/0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+    "blockNumber": 28328168,
+    "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+    "displayStatus": "Receipt ready",
+    "safetyNotice": "Testnet-only. No real asset, no yield, no RWA claim."
+  },
+  "runEvents": [
+    {
+      "name": "campaign_entry",
+      "timestamp": "2026-06-17T05:35:57.000Z",
+      "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "source": "fixture"
+    },
+    {
+      "name": "wallet_connected",
+      "timestamp": "2026-06-17T05:36:07.000Z",
+      "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "source": "fixture"
+    },
+    {
+      "name": "intent_accepted",
+      "timestamp": "2026-06-17T05:36:17.000Z",
+      "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "source": "fixture"
+    },
+    {
+      "name": "intent_submitted",
+      "timestamp": "2026-06-17T05:36:27.000Z",
+      "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "source": "fixture"
+    },
+    {
+      "name": "deposit_submitted",
+      "timestamp": "2026-06-17T05:36:37.000Z",
+      "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "source": "fixture"
+    },
+    {
+      "name": "receipt_matched",
+      "timestamp": "2026-06-17T05:36:57.000Z",
+      "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "source": "fixture"
+    }
+  ],
+  "partnerConsole": {
+    "screenKind": "partner-proof-console",
+    "productName": "GIWA Verified Intent Rail",
+    "partnerExplanation": "Quest clicks show participation. GIWA Verified Intent Rail shows that a signed, manifest-covered GIWA Sepolia testnet action matched a block-confirmed transaction and produced a receipt hash.",
+    "source": {
+      "evidencePath": "docs/evidence/giwa-sepolia-mvp-evidence.json",
+      "evidenceDraftUntilSprint7": false,
+      "fixtureRowsVisible": true,
+      "liveRowsVisible": false,
+      "sourceTimestamp": "2026-06-17T05:36:57.000Z"
+    },
+    "summary": {
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "campaignEntryCount": 1,
+      "walletConnectedCount": 1,
+      "intentAcceptedCount": 1,
+      "depositSubmittedCount": 1,
+      "manifestMatchedReceiptCount": 1,
+      "matchedTxRate": "100%",
+      "matchedTxRateNumerator": 1,
+      "matchedTxRateDenominator": 1,
+      "mockTestnetDepositAmountBaseUnits": "1000000000000000000",
+      "mockTestnetDepositCount": 1,
+      "matchedStatus": "matched"
+    },
+    "evidenceCards": {
+      "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+      "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+      "intentSubmittedTxHash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+      "standardConfirmation": {
+        "status": 1,
+        "blockNumber": "28328168",
+        "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+        "confirmationDepth": 1332,
+        "finalConfirmation": true
+      },
+      "fastFeedback": {
+        "observed": true,
+        "namespace": "non-final",
+        "finalConfirmation": false
+      },
+      "manifestSigner": {
+        "expectedSigner": "0xaccea461499427f05dff4c998ef26e18f790e4a7",
+        "recoveredSigner": "0xaccea461499427f05dff4c998ef26e18f790e4a7",
+        "signerMatched": true
+      },
+      "decodedLogSummary": [
+        {
+          "eventName": "IntentSubmitted",
+          "contractAddress": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+          "logIndex": 0
+        },
+        {
+          "eventName": "Approval",
+          "contractAddress": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+          "logIndex": 0
+        },
+        {
+          "eventName": "Transfer",
+          "contractAddress": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+          "logIndex": 2
+        },
+        {
+          "eventName": "MockDeposit",
+          "contractAddress": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+          "logIndex": 3
+        }
+      ]
+    },
+    "rows": [
+      {
+        "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+        "dedupeKey": "0xf3a729973559082260e742ebedf705271ad29476:gasok-demo:first-mock-vault-deposit:0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+        "source": "fixture",
+        "campaignId": "gasok-demo",
+        "missionId": "first-mock-vault-deposit",
+        "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+        "verifiedState": "guest",
+        "status": "matched",
+        "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+        "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+        "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+        "intentSubmittedTxHash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+        "blockNumber": 28328168,
+        "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+        "receiptPermalink": "/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+        "depositExplorerUrl": "https://sepolia-explorer.giwa.io/tx/0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+        "decisionExplorerUrl": "https://sepolia-explorer.giwa.io/tx/0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df"
+      }
+    ],
+    "exportSnapshot": {
+      "snapshotPath": "/partner-snapshot.json",
+      "receiptPermalink": "/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "generatedFrom": "docs/evidence/giwa-sepolia-mvp-evidence.json"
+    },
+    "evidencePacket": {
+      "screenKind": "partner-evidence-packet",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "rows": [
+        {
+          "source": "fixture",
+          "runId": "gasok-demo:first-mock-vault-deposit:359228ce",
+          "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+          "status": "matched",
+          "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+          "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+          "verifierInputHash": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de",
+          "receiptPermalink": "/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+          "amountBaseUnits": "1000000000000000000"
+        }
+      ],
+      "sourceMix": {
+        "fixture": 1,
+        "live": 0
+      },
+      "kpis": {
+        "submittedDepositCount": 1,
+        "matchedReceiptCount": 1,
+        "matchedTxRate": "1/1",
+        "mockTestnetDepositAmountBaseUnits": "1000000000000000000"
+      },
+      "evidence": {
+        "standardRpc": {
+          "finalConfirmation": true,
+          "status": 1,
+          "blockNumber": "28328168",
+          "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+          "confirmationDepth": 1332
+        },
+        "fastFeedback": {
+          "finalConfirmation": false,
+          "namespace": "non-final"
+        },
+        "replayStatus": "passed"
+      },
+      "exportLinks": {
+        "snapshotPath": "/partner-snapshot.json",
+        "generatedAt": "2026-06-17T05:36:57.000Z"
+      }
+    }
+  }
+}

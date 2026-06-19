@@ -1,0 +1,738 @@
+{
+  "schemaVersion": "1",
+  "manifestKind": "local-artifact-manifest",
+  "authority": "local-advisory",
+  "generatedAt": "2026-06-19T12:52:07.990Z",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "hashPolicy": {
+    "fileHashAlgorithm": "sha256",
+    "fileHashInput": "raw-file-bytes",
+    "pathStyle": "repo-relative-posix",
+    "aggregateLineEnding": "lf",
+    "aggregateSort": "normalized-path-ascending"
+  },
+  "sourceState": {
+    "gitDirectory": true,
+    "githubDirectory": true,
+    "workflowDirectory": true,
+    "sourceAuthority": "local-non-git-advisory"
+  },
+  "artifactGroups": {
+    "packageMetadata": [
+      {
+        "path": "apps/web/package.json",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "beb812fb8e96ac3b74351500cf37256d7d8084bdd947152d46e51589ea995c70",
+        "bytes": 1300,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "package.json",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "c79663c720af993165e72446013bb87566a7deba9e7310c05c9d0bedb92aadb8",
+        "bytes": 548,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "packages/contracts/package.json",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "0e0c7a7e3b7935859b702f5cdd56b2d75053c4ca33fe7fd1536dcc0c2d1a70ed",
+        "bytes": 827,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "packages/protocol/package.json",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "d70d7cc6bc7bd24eb6d854a67e9a5e2f466399c22f3cd9a43f42f6f733a43c12",
+        "bytes": 391,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "345411741e3bd05b32f40f1397bfb726dd3e35a283ccf62193542b695e9746cf",
+        "bytes": 51633,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "08d75840c97ab0e72d1d9b5b84a17e47a2e06cb159a5fbec5ee0a6a56682dad7",
+        "bytes": 40,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "tsconfig.base.json",
+        "role": "package-metadata",
+        "required": true,
+        "sha256": "8b52b519b8dac6cb2b2297708f65e260d032afd58727bee834a03ebad000a88c",
+        "bytes": 343,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      }
+    ],
+    "publicArtifacts": [
+      {
+        "path": "apps/web/public/demo-control-room.js",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "4fbcc07820e46713a89b44a014d18ed841238f38b264efd42b2c530438465e32",
+        "bytes": 5054,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/demo.html",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "f666666e99b4a778fd5c0abbed7c604fa9b08ffcb87b032d0552e64f717ca984",
+        "bytes": 564,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/flow-data.json",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "b36fa399b1f87c27c8375881083a34ee2633274f6b4f4f07086cca1432e9caed",
+        "bytes": 13426,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "pnpm --filter @giwa/web --fail-if-no-match build",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/flow.js",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "4dbb7cbe550baa2a765d1d8926444de65ad7461e51c740436a88a2451dca3c32",
+        "bytes": 20820,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/index.html",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "7e0027a0b3ab591ddc279bf062fdb59ef6eaa7aa0252ad00aec913b2c5a113a3",
+        "bytes": 535,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/live-demo-snapshot.json",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "e6edd7a6032fb4b7abdf68affb2dc16ca5a306215d73594a273514faf32059d6",
+        "bytes": 6616,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "approved local live snapshot export or checked-in public artifact",
+        "schemaPath": "docs/evidence/live-demo-sprint12-snapshot.schema.md"
+      },
+      {
+        "path": "apps/web/public/live-flow.js",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "726edd81a353be0aa3499e116f339acc6eafe022cb60245380ee75a993b854dc",
+        "bytes": 21877,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/live.html",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "7d936c2735a89bb97438254fbe4646ad1c4080e44b4a07cc8a1a5561cd32ca5d",
+        "bytes": 369,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/partner-snapshot.json",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "c1f2cf08af6ef7de9279c986ca5bc098a3c2c0fc9d4d2deccacb7826b7b33b3d",
+        "bytes": 5805,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "pnpm --filter @giwa/web --fail-if-no-match build",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/styles.css",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "d08c22a585f3ea02c9334c0faf0a9e7329ae5a1158225aeec2db554bcdcd510b",
+        "bytes": 6644,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      }
+    ],
+    "publicEvidence": [
+      {
+        "path": "docs/evidence/giwa-sepolia-chain-anchor.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "7d460a44c23675296c400e880417ccea5f916bb0126706ed7ae7394ae3c635db",
+        "bytes": 42809,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/giwa-sepolia-mvp-evidence.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "7d460a44c23675296c400e880417ccea5f916bb0126706ed7ae7394ae3c635db",
+        "bytes": 42809,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": "docs/evidence/giwa-sepolia-mvp-evidence.schema.md"
+      },
+      {
+        "path": "docs/evidence/giwa-sepolia-mvp-evidence.schema.md",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "e6b8e661e6a14bb0139051fbc95d2e60b7ae036683cbf169cb84e8225534aec7",
+        "bytes": 11242,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/live-demo-sprint12-snapshot.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "e6edd7a6032fb4b7abdf68affb2dc16ca5a306215d73594a273514faf32059d6",
+        "bytes": 6616,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "approved local live snapshot export or checked-in public artifact",
+        "schemaPath": "docs/evidence/live-demo-sprint12-snapshot.schema.md"
+      },
+      {
+        "path": "docs/evidence/live-demo-sprint12-snapshot.schema.md",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "163f4872a3dda1f828896658a6290c3c492221e53604d5d93cff8a7b6505fcb1",
+        "bytes": 2597,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "7d460a44c23675296c400e880417ccea5f916bb0126706ed7ae7394ae3c635db",
+        "bytes": 42809,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      }
+    ],
+    "implementationDocs": [
+      {
+        "path": "docs/implementation/giwa-branch-protection-approval.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "5e1bce2c6348a73917a956f7647046f62eb6e5b0c4e0014fa52d5ff426066fb4",
+        "bytes": 3432,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-ci-failure-triage.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "2485ead5720b38f33ec7b990eb7577242343a52e1f63259f29c0835f3769e4b5",
+        "bytes": 6851,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-ci-workflow-creation-approval.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "7f2b70be713d29e107558b586e28a9b95c61704f029acecbfe59dac62e880127",
+        "bytes": 7070,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-ci-workflow-draft.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "4348f96acf515cdc46df6cd034ed35dbd7778a55deaa96fb455645850e9c6abd",
+        "bytes": 7471,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-ci-workflow-yaml-draft.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "1300832e0e6cc2ba3895858097cab5b892918532a8a2f3693a351b8cd60b0c84",
+        "bytes": 5358,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-commercial-readiness-gate.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "87d3df543814133b88e7b8a2fad3a672c0cf7b141cc80c942455989a5dc37c37",
+        "bytes": 13443,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-evidence-retention-policy.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "878b785409b2eb355031dcba013d9bf39b22a0cff6fdd69210d88b12fd53d42c",
+        "bytes": 5639,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-git-and-workflow-initialization-execution.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "e2ab8a7fe62523a0ac26442a3d84ed00b27f8f4baa4f9a8067bebd3960135734",
+        "bytes": 4527,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-git-and-workflow-initialization-readiness.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "00c78d7dd6a53a4223a066ad7533c1e6ebffa549edc19466433f88f1e736e690",
+        "bytes": 5639,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-git-initialization-approval.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "11f49a1ce53c1798beae4024675423e68229a9ddf298cd20c863c7e3cc3552bd",
+        "bytes": 4861,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-hosted-ops-runbook.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "e706b9b7dd05ee2935990626b2dd2a06685d8c1c866387db93a9ac9414fa8c68",
+        "bytes": 13893,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-incident-response.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "7d365bd5ea23884476220d7e1b8ae25b37ebc5304fb4b92239e3fdc738bdc2c0",
+        "bytes": 6187,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-initial-commit-file-policy.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "885f36d343a5520e723a55032dd3b43ac0b343f9fd810a0ba3d5c80d7189184c",
+        "bytes": 4370,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-live-mvp-runtime-gate.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "c6a4c86f56e26d073113bdc94aaad3165790250778473983d7d5b2205c7e2cf0",
+        "bytes": 14502,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-local-ci-simulation.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "1bd52de703650da8be451352bac86a846f0cab9ba373a673db4757c6401038d0",
+        "bytes": 4367,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-acceptance-checklist.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "e0fdd038611a13034a2230153bd7ff36dc9585b3fa83cb17063fa2267a9f1e7f",
+        "bytes": 8885,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-demo-script.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "57d6af48cc623133aff057b599039b9ff1e51fb9231a26d8813c7028d81b504e",
+        "bytes": 6331,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-dependency-approval.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "4f2ddf86a8e01072e480667bfb9f6b044d2fe3e471cd063a8322efb7864ec740",
+        "bytes": 5084,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-faucet-and-preflight.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "72ccc86202479fd70bb2b5426e353aa1cd039b1ad8e02502367b2fdfb70414cf",
+        "bytes": 7705,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-role-and-key-policy.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "e6649b8fbaea2c3bbdcf8ca8647b710911902854b8ee88b50c4bf5417c7ca8ec",
+        "bytes": 3491,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-runbook.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "7a59e2c4c52d58a5a1c5861acc04504386d10caf8b30afba065f78d3a93855d5",
+        "bytes": 13331,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-submission-evidence.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "95f09850f9d067d13e25fa31963c8938cc8fb3a5db258fe557856a1b9804d073",
+        "bytes": 8102,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-mvp-workspace-gate.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "a19ccc0c03d66b0c8aac199be0d7cab668f5785251c45b7d10dbdd101808a1b8",
+        "bytes": 2994,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-partner-beta-closeout-report.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "17213e2cfc7141e7088a5be2f7243d8ac12592ee802944a75a3b0010cae05501",
+        "bytes": 5476,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-partner-beta-feedback-form.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "5992456b0fef4a3b72ce269c591617bfed2cd4f4c582f1d74ba1dd1fefce3ed4",
+        "bytes": 2592,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-partner-beta-rehearsal-checklist.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "41de4570c96e4621e6ce164627afadaed7ad3eb3eaf94bd501f6f339ec0f5054",
+        "bytes": 4036,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-partner-beta-rehearsal-runbook.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "a7d31c26598fe8d6571455826b1233d129ebeb87ea5b04467352d0c6bbf257c3",
+        "bytes": 12975,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-partner-beta-runbook.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "91583227813a929644894ad242e685223f45917f74eea615672e651723b244c9",
+        "bytes": 7190,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-protected-ci-transition-checklist.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "3b134517945ee32c844e543ced33003708cd5a675f1703058fca0c9a2d9aaac2",
+        "bytes": 3840,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-provenance-artifact-manifest.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "9cc217ae28e38fc5f36ac5fe76f39b99a7713a00196cf132b86953df400ecf90",
+        "bytes": 11626,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-release-approval-checklist.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "e70489b65c30bafe5568f95baaab8d167fbcc9aa450b5252f3340cfb9c72b86f",
+        "bytes": 4131,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-blocker-register.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "0686831bd731436577f9cabebaacf74d5ea492e2b41ed7b6e3f6eb724435ca36",
+        "bytes": 12996,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-deployment-preparation.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "9f75693de8fd9fed5dc6f3eea6f28457a847355e58b87e6eed875ca162d40891",
+        "bytes": 4664,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-env-contract.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "659e0340b8ddf80eb7accc2fee2edc07d588344ddc75090f3529f69b18334cbd",
+        "bytes": 2402,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-observability.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "76de60be41d3324683fd713dff87d24d7e83c9e6bad1a74cbad08657679db8a1",
+        "bytes": 3130,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-partner-promotion-gate.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "a25aabfba00cd4030a32f188c10fe256c40e2f700ba1f4747f2050c5d1f1cdb4",
+        "bytes": 1694,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-release-provenance.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "5a61fd3237c6dc3e51614d02617cadf22c29a6c7be45022dbbb2d40f8623af06",
+        "bytes": 14666,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-rollback-and-incident-drill.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "22e28b4f9cae0ad42c5b186767c45534ff77a342fe2ef326f204a1aca26b3696",
+        "bytes": 1971,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-security-boundary.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "fd428f393b7041c66ea0c4883eb4963c71279d3c2c6242b6b44885244598656f",
+        "bytes": 3243,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-staging-storage-and-restore.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "9adc601f2a1c9b60f5d478a006b644fbf917c6ab5beea67dc1e9b9cf2951c93e",
+        "bytes": 2762,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-workflow-creation-preflight.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "063a7131252b6f1d6501de3e40f8a55dfc6e18bf611a9d118fdda69f329387ee",
+        "bytes": 4116,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      }
+    ]
+  },
+  "ignoredPublicArtifacts": [],
+  "equivalenceGroups": [
+    {
+      "name": "live-demo-snapshot-public-copy",
+      "mustShareSha256": true,
+      "paths": [
+        "docs/evidence/live-demo-sprint12-snapshot.json",
+        "apps/web/public/live-demo-snapshot.json"
+      ],
+      "decision": "pass",
+      "sha256": "e6edd7a6032fb4b7abdf68affb2dc16ca5a306215d73594a273514faf32059d6"
+    },
+    {
+      "name": "giwa-sepolia-chain-evidence-copy",
+      "mustShareSha256": true,
+      "paths": [
+        "docs/evidence/giwa-sepolia-chain-anchor.json",
+        "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json"
+      ],
+      "decision": "pass",
+      "sha256": "7d460a44c23675296c400e880417ccea5f916bb0126706ed7ae7394ae3c635db"
+    }
+  ],
+  "domainHashes": [
+    {
+      "name": "intentHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4"
+    },
+    {
+      "name": "intentHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x67c754c6e4582cb6b1c574c21e2ea4fe034691de80e7512223fe338aee40a88d"
+    },
+    {
+      "name": "receiptHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8"
+    },
+    {
+      "name": "receiptHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x83a4b7d20d0162affe04be016a68d9711f86eef356cf527620159957c7b2ed04"
+    }
+  ],
+  "scanSummary": {
+    "scanner": "public-artifact-scanner",
+    "decision": "pass-or-blocked"
+  },
+  "buildTreeSha256": "83330783c42f02ba1537443c874c4123540a2528876cf250ada7d7067cc13b20",
+  "unmanifestedFilePolicy": "fail"
+}

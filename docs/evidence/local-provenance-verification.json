@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1",
+  "verificationKind": "local-provenance-verification",
+  "authority": "local-advisory",
+  "generatedAt": "2026-06-19T09:32:59.042Z",
+  "manifestPath": "docs/evidence/local-artifact-manifest.json",
+  "reportPath": "docs/evidence/local-provenance-report.json",
+  "verificationDecision": "pass",
+  "manifestBinding": {
+    "decision": "pass",
+    "failures": []
+  },
+  "drift": {
+    "decision": "pass",
+    "failures": []
+  },
+  "reportHashPolicy": "external-only",
+  "reportSha256": "8cae49a35ad7db56a9c57167c790f57605779700cabf9af7b9d1c31a96d225f0",
+  "sidecar": {
+    "path": "docs/evidence/local-provenance-report.json.sha256",
+    "decision": "pass"
+  },
+  "excludedBoundary": {
+    "envFilesRead": false,
+    "privateDatabasesRead": false,
+    "excludedPaths": [
+      ".env",
+      ".env.local",
+      "apps/web/.data",
+      "node_modules"
+    ]
+  },
+  "knownBlockers": [
+    {
+      "id": "source-provenance",
+      "status": "blocked",
+      "reason": ".git is absent"
+    },
+    {
+      "id": "protected-ci",
+      "status": "blocked",
+      "reason": ".github workflows are absent"
+    }
+  ],
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "failures": []
+}

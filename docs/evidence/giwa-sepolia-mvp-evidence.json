@@ -1,0 +1,689 @@
+{
+  "schemaVersion": "sprint-4-giwa-mvp-evidence-draft-v1",
+  "status": "matched",
+  "network": {
+    "chainId": 91342,
+    "networkName": "GIWA Sepolia",
+    "standardRpcSanitizedHost": "sepolia-rpc.giwa.io",
+    "flashblocksEvidenceNamespace": "non-final"
+  },
+  "roles": {
+    "deployerAddress": "0xc379a0f987c156eef982ea10cd91595bd83df5b4",
+    "campaignSignerAddress": "0xaccea461499427f05dff4c998ef26e18f790e4a7",
+    "verifierAddress": "0xb125e5e873a45999532777fdc1cb0e4c24c22cf7",
+    "intentSubmitterAddress": "0x449ce112691962504ffdb7819e46faba87d0044e",
+    "demoUserAddress": "0xf3a729973559082260e742ebedf705271ad29476",
+    "demoUserPrivateKeyNeverRequested": true
+  },
+  "contracts": {
+    "mockTokenAddress": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+    "mockVaultAddress": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+    "intentRailAddress": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+    "mockTokenDeploymentTxHash": "0xf49f597f6d279a6df5209cf5f3cd20d86e2e5685adc44483edacbe87a5171c94",
+    "mockVaultDeploymentTxHash": "0xfda33d05a7855f93eada2a327bad157b932fe0e747ef05c19f93cc5c978951f2",
+    "intentRailDeploymentTxHash": "0xc4bf3de597e949f653412132ae77007a93b7d9ef41411111dee763945d2dbc86",
+    "deploymentBlockNumber": "28268964",
+    "deploymentBlockHash": "0x091e7306a606e706b2cbc1b457e9807f2d8e6eaaa378d0bdf99b326995f6a4fd",
+    "codePresent": true,
+    "codeLength": {
+      "mockToken": 6972,
+      "mockVault": 2744,
+      "intentRail": 7554
+    }
+  },
+  "manifest": {
+    "manifest": {
+      "manifestVersion": "1",
+      "chainId": 91342,
+      "nonce": "sprint-3-28268964-c4bf3de5",
+      "expiryUnix": 1782218883,
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "actionType": "mockVaultDeposit",
+      "target": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "selector": "0x47e7ef24",
+      "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "amountBaseUnits": "1000000000000000000",
+      "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "maxAllowanceBaseUnits": "1000000000000000000",
+      "referralCode": "sprint-3-giwa-sepolia"
+    },
+    "verifyingContract": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+    "manifestSignature": "0x92fe16b604bc0319c68712c72c87d92babdda7c40ad9518342aac26d04e1dca77e1e384187d438c27f75dd4194280972cead48a7235ba2f3244564231632c2071b",
+    "recoveredSigner": "0xaccea461499427f05dff4c998ef26e18f790e4a7",
+    "intentHash": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+    "manifestStructHash": "0xb77fdeb24db2dd7686abc0b193466becc49c87a6d6c0c349975212bd31697fb1",
+    "eip712Digest": "0xe52b38403efcf02decd86a3e3aa9a29d8fe3f8f1111cbd3321d22470abe8b759",
+    "canonicalManifestPayload": "{\"manifestVersion\":\"1\",\"chainId\":91342,\"nonce\":\"sprint-3-28268964-c4bf3de5\",\"expiryUnix\":1782218883,\"campaignId\":\"gasok-demo\",\"missionId\":\"first-mock-vault-deposit\",\"wallet\":\"0xf3a729973559082260e742ebedf705271ad29476\",\"actionType\":\"mockVaultDeposit\",\"target\":\"0x94c7a4deb22318ff798cbe8340d7cc3365c405f6\",\"selector\":\"0x47e7ef24\",\"asset\":\"0x06a26a1182bd40ec38b38ee987a0a16cf572222f\",\"amountBaseUnits\":\"1000000000000000000\",\"spender\":\"0x94c7a4deb22318ff798cbe8340d7cc3365c405f6\",\"maxAllowanceBaseUnits\":\"1000000000000000000\",\"referralCode\":\"sprint-3-giwa-sepolia\"}",
+    "canonicalManifestPayloadBytesHex": "0x7b226d616e696665737456657273696f6e223a2231222c22636861696e4964223a39313334322c226e6f6e6365223a22737072696e742d332d32383236383936342d6334626633646535222c22657870697279556e6978223a313738323231383838332c2263616d706169676e4964223a226761736f6b2d64656d6f222c226d697373696f6e4964223a2266697273742d6d6f636b2d7661756c742d6465706f736974222c2277616c6c6574223a22307866336137323939373335353930383232363065373432656265646637303532373161643239343736222c22616374696f6e54797065223a226d6f636b5661756c744465706f736974222c22746172676574223a22307839346337613464656232323331386666373938636265383334306437636333333635633430356636222c2273656c6563746f72223a2230783437653765663234222c226173736574223a22307830366132366131313832626434306563333862333865653938376130613136636635373232323266222c22616d6f756e7442617365556e697473223a2231303030303030303030303030303030303030222c227370656e646572223a22307839346337613464656232323331386666373938636265383334306437636333333635633430356636222c226d6178416c6c6f77616e636542617365556e697473223a2231303030303030303030303030303030303030222c22726566657272616c436f6465223a22737072696e742d332d676977612d7365706f6c6961227d",
+    "campaignIdBytes32": "0x5002945cf23e37d137e9a2c3e13e6e2ab2d580ae1b7359550b8bd74fcaa15ee5",
+    "missionIdBytes32": "0x76a63c18da9e277cea49341a08e7cf65c6f3f8b3781a954a911f00f099a986c1"
+  },
+  "transactions": {
+    "mintTxHash": "0x1fc760df19972a80af5b3e09a6f681e1cd7b8e28128fe00f628a464f8ec79f4a",
+    "intentSubmittedTxHash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+    "approveTxHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+    "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+    "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+    "approveTx": {
+      "rawEthGetTransaction": {
+        "accessList": [],
+        "blockHash": "0x46c427649c7de1f38432b8a3913ed7e3c8a45be1bd3398283dddec699ea1ba81",
+        "blockNumber": "28328167",
+        "chainId": 91342,
+        "from": "0xf3a729973559082260e742ebedf705271ad29476",
+        "gas": "47127",
+        "gasPrice": "1000251",
+        "hash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+        "input": "0x095ea7b300000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f60000000000000000000000000000000000000000000000000de0b6b3a7640000",
+        "maxFeePerGas": "1000301",
+        "maxPriorityFeePerGas": "1000000",
+        "nonce": 7,
+        "r": "0xd5050b02917f505a65d0b329dd08f01cfa554a3ed7f7fd3139f9f4b9e4308bb3",
+        "s": "0x2356bae450211997ab16290d790279931592ddc6d03b5ad7fdcb679c2010b9c5",
+        "to": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+        "transactionIndex": 1,
+        "type": "eip1559",
+        "v": "1",
+        "value": "0",
+        "yParity": 1,
+        "typeHex": "0x2"
+      },
+      "rawEthGetTransactionReceipt": {
+        "blobGasUsed": "40000",
+        "blockHash": "0x46c427649c7de1f38432b8a3913ed7e3c8a45be1bd3398283dddec699ea1ba81",
+        "blockNumber": "28328167",
+        "contractAddress": null,
+        "cumulativeGasUsed": "92938",
+        "daFootprintGasScalar": "0x190",
+        "effectiveGasPrice": "1000251",
+        "from": "0xf3a729973559082260e742ebedf705271ad29476",
+        "gasUsed": "46744",
+        "l1BaseFeeScalar": "0x558",
+        "l1BlobBaseFee": "0x3ea05ed",
+        "l1BlobBaseFeeScalar": "0xc5fc5",
+        "l1Fee": "0x1c24bd65e",
+        "l1GasPrice": "0x3cb55556",
+        "l1GasUsed": "0x640",
+        "logs": [
+          {
+            "address": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+            "blockHash": "0x46c427649c7de1f38432b8a3913ed7e3c8a45be1bd3398283dddec699ea1ba81",
+            "blockNumber": "28328167",
+            "blockTimestamp": "1781673283",
+            "data": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+            "logIndex": 0,
+            "removed": false,
+            "topics": [
+              "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+              "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476",
+              "0x00000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f6"
+            ],
+            "transactionHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+            "transactionIndex": 1
+          }
+        ],
+        "logsBloom": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000004000000000000000100000000002000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000010200000000000000000000000000000000000000100000000002000000000",
+        "status": "success",
+        "to": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+        "transactionHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+        "transactionIndex": 1,
+        "type": "eip1559"
+      },
+      "receiptStatus": "success",
+      "blockNumber": "28328167",
+      "blockHash": "0x46c427649c7de1f38432b8a3913ed7e3c8a45be1bd3398283dddec699ea1ba81"
+    },
+    "depositTx": {
+      "rawEthGetTransaction": {
+        "accessList": [],
+        "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+        "blockNumber": "28328168",
+        "chainId": 91342,
+        "from": "0xf3a729973559082260e742ebedf705271ad29476",
+        "gas": "87193",
+        "gasPrice": "1000251",
+        "hash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+        "input": "0x47e7ef2400000000000000000000000006a26a1182bd40ec38b38ee987a0a16cf572222f0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+        "maxFeePerGas": "1000301",
+        "maxPriorityFeePerGas": "1000000",
+        "nonce": 8,
+        "r": "0xe72ea2883601a272eef69395b7fa9bd7584a3a463a117facb1b1fed6c090d53d",
+        "s": "0x1c72261f78c5157572fbff900e04894fb436b0fef8c13b14a3c17e56a89f7f78",
+        "to": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "transactionIndex": 2,
+        "type": "eip1559",
+        "v": "1",
+        "value": "0",
+        "yParity": 1,
+        "typeHex": "0x2"
+      },
+      "rawEthGetTransactionReceipt": {
+        "blobGasUsed": "40000",
+        "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+        "blockNumber": "28328168",
+        "contractAddress": null,
+        "cumulativeGasUsed": "275987",
+        "daFootprintGasScalar": "0x190",
+        "effectiveGasPrice": "1000251",
+        "from": "0xf3a729973559082260e742ebedf705271ad29476",
+        "gasUsed": "77208",
+        "l1BaseFeeScalar": "0x558",
+        "l1BlobBaseFee": "0x36bd367",
+        "l1BlobBaseFeeScalar": "0xc5fc5",
+        "l1Fee": "0x19770596e",
+        "l1GasPrice": "0x3b6460fd",
+        "l1GasUsed": "0x640",
+        "logs": [
+          {
+            "address": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+            "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+            "blockNumber": "28328168",
+            "blockTimestamp": "1781673284",
+            "data": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+            "logIndex": 2,
+            "removed": false,
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476",
+              "0x00000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f6"
+            ],
+            "transactionHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+            "transactionIndex": 2
+          },
+          {
+            "address": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+            "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+            "blockNumber": "28328168",
+            "blockTimestamp": "1781673284",
+            "data": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+            "logIndex": 3,
+            "removed": false,
+            "topics": [
+              "0x54f30f65bc90d0c3c8b3cafc00d7eae2389e60a60604dca1a948663b2de4c818",
+              "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476",
+              "0x00000000000000000000000006a26a1182bd40ec38b38ee987a0a16cf572222f"
+            ],
+            "transactionHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+            "transactionIndex": 2
+          }
+        ],
+        "logsBloom": "0x0000000000000000400000000000000000000000000000000000000000000000000000000000000000000008000000040000000000000000000000000000000000000000000800000000008800000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000080000000000800000000000000000000004000000000000000100000800000000000000000000000000000000000000200000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000100000000002000000000",
+        "status": "success",
+        "to": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "transactionHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+        "transactionIndex": 2,
+        "type": "eip1559"
+      },
+      "receiptStatus": "success",
+      "blockNumber": "28328168",
+      "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+      "depositTransactionSnapshotHash": "0x2cd3c423260e91e36f5c38a0c19114c6fac4e9323b163b976db802ed1605977c",
+      "depositReceiptSnapshotHash": "0xc06393b2a30305b8c65219e1b4ea30a0dff5573d1a753f9b5fbb3f9795782ef8"
+    },
+    "intentSubmittedTx": {
+      "rawEthGetTransaction": {
+        "accessList": [],
+        "blockHash": "0xdb7232b8c6d986565afd11344bebb53c29a6099da890f06d985ff1b4b57f6ca3",
+        "blockNumber": "28268969",
+        "chainId": 91342,
+        "from": "0x449ce112691962504ffdb7819e46faba87d0044e",
+        "gas": "32516",
+        "gasPrice": "1000251",
+        "hash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+        "input": "0x0a076a7b359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a45002945cf23e37d137e9a2c3e13e6e2ab2d580ae1b7359550b8bd74fcaa15ee576a63c18da9e277cea49341a08e7cf65c6f3f8b3781a954a911f00f099a986c1000000000000000000000000f3a729973559082260e742ebedf705271ad2947600000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f647e7ef240000000000000000000000000000000000000000000000000000000000000000000000000000000006a26a1182bd40ec38b38ee987a0a16cf572222f0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f60000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000006a3a8083",
+        "maxFeePerGas": "1000301",
+        "maxPriorityFeePerGas": "1000000",
+        "nonce": 1,
+        "r": "0x107fbaf70d4936a2c5c43df309fd637a24f4eb89e23c44bed93b69b586a8e129",
+        "s": "0x6eda17b33603f3a1e50d1b849d004623922c357219adfffc8f928cc4687c6d8c",
+        "to": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+        "transactionIndex": 2,
+        "type": "eip1559",
+        "v": "1",
+        "value": "0",
+        "yParity": 1,
+        "typeHex": "0x2"
+      },
+      "rawEthGetTransactionReceipt": {
+        "blobGasUsed": "94000",
+        "blockHash": "0xdb7232b8c6d986565afd11344bebb53c29a6099da890f06d985ff1b4b57f6ca3",
+        "blockNumber": "28268969",
+        "contractAddress": null,
+        "cumulativeGasUsed": "99367",
+        "daFootprintGasScalar": "0x190",
+        "effectiveGasPrice": "1000251",
+        "from": "0x449ce112691962504ffdb7819e46faba87d0044e",
+        "gasUsed": "32161",
+        "l1BaseFeeScalar": "0x558",
+        "l1BlobBaseFee": "0x39e7436",
+        "l1BlobBaseFeeScalar": "0xc5fc5",
+        "l1Fee": "0x3ed43bf50",
+        "l1GasPrice": "0x3c8d5788",
+        "l1GasUsed": "0xebf",
+        "logs": [
+          {
+            "address": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+            "blockHash": "0xdb7232b8c6d986565afd11344bebb53c29a6099da890f06d985ff1b4b57f6ca3",
+            "blockNumber": "28268969",
+            "blockTimestamp": "1781614085",
+            "data": "0x000000000000000000000000f3a729973559082260e742ebedf705271ad2947600000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f647e7ef240000000000000000000000000000000000000000000000000000000000000000000000000000000006a26a1182bd40ec38b38ee987a0a16cf572222f0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f60000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000006a3a8083",
+            "logIndex": 0,
+            "removed": false,
+            "topics": [
+              "0xa021f5e6afaa01d31855fc07e4fda7098911fb0df03b433c456f661e1acd3ed9",
+              "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+              "0x5002945cf23e37d137e9a2c3e13e6e2ab2d580ae1b7359550b8bd74fcaa15ee5",
+              "0x76a63c18da9e277cea49341a08e7cf65c6f3f8b3781a954a911f00f099a986c1"
+            ],
+            "transactionHash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+            "transactionIndex": 2
+          }
+        ],
+        "logsBloom": "0x00000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000010000000004000000000000000000000000010000000010000000200000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000100000008000000000000000000000001000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000100000000000000000000000000000000100000000000000000000000000400000000000000000000000000000010000000000000",
+        "status": "success",
+        "to": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+        "transactionHash": "0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+        "transactionIndex": 2,
+        "type": "eip1559"
+      },
+      "receiptStatus": "success",
+      "blockNumber": "28268969",
+      "blockHash": "0xdb7232b8c6d986565afd11344bebb53c29a6099da890f06d985ff1b4b57f6ca3"
+    },
+    "decisionTx": {
+      "rawEthGetTransaction": {
+        "accessList": [],
+        "blockHash": null,
+        "blockNumber": null,
+        "chainId": 91342,
+        "from": "0xb125e5e873a45999532777fdc1cb0e4c24c22cf7",
+        "gas": "55983",
+        "gasPrice": "1000301",
+        "hash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+        "input": "0x33f36d37359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503000000000000000000000000f3a729973559082260e742ebedf705271ad2947651346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962d25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a01268860000000000000000000000000000000000000000000000000000000001b040e8cdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a950000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000006a323279",
+        "maxFeePerGas": "1000301",
+        "maxPriorityFeePerGas": "1000000",
+        "nonce": 0,
+        "r": "0x3ec064964eaa5ffeaac186a98df027c212e3eeec24407237364ab556d7df85ef",
+        "s": "0x49d7b62257c4d2412ba7f068a5e7ce1415c7a8d0f4ecd787a9b999ea923a7c9f",
+        "to": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+        "transactionIndex": null,
+        "type": "eip1559",
+        "v": "1",
+        "value": "0",
+        "yParity": 1,
+        "typeHex": "0x2"
+      },
+      "rawEthGetTransactionReceipt": {
+        "blobGasUsed": "98000",
+        "blockHash": "0x40a9521c0ae711ad50d6c25ad02dec926d202cf11319276965cc719cdc3ba5a6",
+        "blockNumber": "28329502",
+        "contractAddress": null,
+        "cumulativeGasUsed": "129125",
+        "daFootprintGasScalar": "0x190",
+        "effectiveGasPrice": "1000251",
+        "from": "0xb125e5e873a45999532777fdc1cb0e4c24c22cf7",
+        "gasUsed": "55181",
+        "l1BaseFeeScalar": "0x558",
+        "l1BlobBaseFee": "0x3b35e0f",
+        "l1BlobBaseFeeScalar": "0xc5fc5",
+        "l1Fee": "0x443b99fad",
+        "l1GasPrice": "0x425513c0",
+        "l1GasUsed": "0xf52",
+        "logs": [
+          {
+            "address": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+            "blockHash": "0x40a9521c0ae711ad50d6c25ad02dec926d202cf11319276965cc719cdc3ba5a6",
+            "blockNumber": "28329502",
+            "blockTimestamp": "1781674618",
+            "data": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962d25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a01268860000000000000000000000000000000000000000000000000000000001b040e8cdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a950000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000006a323279",
+            "logIndex": 1,
+            "removed": false,
+            "topics": [
+              "0x7ba53da77a2e814bb1ea2749af7e7d38c5ee71813b21078721d93f9563ac3f5c",
+              "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+              "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+              "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476"
+            ],
+            "transactionHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+            "transactionIndex": 2
+          }
+        ],
+        "logsBloom": "0x00000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000002000000000000000000000000000000100000008000000000000000040000000000000000000010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000100000000000200000000000000400000000000000000000000000000010000000000000",
+        "status": "success",
+        "to": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+        "transactionHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+        "transactionIndex": 2,
+        "type": "eip1559"
+      },
+      "receiptStatus": "success",
+      "blockNumber": "28329502",
+      "blockHash": "0x40a9521c0ae711ad50d6c25ad02dec926d202cf11319276965cc719cdc3ba5a6"
+    }
+  },
+  "decodedLogSnapshots": [
+    {
+      "eventName": "IntentSubmitted",
+      "contractAddress": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+      "logIndex": 0,
+      "args": {
+        "intentHash": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+        "campaignIdBytes32": "0x5002945cf23e37d137e9a2c3e13e6e2ab2d580ae1b7359550b8bd74fcaa15ee5",
+        "missionIdBytes32": "0x76a63c18da9e277cea49341a08e7cf65c6f3f8b3781a954a911f00f099a986c1",
+        "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+        "target": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "selector": "0x47e7ef24",
+        "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+        "amountBaseUnits": "1000000000000000000",
+        "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "maxAllowanceBaseUnits": "1000000000000000000",
+        "expiryUnix": "1782218883"
+      }
+    },
+    {
+      "eventName": "Approval",
+      "contractAddress": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "logIndex": 0,
+      "topics": [
+        "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+        "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476",
+        "0x00000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f6"
+      ],
+      "args": {
+        "owner": "0xf3a729973559082260e742ebedf705271ad29476",
+        "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "amount": "1000000000000000000"
+      }
+    },
+    {
+      "eventName": "Transfer",
+      "contractAddress": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "logIndex": 2,
+      "topics": [
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476",
+        "0x00000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f6"
+      ],
+      "args": {
+        "from": "0xf3a729973559082260e742ebedf705271ad29476",
+        "to": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "amount": "1000000000000000000"
+      }
+    },
+    {
+      "eventName": "MockDeposit",
+      "contractAddress": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "logIndex": 3,
+      "topics": [
+        "0x54f30f65bc90d0c3c8b3cafc00d7eae2389e60a60604dca1a948663b2de4c818",
+        "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476",
+        "0x00000000000000000000000006a26a1182bd40ec38b38ee987a0a16cf572222f"
+      ],
+      "args": {
+        "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+        "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+        "amount": "1000000000000000000"
+      }
+    }
+  ],
+  "explorer": {
+    "contracts": {
+      "mockToken": "https://sepolia-explorer.giwa.io/address/0x06A26A1182BD40ec38b38ee987A0A16cf572222F",
+      "mockVault": "https://sepolia-explorer.giwa.io/address/0x94C7a4DEB22318fF798CbE8340d7cC3365c405f6",
+      "intentRail": "https://sepolia-explorer.giwa.io/address/0x5282325C5B82E9E3fb39050bdD8Ec0f500185597"
+    },
+    "transactions": {
+      "mockTokenDeployment": "https://sepolia-explorer.giwa.io/tx/0xf49f597f6d279a6df5209cf5f3cd20d86e2e5685adc44483edacbe87a5171c94",
+      "mockVaultDeployment": "https://sepolia-explorer.giwa.io/tx/0xfda33d05a7855f93eada2a327bad157b932fe0e747ef05c19f93cc5c978951f2",
+      "intentRailDeployment": "https://sepolia-explorer.giwa.io/tx/0xc4bf3de597e949f653412132ae77007a93b7d9ef41411111dee763945d2dbc86",
+      "mint": "https://sepolia-explorer.giwa.io/tx/0x1fc760df19972a80af5b3e09a6f681e1cd7b8e28128fe00f628a464f8ec79f4a",
+      "intentSubmitted": "https://sepolia-explorer.giwa.io/tx/0x93d5b9092778f787351f36bba21622f8ce4e5f0a8c504f4a9fde46783b15b0f8",
+      "approve": "https://sepolia-explorer.giwa.io/tx/0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+      "deposit": "https://sepolia-explorer.giwa.io/tx/0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+      "decision": "https://sepolia-explorer.giwa.io/tx/0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df"
+    }
+  },
+  "walletActions": {
+    "approvalRequired": true,
+    "approve": {
+      "from": "0xf3a729973559082260e742ebedf705271ad29476",
+      "to": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "valueWei": "0",
+      "data": "0x095ea7b300000000000000000000000094c7a4deb22318ff798cbe8340d7cc3365c405f60000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    },
+    "deposit": {
+      "from": "0xf3a729973559082260e742ebedf705271ad29476",
+      "to": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "valueWei": "0",
+      "data": "0x47e7ef2400000000000000000000000006a26a1182bd40ec38b38ee987a0a16cf572222f0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    }
+  },
+  "nextStep": {
+    "recommendedNextAction": "Open the Sprint 7 submission pack and run the static demo.",
+    "demoScript": "docs/implementation/giwa-mvp-demo-script.md",
+    "runbook": "docs/implementation/giwa-mvp-runbook.md",
+    "acceptanceChecklist": "docs/implementation/giwa-mvp-acceptance-checklist.md",
+    "submissionEvidence": "docs/implementation/giwa-mvp-submission-evidence.md"
+  },
+  "confirmation": {
+    "standardRpcReceiptStatus": 1,
+    "depositBlockNumber": "28328168",
+    "depositBlockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+    "flashblocksObserved": true,
+    "flashblocksObservationStatus": {
+      "observed": true,
+      "namespace": "non-final",
+      "receiptStatus": "success",
+      "blockNumber": "28328168",
+      "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95"
+    },
+    "flashblocksExcludedFromFinalConfirmation": true,
+    "confirmationDepth": 1332,
+    "headBlockNumberAtVerification": 28329500,
+    "standardRpcDecisionReceiptStatus": 1,
+    "decisionBlockNumber": "28329502",
+    "decisionBlockHash": "0x40a9521c0ae711ad50d6c25ad02dec926d202cf11319276965cc719cdc3ba5a6"
+  },
+  "sprint4Boundary": {
+    "decisionTxHashProducedInSprint3": false,
+    "decisionTxHashProducedInSprint4": true,
+    "decisionTxHashOwner": "Sprint 4 verifier and receipt engine"
+  },
+  "decodedLogSnapshotHash": "0x1f338c1999a710bdf1688d5074be7fe2f77a372520ed20fced2aacfc2044d4ce",
+  "sourceChainAnchorSchemaVersion": "sprint-3-giwa-chain-anchor-v1",
+  "draftUntilSprint7": false,
+  "verifier": {
+    "verifierVersion": "1",
+    "canonicalVerifierInputPayload": "{\"schemaVersion\":\"1\",\"chainId\":91342,\"intentHash\":\"0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4\",\"depositTxHash\":\"0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886\",\"depositTransactionSnapshotHash\":\"0x2cd3c423260e91e36f5c38a0c19114c6fac4e9323b163b976db802ed1605977c\",\"depositReceiptSnapshotHash\":\"0xc06393b2a30305b8c65219e1b4ea30a0dff5573d1a753f9b5fbb3f9795782ef8\",\"decodedLogSnapshotHash\":\"0x1f338c1999a710bdf1688d5074be7fe2f77a372520ed20fced2aacfc2044d4ce\",\"confirmationDepth\":1332,\"headBlockNumberAtVerification\":28329500,\"verifierVersion\":\"1\"}",
+    "canonicalVerifierInputPayloadBytesHex": "0x7b22736368656d6156657273696f6e223a2231222c22636861696e4964223a39313334322c22696e74656e7448617368223a22307833353932323863653265663164353966666636343739653366306138633461396363633834643734646338396239623338376132353234376664323863376134222c226465706f736974547848617368223a22307864323561346630363464313561626131666231303861326462303864633637333933323331346334323530376462356237663931363265306130313236383836222c226465706f7369745472616e73616374696f6e536e617073686f7448617368223a22307832636433633432333236306539316533366635633338613063313931313463366661633465393332336231363362393736646238303265643136303539373763222c226465706f73697452656365697074536e617073686f7448617368223a22307863303633393362326133303330356238633635323139653162346561333061306466663535373364316137353366396235666262336639373935373832656638222c226465636f6465644c6f67536e617073686f7448617368223a22307831663333386331393939613731306264663136383864353037346265376665326637376133373235323065643230666365643261616366633230343464346365222c22636f6e6669726d6174696f6e4465707468223a313333322c2268656164426c6f636b4e756d6265724174566572696669636174696f6e223a32383332393530302c22766572696669657256657273696f6e223a2231227d",
+    "verifierInputHash": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de",
+    "matchedFields": [
+      "officialSigner",
+      "deployedManifestVector",
+      "intentSubmitted",
+      "intentSubmitter",
+      "confirmationDepth",
+      "standardRpcReceipt",
+      "expiry",
+      "depositWallet",
+      "depositTarget",
+      "depositSelector",
+      "depositAsset",
+      "depositAmount",
+      "approvalOwner",
+      "approvalSpender",
+      "allowanceBound",
+      "transferLog",
+      "mockDepositLog"
+    ],
+    "decision": "matched",
+    "failureReason": null,
+    "failureMatchedFields": []
+  },
+  "receipt": {
+    "payload": {
+      "schemaVersion": "1",
+      "verifierVersion": "1",
+      "intentHash": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+      "chainId": 91342,
+      "networkName": "GIWA Sepolia",
+      "status": "matched",
+      "actionType": "mockVaultDeposit",
+      "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+      "amountBaseUnits": "1000000000000000000",
+      "target": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+      "maxAllowanceBaseUnits": "1000000000000000000",
+      "allowanceUsedBaseUnits": "1000000000000000000",
+      "approvalRequired": true,
+      "approveTxHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+      "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+      "depositBlockNumber": 28328168,
+      "depositBlockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+      "campaignId": "gasok-demo",
+      "missionId": "first-mock-vault-deposit",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "verifiedState": "guest",
+      "testnetDepositAmountDelta": "1000000000000000000",
+      "issuedAt": 1781674617,
+      "issuer": "GIWA Verified Intent Rail MVP",
+      "safetyNotice": "Testnet-only. No real asset, no yield, no RWA claim."
+    },
+    "canonicalReceiptPayload": "{\"schemaVersion\":\"1\",\"verifierVersion\":\"1\",\"intentHash\":\"0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4\",\"chainId\":91342,\"networkName\":\"GIWA Sepolia\",\"status\":\"matched\",\"actionType\":\"mockVaultDeposit\",\"asset\":\"0x06a26a1182bd40ec38b38ee987a0a16cf572222f\",\"amountBaseUnits\":\"1000000000000000000\",\"target\":\"0x94c7a4deb22318ff798cbe8340d7cc3365c405f6\",\"spender\":\"0x94c7a4deb22318ff798cbe8340d7cc3365c405f6\",\"maxAllowanceBaseUnits\":\"1000000000000000000\",\"allowanceUsedBaseUnits\":\"1000000000000000000\",\"approvalRequired\":true,\"approveTxHash\":\"0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962\",\"depositTxHash\":\"0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886\",\"depositBlockNumber\":28328168,\"depositBlockHash\":\"0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95\",\"campaignId\":\"gasok-demo\",\"missionId\":\"first-mock-vault-deposit\",\"wallet\":\"0xf3a729973559082260e742ebedf705271ad29476\",\"verifiedState\":\"guest\",\"testnetDepositAmountDelta\":\"1000000000000000000\",\"issuedAt\":1781674617,\"issuer\":\"GIWA Verified Intent Rail MVP\",\"safetyNotice\":\"Testnet-only. No real asset, no yield, no RWA claim.\"}",
+    "canonicalReceiptPayloadBytesHex": "0x7b22736368656d6156657273696f6e223a2231222c22766572696669657256657273696f6e223a2231222c22696e74656e7448617368223a22307833353932323863653265663164353966666636343739653366306138633461396363633834643734646338396239623338376132353234376664323863376134222c22636861696e4964223a39313334322c226e6574776f726b4e616d65223a2247495741205365706f6c6961222c22737461747573223a226d617463686564222c22616374696f6e54797065223a226d6f636b5661756c744465706f736974222c226173736574223a22307830366132366131313832626434306563333862333865653938376130613136636635373232323266222c22616d6f756e7442617365556e697473223a2231303030303030303030303030303030303030222c22746172676574223a22307839346337613464656232323331386666373938636265383334306437636333333635633430356636222c227370656e646572223a22307839346337613464656232323331386666373938636265383334306437636333333635633430356636222c226d6178416c6c6f77616e636542617365556e697473223a2231303030303030303030303030303030303030222c22616c6c6f77616e63655573656442617365556e697473223a2231303030303030303030303030303030303030222c22617070726f76616c5265717569726564223a747275652c22617070726f7665547848617368223a22307835313334363739326331396166336633356465666538613036366638613337636631613162616633323636623430353537336562663564386563316263393632222c226465706f736974547848617368223a22307864323561346630363464313561626131666231303861326462303864633637333933323331346334323530376462356237663931363265306130313236383836222c226465706f736974426c6f636b4e756d626572223a32383332383136382c226465706f736974426c6f636b48617368223a22307863646334653464613137303937366535333734353565396334656165646230383033396566393134643833643464623030666131393730633963316236613935222c2263616d706169676e4964223a226761736f6b2d64656d6f222c226d697373696f6e4964223a2266697273742d6d6f636b2d7661756c742d6465706f736974222c2277616c6c6574223a22307866336137323939373335353930383232363065373432656265646637303532373161643239343736222c2276657269666965645374617465223a226775657374222c22746573746e65744465706f736974416d6f756e7444656c7461223a2231303030303030303030303030303030303030222c226973737565644174223a313738313637343631372c22697373756572223a224749574120566572696669656420496e74656e74205261696c204d5650222c227361666574794e6f74696365223a22546573746e65742d6f6e6c792e204e6f207265616c2061737365742c206e6f207969656c642c206e6f2052574120636c61696d2e227d",
+    "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+    "envelope": {
+      "payload": {
+        "schemaVersion": "1",
+        "verifierVersion": "1",
+        "intentHash": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+        "chainId": 91342,
+        "networkName": "GIWA Sepolia",
+        "status": "matched",
+        "actionType": "mockVaultDeposit",
+        "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+        "amountBaseUnits": "1000000000000000000",
+        "target": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+        "maxAllowanceBaseUnits": "1000000000000000000",
+        "allowanceUsedBaseUnits": "1000000000000000000",
+        "approvalRequired": true,
+        "approveTxHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+        "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+        "depositBlockNumber": 28328168,
+        "depositBlockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+        "campaignId": "gasok-demo",
+        "missionId": "first-mock-vault-deposit",
+        "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+        "verifiedState": "guest",
+        "testnetDepositAmountDelta": "1000000000000000000",
+        "issuedAt": 1781674617,
+        "issuer": "GIWA Verified Intent Rail MVP",
+        "safetyNotice": "Testnet-only. No real asset, no yield, no RWA claim."
+      },
+      "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+      "decisionBlockNumber": 28329502,
+      "decisionBlockHash": "0x40a9521c0ae711ad50d6c25ad02dec926d202cf11319276965cc719cdc3ba5a6",
+      "explorerUrl": "https://sepolia-explorer.giwa.io/tx/0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+      "displayStatus": "Receipt ready",
+      "displayCopy": "Block-confirmed GIWA Sepolia testnet vault deposit matched the signed manifest."
+    }
+  },
+  "decisionEvent": {
+    "eventName": "IntentMatched",
+    "contractAddress": "0x5282325c5b82e9e3fb39050bdd8ec0f500185597",
+    "logIndex": 1,
+    "topics": [
+      "0x7ba53da77a2e814bb1ea2749af7e7d38c5ee71813b21078721d93f9563ac3f5c",
+      "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+      "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "0x000000000000000000000000f3a729973559082260e742ebedf705271ad29476"
+    ],
+    "args": {
+      "intentHash": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+      "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+      "approveTxHash": "0x51346792c19af3f35defe8a066f8a37cf1a1baf3266b405573ebf5d8ec1bc962",
+      "depositTxHash": "0xd25a4f064d15aba1fb108a2db08dc673932314c42507db5b7f9162e0a0126886",
+      "blockNumber": "28328168",
+      "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
+      "allowanceUsedBaseUnits": "1000000000000000000",
+      "issuedAt": "1781674617"
+    }
+  },
+  "submissionFinalization": {
+    "finalizedForSprint7": true,
+    "finalizedAt": "2026-06-17",
+    "draftUntilSprint7Resolved": true,
+    "schemaVersionRetained": "sprint-4-giwa-mvp-evidence-draft-v1",
+    "testnetOnly": true,
+    "mockActionOnly": true,
+    "standardRpcFinalConfirmation": true,
+    "flashblocksFinalConfirmation": false,
+    "localUrls": {
+      "guidedFlow": "http://127.0.0.1:4176/",
+      "receiptRoute": "http://127.0.0.1:4176/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "partnerConsole": "http://127.0.0.1:4176/partner",
+      "partnerSnapshot": "http://127.0.0.1:4176/partner-snapshot.json"
+    },
+    "evidenceArtifacts": {
+      "mvpEvidence": "docs/evidence/giwa-sepolia-mvp-evidence.json",
+      "chainAnchorEvidence": "docs/evidence/giwa-sepolia-chain-anchor.json",
+      "chainFixture": "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json",
+      "deployment": "apps/web/src/generated/deployment.json",
+      "flowData": "apps/web/public/flow-data.json",
+      "partnerSnapshot": "apps/web/public/partner-snapshot.json"
+    },
+    "submissionDocs": {
+      "demoScript": "docs/implementation/giwa-mvp-demo-script.md",
+      "runbook": "docs/implementation/giwa-mvp-runbook.md",
+      "acceptanceChecklist": "docs/implementation/giwa-mvp-acceptance-checklist.md",
+      "submissionEvidence": "docs/implementation/giwa-mvp-submission-evidence.md"
+    },
+    "hashRecomputation": {
+      "intentHash": {
+        "value": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+        "recomputedFrom": "manifest.manifest canonical payload field order",
+        "matchesEvidence": true
+      },
+      "receiptHash": {
+        "value": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+        "recomputedFrom": "receipt.payload canonical payload field order",
+        "matchesEvidence": true
+      },
+      "verifierInputHash": {
+        "value": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de",
+        "recomputedFrom": "verifier.canonicalVerifierInputPayload",
+        "matchesEvidence": true
+      },
+      "decodedLogSnapshotHash": {
+        "value": "0x1f338c1999a710bdf1688d5074be7fe2f77a372520ed20fced2aacfc2044d4ce",
+        "recomputedFrom": "decodedLogSnapshots normalized evidence JSON",
+        "matchesEvidence": true
+      }
+    },
+    "redactionChecklist": {
+      "noPrivateKeys": true,
+      "noMnemonics": true,
+      "noRpcTokens": true,
+      "noBearerTokens": true,
+      "noAuthHeaders": true,
+      "noEnvFileContents": true,
+      "publicTransactionAndAddressEvidenceOnly": true
+    },
+    "officialReferenceCheck": {
+      "checkedAt": "2026-06-17",
+      "urls": [
+        "https://docs.giwa.io/get-started/connect-to-giwa",
+        "https://docs.giwa.io/get-started/faucets",
+        "https://docs.giwa.io/giwa-chain/en/network-information/flashblocks",
+        "https://sepolia-explorer.giwa.io/",
+        "https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/dojang/verified-address",
+        "https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/up-id"
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@giwa/contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "hardhat build && tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "hardhat build && vitest run",
+    "deploy:local": "hardhat run scripts/deploy-local.ts",
+    "deploy:giwa": "hardhat run scripts/deploy-giwa.ts",
+    "fund:giwa": "hardhat run scripts/fund-roles-giwa.ts",
+    "preflight:giwa": "hardhat run scripts/preflight-giwa.ts",
+    "sign:manifest": "hardhat run scripts/sign-manifest-local.ts",
+    "anchor:giwa": "hardhat run scripts/run-chain-anchor.ts",
+    "verify:giwa": "hardhat run scripts/run-verifier-decision.ts"
+  },
+  "devDependencies": {
+    "hardhat": "3.9.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  },
+  "dependencies": {
+    "viem": "2.52.2"
+  }
+}

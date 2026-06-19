@@ -1,0 +1,22 @@
+{
+  "name": "@giwa/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node --experimental-strip-types scripts/export-flow-data.mjs && tsc -p tsconfig.json --noEmit",
+    "dev": "node --experimental-strip-types scripts/serve-static.mjs",
+    "dev:live": "node --experimental-strip-types scripts/serve-live.mjs",
+    "export:flow": "node --experimental-strip-types scripts/export-flow-data.mjs",
+    "export:live-demo": "node --experimental-strip-types scripts/export-live-demo-snapshot.mjs",
+    "artifact:manifest": "node --experimental-strip-types scripts/export-artifact-manifest.mjs --manifest",
+    "artifact:provenance": "node --experimental-strip-types scripts/export-artifact-manifest.mjs --provenance",
+    "artifact:scan": "node --experimental-strip-types scripts/export-artifact-manifest.mjs --scan",
+    "artifact:local": "node --experimental-strip-types scripts/export-artifact-manifest.mjs",
+    "artifact:provenance:verify": "node --experimental-strip-types scripts/verify-provenance-report.mjs",
+    "serve": "node --experimental-strip-types scripts/serve-static.mjs",
+    "serve:live": "node --experimental-strip-types scripts/serve-live.mjs",
+    "test:live": "vitest run live",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

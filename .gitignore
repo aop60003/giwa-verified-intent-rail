@@ -1,0 +1,55 @@
+.engram/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.envrc
+*.pem
+*.key
+*.p8
+*.p12
+*.keystore
+*.jks
+*private-key*
+*private_key*
+*privatekey*
+*mnemonic*
+mnemonic*
+*seed-phrase*
+*seed_phrase*
+*.seed
+secret*
+wallet*.json
+*.wallet.json
+wallet-*.json
+*-wallet.json
+*bearer-token*
+*auth-header*
+
+# Node and build output
+node_modules/
+.next/
+dist/
+coverage/
+.turbo/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+browser-state/
+test-output/
+.cache/
+cache/
+
+# MVP local runtime data
+apps/web/.data/
+docs/evidence/local/
+*.raw.json
+*.private.json
+
+# Hardhat output
+packages/contracts/cache/
+packages/contracts/artifacts/
+packages/contracts/typechain-types/

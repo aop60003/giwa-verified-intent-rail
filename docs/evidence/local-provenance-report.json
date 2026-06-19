@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "1",
+  "reportKind": "local-provenance-report",
+  "authority": "local-advisory",
+  "generatedAt": "2026-06-19T12:52:07.990Z",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "blockedProtectedFields": [
+    "sourceCommit",
+    "ciRunId",
+    "releaseTag",
+    "promotionDecision"
+  ],
+  "reportHashPolicy": "external-only",
+  "manifestBinding": {
+    "authority": "local-advisory",
+    "bindingKind": "artifact-manifest-binding",
+    "manifestPath": "docs/evidence/local-artifact-manifest.json",
+    "manifestKind": "local-artifact-manifest",
+    "manifestAuthority": "local-advisory",
+    "artifactManifestSha256": "5d9bdc7aca8190c99628a4dfe4ec62e9ec4f58a4fc60739788ebdc38d6a89f43",
+    "artifactManifestBytes": 27533,
+    "buildTreeSha256": "83330783c42f02ba1537443c874c4123540a2528876cf250ada7d7067cc13b20",
+    "artifactGroupCounts": {
+      "packageMetadata": 7,
+      "publicArtifacts": 10,
+      "publicEvidence": 6,
+      "implementationDocs": 41
+    },
+    "equivalenceGroups": {
+      "passed": 2,
+      "blocked": 0
+    },
+    "domainHashCount": 6,
+    "decision": "pass"
+  },
+  "scanBinding": {
+    "scanner": "public-artifact-scanner",
+    "scope": "served-public-artifacts",
+    "decision": "pass",
+    "filesScanned": 10,
+    "blockedCount": 0,
+    "skippedCount": 0,
+    "findingCount": 0,
+    "valuePrinted": false,
+    "findings": []
+  },
+  "commandEvidenceBinding": {
+    "path": "docs/evidence/local-command-evidence-report.json",
+    "sha256": "bb678f427381c17772b1479d480517514a32fdf72c6d57e065e80371508c05cc",
+    "bytes": 1972,
+    "decision": "pass"
+  },
+  "domainHashBinding": [
+    {
+      "name": "intentHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/0",
+      "value": "0x359228ce2ef1d59fff6479e3f0a8c4a9ccc84d74dc89b9b387a25247fd28c7a4",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "intentHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/1",
+      "value": "0x67c754c6e4582cb6b1c574c21e2ea4fe034691de80e7512223fe338aee40a88d",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "receiptHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/2",
+      "value": "0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "receiptHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/3",
+      "value": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/4",
+      "value": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/5",
+      "value": "0x83a4b7d20d0162affe04be016a68d9711f86eef356cf527620159957c7b2ed04",
+      "derivation": "extracted",
+      "decision": "pass"
+    }
+  ],
+  "knownBlockers": [],
+  "sidecar": {
+    "path": "docs/evidence/local-provenance-report.json.sha256",
+    "algorithm": "sha256",
+    "decision": "pass"
+  },
+  "releaseGateStatus": "blocked-until-protected-ci-and-release-approval"
+}

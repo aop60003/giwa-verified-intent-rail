@@ -1,0 +1,281 @@
+name: ci-source-provenance
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-source-provenance-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22.16.0"
+  PNPM_VERSION: "10.32.1"
+  BLOCKED_WORKFLOW_COMMANDS: "deploy:local,deploy:giwa,fund:giwa,preflight:giwa,sign:manifest,anchor:giwa,verify:giwa,dev,serve,dev:live,serve:live,export:live-demo,artifact:provenance:check,artifact:drift,artifact:commands,mint,wallet signing,public hosting,managed infrastructure"
+
+jobs:
+  source-provenance:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Record source context
+        shell: pwsh
+        run: |
+          git rev-parse --is-inside-work-tree
+          git rev-parse HEAD
+          git status --short
+
+  workflow-command-boundary:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    needs: source-provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Check workflow command boundary
+        shell: pwsh
+        run: |
+          $workflowPath = ".github/workflows/ci.yml"
+          $workflowLines = Get-Content $workflowPath
+          $blocked = "${{ env.BLOCKED_WORKFLOW_COMMANDS }}".Split(",")
+          $hits = @()
+          foreach ($line in $workflowLines) {
+            if ($line -match "^\s*BLOCKED_WORKFLOW_COMMANDS:") { continue }
+            foreach ($term in $blocked) {
+              if ($term -in @("dev", "serve", "mint")) {
+                if ($line -match "pnpm\s+.*\b$term\b") { $hits += "$term :: $line" }
+              } elseif ($line.Contains($term)) {
+                $hits += "$term :: $line"
+              }
+            }
+          }
+          if ($hits.Count -gt 0) {
+            $hits | ForEach-Object { Write-Host $_ }
+            exit 1
+          }
+
+  web-checks:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    needs: workflow-command-boundary
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run web checks
+        shell: pwsh
+        run: |
+          pnpm --filter @giwa/web --fail-if-no-match test
+          pnpm --filter @giwa/web --fail-if-no-match typecheck
+          pnpm --filter @giwa/web --fail-if-no-match build
+
+  protocol-checks:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    needs: workflow-command-boundary
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run protocol checks
+        shell: pwsh
+        run: |
+          pnpm --filter @giwa/protocol --fail-if-no-match test
+          pnpm --filter @giwa/protocol --fail-if-no-match typecheck
+          pnpm --filter @giwa/protocol --fail-if-no-match build
+
+  contracts-checks:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: workflow-command-boundary
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run contracts checks
+        shell: pwsh
+        run: |
+          pnpm --filter @giwa/contracts --fail-if-no-match test
+          pnpm --filter @giwa/contracts --fail-if-no-match typecheck
+          pnpm --filter @giwa/contracts --fail-if-no-match build
+
+  node-syntax-checks:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    needs: workflow-command-boundary
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run syntax checks
+        shell: pwsh
+        run: |
+          node --check apps/web/public/flow.js
+          node --check apps/web/public/live-flow.js
+          node --check apps/web/public/demo-control-room.js
+          node --check apps/web/scripts/export-flow-data.mjs
+          node --check apps/web/scripts/export-live-demo-snapshot.mjs
+          node --check apps/web/scripts/export-artifact-manifest.mjs
+          node --check apps/web/scripts/verify-provenance-report.mjs
+          node --check apps/web/scripts/serve-live.mjs
+          node --check apps/web/scripts/serve-static.mjs
+
+  safe-scans:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    needs: workflow-command-boundary
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run safe scans
+        shell: pwsh
+        run: |
+          function Invoke-RgScan {
+            param(
+              [string] $Pattern,
+              [string[]] $Paths,
+              [string[]] $Globs
+            )
+            & rg -n $Pattern @Paths @Globs
+            if ($LASTEXITCODE -eq 1) {
+              return
+            }
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          }
+
+          $placeholderPattern = ("TO" + "DO") + "|" + ("FIX" + "ME") + "|" + ("T" + "BD")
+          Invoke-RgScan $placeholderPattern @("docs\implementation", "docs\superpowers\plans", "README.md", ".github") @("-g", "*.md", "-g", "*.yml", "-g", "*.yaml")
+          Invoke-RgScan "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|real yield|real funds|settlement" @("docs\implementation", "docs\superpowers\plans", "README.md", "apps\web\public", "apps\web\src", "apps\web\scripts", ".github") @("-g", "*.md", "-g", "*.html", "-g", "*.js", "-g", "*.ts", "-g", "*.mjs", "-g", "*.yml", "-g", "*.yaml")
+          Invoke-RgScan "private key|mnemonic|bearer|api key|secret" @("docs\implementation", "docs\superpowers\plans", "README.md", "apps\web\public", "apps\web\src", "apps\web\scripts", ".github") @("-g", "*.md", "-g", "*.html", "-g", "*.js", "-g", "*.ts", "-g", "*.mjs", "-g", "*.yml", "-g", "*.yaml")
+
+  workspace-checks:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    needs:
+      - web-checks
+      - protocol-checks
+      - contracts-checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run workspace checks
+        shell: pwsh
+        run: |
+          pnpm test
+          pnpm typecheck
+          pnpm build
+
+  artifact-provenance:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    needs:
+      - workspace-checks
+      - node-syntax-checks
+      - safe-scans
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Activate pnpm
+        shell: pwsh
+        run: |
+          node --version
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - name: Run local advisory artifact checks
+        shell: pwsh
+        run: |
+          pnpm --filter @giwa/web --fail-if-no-match test -- provenance
+          pnpm --filter @giwa/web --fail-if-no-match artifact:local
+          pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check
+          pnpm --filter @giwa/web --fail-if-no-match artifact:scan
+          pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check
