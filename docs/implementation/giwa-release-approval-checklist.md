@@ -192,6 +192,7 @@ postVisibilityDiagnosticConclusion=failure
 postVisibilityDiagnosticJobs=3
 postVisibilityDiagnosticAnnotation=account-locked-due-to-billing
 rootCauseClass=github-account-billing-lock
+branchProtection=configured-required-checks-failing
 ```
 
 Release approval remains blocked until:

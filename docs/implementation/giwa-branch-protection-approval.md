@@ -37,8 +37,10 @@ diagnosticRunId=27849292869
 diagnosticJobs=3
 diagnosticFirstJobConclusion=failure
 diagnosticFirstJobAnnotation=account-locked-due-to-billing
-branchProtectionRetry=not-attempted
-branchProtectionCurrentBlocker=no-passing-required-checks
+branchProtectionRetry=succeeded
+branchProtected=true
+branchProtectionEnforceAdmins=false
+branchProtectionCurrentBlocker=required-checks-failing-due-to-billing-lock
 ```
 
 Branch protection requires a GitHub repository, a reviewed workflow path, and required checks that have run from a protected source context. A local workflow draft alone cannot satisfy this gate.
@@ -135,7 +137,7 @@ The Sprint 29 branch protection attempt returned a plan or visibility gate for t
 
 Do not add queued third-party app check suites as required checks. Only stable, intentionally configured, passing check contexts with owners can be considered for required-check policy.
 
-After Sprint 31, repository visibility is public, but branch protection remains blocked because the GitHub account billing lock prevents required checks from starting successfully. Retry branch protection only after the billing lock is resolved and the protected required-check names have passing GitHub check contexts.
+After Sprint 31, repository visibility is public and branch protection is configured for `main` with the canonical required checks. Release approval remains blocked because the GitHub account billing lock prevents required checks from starting successfully. Retry protected CI only after the billing lock is resolved and the protected required-check names have passing GitHub check contexts.
 
 ## Exit Gate
 

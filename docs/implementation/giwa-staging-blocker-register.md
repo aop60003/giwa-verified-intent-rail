@@ -349,7 +349,9 @@ postVisibilityDiagnosticRunId=27849292869
 postVisibilityDiagnosticConclusion=failure
 postVisibilityDiagnosticJobs=3
 githubAccountBilling=locked
-branchProtection=blocked-no-passing-required-checks
+branchProtection=configured-required-checks-failing
+protectedBranch=main
+branchProtectionEnforceAdmins=false
 thirdPartyCheckSuites=non-authoritative
 protectedArtifactGeneration=blocked
 releaseApproval=blocked
@@ -365,6 +367,7 @@ Every external-state transition in Sprint 30 or later must update this blocker r
 | P1 | third-party app checks are queued | Cloudtype, Cloudflare, or Vercel suites remain queued | non-authoritative integration gate | do not add them to required checks and do not trigger provider setup |
 | P1 | branch policy workaround requested | private repo branch protection stays 403 | source-control policy gate | require plan upgrade, explicit public repository conversion, or approved substitute policy |
 | P1 | GitHub account billing lock | check-run annotation says the job was not started because the account is locked due to billing | account billing gate | resolve GitHub account billing outside the repository before claiming protected CI |
+| P1 | branch protection configured while checks fail | `main` requires canonical checks, but `source-provenance` fails before runner steps | release provenance gate | keep release and staging blocked until billing is resolved and checks pass |
 
 ## Sprint 21 Failure Triage
 

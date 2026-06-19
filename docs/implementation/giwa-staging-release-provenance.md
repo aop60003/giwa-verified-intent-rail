@@ -557,7 +557,10 @@ postVisibilityDiagnosticRunId=27849292869
 postVisibilityDiagnosticConclusion=failure
 postVisibilityDiagnosticJobs=3
 postVisibilityDiagnosticAnnotation=account-locked-due-to-billing
-checkRuns=0
+branchProtection=configured-required-checks-failing
+protectedBranch=main
+branchProtectionEnforceAdmins=false
+protectedWorkflowCheckRuns=10
 protectedArtifactGeneration=blocked
 protectedArtifactUploadMetadata=blocked
 ```

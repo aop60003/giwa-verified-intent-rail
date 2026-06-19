@@ -87,7 +87,7 @@ Because public source visibility can expose repository contents, Sprint 31 must 
 
 ## Task 5: Branch Protection Retry
 
-- [ ] Retry branch protection only after at least one real check context exists.
+- [x] Retry branch protection only after at least one real check context exists.
 - [ ] Required check candidates remain:
   ```text
   source-provenance
@@ -101,8 +101,15 @@ Because public source visibility can expose repository contents, Sprint 31 must 
   artifact-provenance
   protected-ci-gate
   ```
-- [ ] If branch protection succeeds, record policy evidence.
+- [x] If branch protection succeeds, record policy evidence.
 - [ ] If branch protection fails, record status, response class, and next external gate.
+  - Observed result:
+    ```text
+    branchProtected=true
+    branchProtectionEnforceAdmins=false
+    requiredChecks=source-provenance,workflow-command-boundary,web-checks,protocol-checks,contracts-checks,node-syntax-checks,safe-scans,workspace-checks,artifact-provenance,protected-ci-gate
+    currentBlocker=required-checks-failing-due-to-billing-lock
+    ```
 
 ## Task 6: Documentation, Verification, and Commit
 

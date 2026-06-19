@@ -137,11 +137,24 @@ Current root-cause class:
 ```text
 rootCauseClass=github-account-billing-lock
 protectedCI=blocked-billing-lock
-branchProtection=blocked-no-passing-required-checks
+branchProtection=configured-required-checks-failing
 protectedArtifactGeneration=blocked
 releaseApproval=blocked
 stagingPromotion=blocked
 ```
+
+## Branch Protection After Public Visibility
+
+After public source visibility and creation of real check contexts, branch protection was configured for `main`:
+
+```text
+protectedBranch=main
+branchProtected=true
+enforceAdmins=false
+requiredStatusChecks=source-provenance,workflow-command-boundary,web-checks,protocol-checks,contracts-checks,node-syntax-checks,safe-scans,workspace-checks,artifact-provenance,protected-ci-gate
+```
+
+This is branch policy evidence only. It is not release approval because `source-provenance` currently fails before runner steps start due to the GitHub account billing lock, and all downstream required checks are skipped.
 
 ## Branch Protection Status
 
