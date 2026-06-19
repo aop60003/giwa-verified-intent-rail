@@ -54,6 +54,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 25 | `2026-06-19-sprint-25-git-and-workflow-initialization-after-approval.md` | approval-gated final execution plan for repository initialization, initial commit policy, workflow creation, branch-protection preparation, and protected CI handoff without performing those actions during plan-writing | Sprint 24 approval |
 | 26 | `docs/implementation/giwa-git-and-workflow-initialization-execution.md` | approved local git initialization, initial source snapshot, workflow file creation, and branch-protection blocker record | Sprint 25 approval |
 | 27 | `2026-06-19-sprint-27-protected-ci-run-and-release-provenance.md` | protected CI run and release provenance probe that records remote GitHub, pushed source, Actions status, branch protection, release approval, and rollback-owner blockers without pushing or deploying | Sprint 26 approval |
+| 28 | `2026-06-19-sprint-28-github-remote-and-protected-ci-activation.md` | GitHub remote and protected CI activation plan for workflow hardening, remote/push/Actions/branch-protection approval gates, staging artifact handoff, and protected provenance blockers | Sprint 27 approval |
 
 ## Sprint 0 Execution Artifacts
 
@@ -140,6 +141,8 @@ Sprint 25 execution without the four explicit approvals remains a readiness-only
 Sprint 26 executes the approved local git and workflow initialization path. It records `docs/implementation/giwa-git-and-workflow-initialization-execution.md`, creates `.github/workflows/ci.yml`, and creates an initial local source snapshot. Sprint 26 does not push, configure remotes, public-host, deploy, connect managed infrastructure, send wallet actions, run chain-operation commands, install dependencies, create release tags, upload CI artifacts, or claim protected CI provenance. Branch protection and required checks remain blocked until a remote GitHub repository, push approval, real workflow run, and exact required-check statuses exist.
 
 Sprint 27 probes the protected CI and release provenance transition after Sprint 26. It records that local git and `.github/workflows/ci.yml` exist, verifies the absence of a configured remote and real GitHub Actions statuses, refreshes local-advisory provenance, updates release/blocker documents, and keeps protected CI, branch protection, release approval, public hosting, deployment, managed infrastructure, wallet actions, chain-operation commands, and dependency installation blocked.
+
+Sprint 28 plans the GitHub remote and protected CI activation path. It can harden the local workflow with CI guard scripts and future protected artifact handoff metadata, but remote add, push, Actions dispatch or reliance, branch protection, artifact upload, release approval, public hosting, deployment, managed infrastructure, wallet actions, chain-operation commands, and dependency installation remain gated by explicit external approval.
 
 ## Global Stop Conditions
 

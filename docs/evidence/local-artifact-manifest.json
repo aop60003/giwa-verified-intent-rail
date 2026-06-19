@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-19T13:44:04.682Z",
+  "generatedAt": "2026-06-19T13:54:11.248Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
