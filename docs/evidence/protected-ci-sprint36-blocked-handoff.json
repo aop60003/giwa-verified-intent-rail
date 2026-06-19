@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1",
+  "authority": "blocked-github-actions-readonly",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "capturedAt": "2026-06-20T07:59:24+09:00",
+  "repository": "https://github.com/aop60003/giwa-verified-intent-rail",
+  "branch": {
+    "name": "main",
+    "protected": true,
+    "currentHeadSha": "30eddb3da26ca6cf8302d1396bd8f5fbe61759c1",
+    "currentHeadCommitMessage": "docs: record sprint 35 ci blocker handoff [skip ci]",
+    "requiredCheckCount": 10
+  },
+  "latestRealActionsRun": {
+    "runId": 27850867132,
+    "runUrl": "https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27850867132",
+    "workflowName": "ci-source-provenance",
+    "event": "push",
+    "headSha": "779b63878b37c3b4f3792dd67718ea5bb3e9d92b",
+    "status": "completed",
+    "conclusion": "failure",
+    "createdAt": "2026-06-19T22:16:23Z",
+    "updatedAt": "2026-06-19T22:16:26Z",
+    "logStatus": "not-found",
+    "firstJob": {
+      "name": "source-provenance",
+      "conclusion": "failure",
+      "steps": []
+    },
+    "downstreamJobs": {
+      "count": 9,
+      "conclusion": "skipped"
+    },
+    "artifacts": {
+      "api": "repos/aop60003/giwa-verified-intent-rail/actions/runs/27850867132/artifacts",
+      "totalCount": 0
+    }
+  },
+  "sprint36Decision": {
+    "billingUnlockConfirmed": false,
+    "billingLockEvidence": "check-run-annotation-account-locked-due-to-billing",
+    "currentMainCheckRuns": 0,
+    "noActionsRunForCurrentMain": true,
+    "rerunAllowed": false,
+    "rerunExecuted": false,
+    "workflowDispatchExecuted": false,
+    "sourceBinding": "blocked-no-run-for-current-main",
+    "protectedCI": "blocked-billing-lock",
+    "protectedArtifactGeneration": "blocked",
+    "protectedArtifactUpload": "blocked",
+    "protectedArtifactUploadImplemented": false,
+    "releaseApproval": "blocked",
+    "stagingDryRunExecution": "blocked-protected-ci",
+    "hostedAdapterImplementation": "blocked",
+    "partnerPromotion": "blocked"
+  },
+  "requiredChecks": [
+    "source-provenance",
+    "workflow-command-boundary",
+    "web-checks",
+    "protocol-checks",
+    "contracts-checks",
+    "node-syntax-checks",
+    "safe-scans",
+    "workspace-checks",
+    "artifact-provenance",
+    "protected-ci-gate"
+  ],
+  "forbiddenActionsObserved": {
+    "workflowRerun": false,
+    "workflowDispatch": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "walletTransaction": false,
+    "chainOperationCommand": false,
+    "dependencyInstall": false,
+    "releaseTag": false
+  }
+}

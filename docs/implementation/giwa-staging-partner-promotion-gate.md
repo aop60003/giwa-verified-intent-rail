@@ -91,3 +91,23 @@ partnerPromotion=blocked
 ```
 
 Partner-facing handoff remains local/advisory only until protected CI and protected artifacts pass, reviewer signoff exists, incident and retention owners are named, and the blocker register is closed.
+
+## Sprint 36 Rerun Gate State
+
+Sprint 36 keeps partner promotion blocked:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUploadImplemented=false
+partnerPromotion=blocked
+```
+
+Partner-facing staging or beta handoff remains local/advisory only until current `main` has passing protected CI, protected artifact metadata exists, reviewer signoff exists, incident and retention owners are named, and the blocker register is closed.

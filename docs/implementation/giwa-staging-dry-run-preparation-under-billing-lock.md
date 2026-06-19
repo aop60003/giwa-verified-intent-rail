@@ -139,3 +139,32 @@ stagingDryRunExecution=blocked-protected-ci
 ```
 
 Staging dry-run execution remains blocked until protected CI passes on the intended source commit and protected artifact metadata is recorded.
+
+## Sprint 36 Rerun Gate State
+
+Sprint 36 records that billing unlock is still not evidenced:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-36-protected-ci-rerun-after-billing-unlock.md
+docs/implementation/giwa-protected-ci-rerun-after-billing-unlock.md
+docs/evidence/protected-ci-sprint36-blocked-handoff.json
+```
+
+Current decision:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+stagingDryRunExecution=blocked-protected-ci
+```
+
+Staging dry-run execution remains no-go until current `main` receives a passing protected CI run and protected artifact metadata exists.

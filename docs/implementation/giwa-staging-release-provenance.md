@@ -662,3 +662,42 @@ stagingPromotion=blocked
 Sprint 35 defines the post-billing handoff contract only. Protected CI provenance begins only after a run on the intended source commit passes all ten required checks and exposes staging-named artifact metadata.
 
 If a future protected CI run passes but the Actions artifacts API returns zero artifacts, protected CI can be recorded separately from artifact handoff, but release approval and staging promotion remain blocked until protected artifact upload metadata exists.
+
+## Sprint 36 Protected CI Rerun After Billing Unlock Boundary
+
+Sprint 36 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-36-protected-ci-rerun-after-billing-unlock.md
+```
+
+Sprint 36 handoff record:
+
+```text
+docs/implementation/giwa-protected-ci-rerun-after-billing-unlock.md
+```
+
+Release authority remains blocked:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+readOnlyEvidence=docs/evidence/protected-ci-sprint36-blocked-handoff.json
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+sourceBinding=blocked-no-run-for-current-main
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+latestRealActionsRunArtifactTotalCount=0
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 36 confirms that a `[skip ci]` direct push to `main` is not protected CI evidence. Protected release provenance begins only after a new run on current `main` passes all ten required checks and exposes protected artifact metadata.

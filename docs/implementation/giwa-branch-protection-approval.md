@@ -173,6 +173,25 @@ sourceBinding=blocked-no-run-for-current-main
 
 An admin-bypassed direct push updates `main`, but it is not protected merge evidence. Protected CI authority requires a passing run on the intended `main` commit with the canonical required checks.
 
+Sprint 36 keeps the same branch boundary and records the current head:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+branchProtected=true
+requiredChecks=10
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+sourceBinding=blocked-no-run-for-current-main
+```
+
+The `[skip ci]` head advance is a documented handoff commit only. It cannot satisfy required checks, and it cannot support release or staging provenance until a later protected workflow run targets the same current `main` head.
+
 ## Exit Gate
 
 Branch protection approval is ready only when:

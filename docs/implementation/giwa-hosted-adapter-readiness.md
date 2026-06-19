@@ -5,7 +5,7 @@ Sprint 34 defines hosted adapter readiness while protected CI is blocked by GitH
 ## Current Boundary
 
 ```text
-currentMainHead=0a5fdc235cd49f2bef78087d029f194635833e7c
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
 latestProtectedRunId=27850867132
 latestProtectedRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
 latestProtectedRunConclusion=failure
@@ -146,3 +146,26 @@ cloudSecretManagerConnection=blocked
 ```
 
 Hosted adapter implementation requires a later protected-CI pass, protected artifact metadata, adapter owner, storage/restore evidence, auth/tenant/origin gates, rollback owner, and release approval.
+
+## Sprint 36 Rerun Gate State
+
+Sprint 36 keeps hosted adapter implementation blocked:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUploadImplemented=false
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+cloudSecretManagerConnection=blocked
+```
+
+Hosted adapter implementation requires protected CI on current `main`, protected artifact metadata, adapter owner, storage/restore evidence, auth/tenant/origin gates, rollback owner, and release approval.

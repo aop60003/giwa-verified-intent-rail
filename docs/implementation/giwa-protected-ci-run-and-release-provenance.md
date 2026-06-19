@@ -312,6 +312,46 @@ stagingPromotion=blocked
 
 Sprint 35 does not rerun the workflow because billing unlock is not confirmed. The next authoritative step is external billing resolution followed by a protected workflow rerun or dispatch on the intended `main` commit.
 
+## Sprint 36 Protected CI Rerun After Billing Unlock State
+
+Sprint 36 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-36-protected-ci-rerun-after-billing-unlock.md
+```
+
+Sprint 36 handoff record:
+
+```text
+docs/implementation/giwa-protected-ci-rerun-after-billing-unlock.md
+```
+
+Current state:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+readOnlyEvidence=docs/evidence/protected-ci-sprint36-blocked-handoff.json
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+latestRealActionsRunConclusion=failure
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+sourceBinding=blocked-no-run-for-current-main
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+latestRealActionsRunArtifactTotalCount=0
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 36 does not rerun or dispatch the workflow because billing unlock is still not evidenced. The current `main` commit must receive a fresh protected CI run after unlock; stale run `27850867132` cannot prove the current head.
+
 ## Safety Confirmation
 
 Sprint 27 did not:

@@ -62,6 +62,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 33 | `2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md` | staging dry-run preparation packet under GitHub billing lock, host/runtime/storage/security/rollback gate alignment, and post-billing handoff without public hosting or deployment | Sprint 32 blocked-billing-lock |
 | 34 | `2026-06-20-sprint-34-hosted-adapter-readiness-under-protected-ci-blocker.md` | hosted adapter readiness packet for runtime, env, storage, migration, backup, restore, rate, queue, observability, security, rollback, and partner gates without implementing or connecting hosted infrastructure | Sprint 33 blocked-protected-ci |
 | 35 | `2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md` | post-billing protected CI rerun and artifact handoff plan, current billing-lock blocked state, source binding, required checks, and protected artifact metadata gates | Sprint 34 blocked-protected-ci |
+| 36 | `2026-06-20-sprint-36-protected-ci-rerun-after-billing-unlock.md` | protected CI rerun gate after Sprint 35 handoff, current-main source binding, billing-lock recheck, zero-artifact blocker, and staging/hosted/partner no-go update | Sprint 35 blocked-billing-lock |
 
 ## Sprint 0 Execution Artifacts
 
@@ -164,6 +165,8 @@ Sprint 33 prepares the staging dry-run packet while the GitHub account billing l
 Sprint 34 prepares the hosted adapter readiness packet while protected CI remains blocked. It defines adapter selection, process-env activation, redacted readiness, migration guard, backup catalog, restore drill, rate-limit and queue durability, observability, security, rollback, partner, and commercial gates. Sprint 34 does not implement an adapter, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, public-host, deploy, create release tags, or claim protected CI before required checks pass.
 
 Sprint 35 records the post-billing protected CI rerun and artifact handoff path while billing unlock remains unconfirmed. It preserves the current source-binding gap between `main` and the latest real Actions run, keeps rerun execution blocked, and defines the protected artifact metadata required before release approval, staging dry-run execution, hosted adapter implementation, partner promotion, public hosting, or deployment. Sprint 35 does not rerun workflows, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI before required checks pass.
+
+Sprint 36 rechecks the protected CI rerun gate after the Sprint 35 blocked handoff commit. Billing unlock is still not evidenced, current `main` is `30eddb3da26ca6cf8302d1396bd8f5fbe61759c1`, the latest real Actions run remains `27850867132` on `779b63878b37c3b4f3792dd67718ea5bb3e9d92b`, and no rerun or workflow dispatch is executed. Sprint 36 keeps protected CI, protected artifacts, release approval, staging dry-run execution, hosted adapter implementation, partner promotion, public hosting, deployment, managed infrastructure, wallet actions, chain-operation commands, dependency installation, release tags, and protected provenance claims blocked.
 
 ## Global Stop Conditions
 

@@ -9,7 +9,8 @@ Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local gi
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-sourceCommit=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=public
 remotePushApproval=approved-2026-06-20
@@ -536,6 +537,56 @@ Sprint 35 cannot rerun protected CI while billing unlock is unconfirmed. If a la
 | P1 | no protected artifact metadata | required checks pass but artifact metadata is absent | artifact handoff gate | block release approval and plan artifact handoff work |
 | P1 | workflow has no artifact upload | Actions artifacts API returns zero artifacts after checks pass | artifact upload gate | keep protected artifact upload blocked |
 | P2 | local advisory evidence promoted | `local-*` files are used as protected output | provenance gate | keep staging blocked |
+
+## Sprint 36 Protected CI Rerun After Billing Unlock
+
+Sprint 36 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-36-protected-ci-rerun-after-billing-unlock.md
+```
+
+Sprint 36 handoff record:
+
+```text
+docs/implementation/giwa-protected-ci-rerun-after-billing-unlock.md
+```
+
+Current Sprint 36 blocker state:
+
+```text
+currentMainHead=30eddb3da26ca6cf8302d1396bd8f5fbe61759c1
+readOnlyEvidence=docs/evidence/protected-ci-sprint36-blocked-handoff.json
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+latestRealActionsRunConclusion=failure
+latestRealActionsRunArtifactTotalCount=0
+billingUnlockConfirmed=false
+currentMainCheckRuns=0
+noActionsRunForCurrentMain=true
+rerunAllowed=false
+rerunExecuted=false
+workflowDispatchExecuted=false
+sourceBinding=blocked-no-run-for-current-main
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+releaseApproval=blocked
+stagingDryRunExecution=blocked-protected-ci
+hostedAdapterImplementation=blocked
+partnerPromotion=blocked
+```
+
+Sprint 36 cannot proceed to staging dry-run execution or hosted adapter implementation while billing unlock is unconfirmed and current `main` has no protected CI run.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | stale rerun evidence | rerun targets `779b638...` instead of current `main` | source binding gate | dispatch on `main` only after billing unlock |
+| P1 | current main has no check runs | current head was pushed with `[skip ci]` | protected CI gate | keep release approval blocked |
+| P1 | artifact upload absent | Actions artifacts API returns zero artifacts | artifact handoff gate | keep protected artifact upload blocked |
+| P1 | billing unlock absent | first job remains account billing locked | GitHub account gate | do not rerun or dispatch |
+| P2 | adapter work starts under blocked CI | hosted adapter implementation begins before protected CI pass | hosted adapter gate | keep implementation advisory-only |
 
 ## Sprint 21 Failure Triage
 
