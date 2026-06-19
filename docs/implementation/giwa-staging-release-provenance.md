@@ -38,7 +38,7 @@ Observed Sprint 29 remote state:
 repository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=private
 remoteName=origin
-pushedCommit=f0a54e684bcd873cedc3623a8416faf356484730
+pushedCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
 githubActionsRun=observed-startup-failure
 requiredCheckStatuses=absent
 protectedArtifactUploadMetadata=absent
@@ -539,3 +539,20 @@ branchProtectionErrorClass=github-plan-or-visibility-gate
 ```
 
 Staging dry-run remains blocked until a successful protected CI run produces required check statuses and branch protection is configured or an explicit source-control policy replacement is approved.
+
+## Sprint 30 Startup Failure Triage
+
+Sprint 30 routes the current GitHub Actions failure before protected artifact handoff:
+
+```text
+plan=docs/superpowers/plans/2026-06-20-sprint-30-protected-ci-startup-and-branch-policy-unblock.md
+triage=docs/implementation/giwa-github-actions-startup-failure-triage.md
+latestPushRunId=27848419907
+latestPushRunConclusion=startup_failure
+latestPushRunJobs=0
+checkRuns=0
+protectedArtifactGeneration=blocked
+protectedArtifactUploadMetadata=blocked
+```
+
+Protected artifact generation and upload metadata are downstream of successful GitHub job/check contexts. A diagnostic workflow may classify the startup gate, but it cannot substitute for the protected `ci-source-provenance` required-check set or release approval.

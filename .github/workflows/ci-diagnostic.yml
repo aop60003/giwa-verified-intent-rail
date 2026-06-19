@@ -1,0 +1,53 @@
+name: ci-diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-diagnostic.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic-platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record platform context
+        run: |
+          echo "diagnostic_platform=ubuntu"
+          echo "event_name=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
+          echo "sha=${{ github.sha }}"
+
+  diagnostic-checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: diagnostic-platform
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record checkout context
+        run: |
+          echo "diagnostic_checkout=pass"
+          git rev-parse --is-inside-work-tree
+          git rev-parse HEAD
+
+  diagnostic-windows:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    needs: diagnostic-platform
+    steps:
+      - name: Record Windows platform context
+        shell: pwsh
+        run: |
+          Write-Host "diagnostic_platform=windows"
+          Write-Host "event_name=${{ github.event_name }}"
+          Write-Host "ref=${{ github.ref }}"
+          Write-Host "sha=${{ github.sha }}"

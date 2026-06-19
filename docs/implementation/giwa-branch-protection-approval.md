@@ -113,6 +113,16 @@ It does not authorize:
 | artifact-provenance check missing | keep protected CI incomplete |
 | GitHub plan or private visibility blocks branch protection | keep branch protection blocked until plan upgrade or explicit public repository conversion approval |
 
+## Sprint 30 Retry Policy
+
+The Sprint 29 branch protection attempt returned a plan or visibility gate for the private repository. Sprint 30 may retry branch protection only after one of these has changed and is recorded:
+
+- GitHub plan or repository feature availability now supports private repository branch protection.
+- Public repository conversion is explicitly approved as a source visibility decision and completed after a source-safety review.
+- A substitute source-control policy is explicitly approved for the private repository and recorded as non-branch-protection release governance.
+
+Do not add queued third-party app check suites as required checks. Only stable, intentionally configured, passing check contexts with owners can be considered for required-check policy.
+
 ## Exit Gate
 
 Branch protection approval is ready only when:

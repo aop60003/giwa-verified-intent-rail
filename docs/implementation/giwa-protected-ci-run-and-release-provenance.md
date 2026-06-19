@@ -190,6 +190,22 @@ Protected provenance remains blocked by:
 - no release owner approval
 - no rollback owner
 
+## Sprint 30 Startup Triage
+
+Sprint 30 continues from the Sprint 29 result with a focused startup-failure triage:
+
+```text
+plan=docs/superpowers/plans/2026-06-20-sprint-30-protected-ci-startup-and-branch-policy-unblock.md
+triageRecord=docs/implementation/giwa-github-actions-startup-failure-triage.md
+latestPushedCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
+latestPushRunId=27848419907
+latestPushRunConclusion=startup_failure
+latestPushRunJobs=0
+checkRuns=0
+```
+
+The next safe action is to classify whether GitHub can start any minimal workflow job. That diagnostic does not weaken the protected check list, does not create protected artifact evidence, and does not unblock release approval by itself.
+
 ## Safety Confirmation
 
 Sprint 27 did not:

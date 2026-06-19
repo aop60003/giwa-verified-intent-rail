@@ -9,11 +9,12 @@ Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local gi
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-sourceCommit=f0a54e684bcd873cedc3623a8416faf356484730
+sourceCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 remotePushApproval=approved-2026-06-20
 remotePush=complete
 githubActionsRun=observed-startup-failure
+githubActionsJobs=0
 requiredCheckStatuses=absent
 protectedArtifactGeneration=absent
 protectedArtifactUploadMetadata=absent
@@ -31,7 +32,7 @@ backup restore drill=absent
 
 ## Blocker Register
 
-| Blocker | Current status | Required evidence | Sprint 20 impact |
+| Blocker | Current status | Required evidence | Staging impact |
 | --- | --- | --- | --- |
 | Source provenance | partial-remote / branch policy blocked | remote GitHub repository, push approval, immutable remote commit, and branch policy | blocks deployment dry run |
 | Protected CI | blocked-startup-failure | successful GitHub workflow run id, exact required-check statuses including `protected-ci-gate`, protected artifact generation, and protected artifact upload metadata | blocks release provenance |
@@ -298,6 +299,9 @@ pushRunId=27848145919
 pushRunConclusion=startup_failure
 dispatchRunId=27848184212
 dispatchRunConclusion=startup_failure
+latestPushedCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
+latestPushRunId=27848419907
+latestPushRunConclusion=startup_failure
 jobsCreated=0
 protectedArtifactUploadMetadata=absent
 ```
@@ -316,6 +320,42 @@ summary=Upgrade to GitHub Pro or make this repository public to enable this feat
 | P1 | branch protection unavailable | GitHub API returns plan or visibility 403 | branch protection gate | upgrade GitHub plan or explicitly approve public repository conversion before retry |
 | P1 | protected artifact metadata absent | artifacts count is zero for observed run | protected artifact gate | keep staging-named protected artifact outputs blocked |
 | P2 | source remote exists without successful CI | remote and pushed commit exist but checks failed before jobs | release provenance | keep source provenance partial and release approval blocked |
+
+## Sprint 30 Protected CI Startup And Branch Policy Unblock
+
+Sprint 30 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-30-protected-ci-startup-and-branch-policy-unblock.md
+```
+
+Sprint 30 triage record:
+
+```text
+docs/implementation/giwa-github-actions-startup-failure-triage.md
+```
+
+Current Sprint 30 blocker state:
+
+```text
+sourceProvenance=partial-remote
+protectedCI=blocked-startup-failure
+protectedCIJobs=0
+branchProtection=blocked-github-plan-or-visibility
+thirdPartyCheckSuites=non-authoritative
+protectedArtifactGeneration=blocked
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Every external-state transition in Sprint 30 or later must update this blocker register with run id, source commit, job count, check contexts, branch-protection result, artifact count, owner/timestamp, and next retry condition.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | diagnostic workflow creates no jobs | minimal workflow has `startup_failure` with zero jobs | GitHub account or platform gate | keep protected CI blocked and record plan, billing, runner, or visibility gate |
+| P1 | diagnostic workflow passes but protected workflow fails before jobs | `ci-diagnostic` has jobs while `ci-source-provenance` does not | workflow graph or YAML gate | inspect `.github/workflows/ci.yml` without dropping required checks |
+| P1 | third-party app checks are queued | Cloudtype, Cloudflare, or Vercel suites remain queued | non-authoritative integration gate | do not add them to required checks and do not trigger provider setup |
+| P1 | branch policy workaround requested | private repo branch protection stays 403 | source-control policy gate | require plan upgrade, explicit public repository conversion, or approved substitute policy |
 
 ## Sprint 21 Failure Triage
 

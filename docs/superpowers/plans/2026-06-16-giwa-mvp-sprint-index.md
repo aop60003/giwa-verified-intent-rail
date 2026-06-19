@@ -56,6 +56,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 27 | `2026-06-19-sprint-27-protected-ci-run-and-release-provenance.md` | protected CI run and release provenance probe that records remote GitHub, pushed source, Actions status, branch protection, release approval, and rollback-owner blockers without pushing or deploying | Sprint 26 approval |
 | 28 | `2026-06-19-sprint-28-github-remote-and-protected-ci-activation.md` | GitHub remote and protected CI activation plan for workflow hardening, remote/push/Actions/branch-protection approval gates, staging artifact handoff, and protected provenance blockers | Sprint 27 approval |
 | 29 | `2026-06-19-sprint-29-github-remote-activation-after-user-approval.md` | approved GitHub private remote creation or reuse, push, real Actions observation, branch-protection attempt, and protected CI blocker recording without public hosting or deployment | Sprint 28 approval |
+| 30 | `2026-06-20-sprint-30-protected-ci-startup-and-branch-policy-unblock.md` | GitHub Actions startup failure triage, minimal diagnostic workflow, branch policy blocker routing, third-party check-suite classification, and protected CI blocker updates | Sprint 29 approval |
 
 ## Sprint 0 Execution Artifacts
 
@@ -146,6 +147,8 @@ Sprint 27 probes the protected CI and release provenance transition after Sprint
 Sprint 28 plans the GitHub remote and protected CI activation path. It can harden the local workflow with CI guard scripts and future protected artifact handoff metadata, but remote add, push, Actions dispatch or reliance, branch protection, artifact upload, release approval, public hosting, deployment, managed infrastructure, wallet actions, chain-operation commands, and dependency installation remain gated by explicit external approval.
 
 Sprint 29 executes the approved private GitHub remote activation path. It may create or reuse `aop60003/giwa-verified-intent-rail` as a private repository, add `origin`, push `main`, observe the real `ci-source-provenance` workflow, and attempt branch protection after matching check names exist. Sprint 29 does not public-host, deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim staging promotion from incomplete GitHub evidence.
+
+Sprint 30 diagnoses the GitHub Actions `startup_failure` state observed after Sprint 29. It may add a minimal diagnostic workflow to separate repository/account/platform startup gates from protected workflow YAML or runner issues. Sprint 30 keeps branch protection blocked unless a GitHub plan, repository visibility, or approved substitute source-control policy changes. It does not public-host, deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI provenance before real job/check contexts exist.
 
 ## Global Stop Conditions
 
