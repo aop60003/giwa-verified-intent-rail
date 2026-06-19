@@ -341,6 +341,9 @@ Current Sprint 30 blocker state:
 sourceProvenance=partial-remote
 protectedCI=blocked-startup-failure
 protectedCIJobs=0
+diagnosticRunId=27849055389
+diagnosticRunConclusion=startup_failure
+diagnosticRunJobs=0
 branchProtection=blocked-github-plan-or-visibility
 thirdPartyCheckSuites=non-authoritative
 protectedArtifactGeneration=blocked

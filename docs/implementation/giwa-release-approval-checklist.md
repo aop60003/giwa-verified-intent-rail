@@ -174,6 +174,15 @@ Sprint 30 triage record:
 docs/implementation/giwa-github-actions-startup-failure-triage.md
 ```
 
+Observed Sprint 30 diagnostic:
+
+```text
+diagnosticRunId=27849055389
+diagnosticRunConclusion=startup_failure
+diagnosticRunJobs=0
+rootCauseClass=repository-account-platform-startup-gate
+```
+
 Release approval remains blocked until:
 
 - GitHub Actions creates real job/check contexts.

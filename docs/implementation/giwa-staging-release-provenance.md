@@ -550,9 +550,12 @@ triage=docs/implementation/giwa-github-actions-startup-failure-triage.md
 latestPushRunId=27848419907
 latestPushRunConclusion=startup_failure
 latestPushRunJobs=0
+diagnosticRunId=27849055389
+diagnosticRunConclusion=startup_failure
+diagnosticRunJobs=0
 checkRuns=0
 protectedArtifactGeneration=blocked
 protectedArtifactUploadMetadata=blocked
 ```
 
-Protected artifact generation and upload metadata are downstream of successful GitHub job/check contexts. A diagnostic workflow may classify the startup gate, but it cannot substitute for the protected `ci-source-provenance` required-check set or release approval.
+Protected artifact generation and upload metadata are downstream of successful GitHub job/check contexts. The diagnostic workflow classified the failure as a repository/account/platform startup gate because it also failed with zero jobs. It cannot substitute for the protected `ci-source-provenance` required-check set or release approval.

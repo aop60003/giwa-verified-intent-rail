@@ -201,10 +201,13 @@ latestPushedCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
 latestPushRunId=27848419907
 latestPushRunConclusion=startup_failure
 latestPushRunJobs=0
+diagnosticRunId=27849055389
+diagnosticRunConclusion=startup_failure
+diagnosticRunJobs=0
 checkRuns=0
 ```
 
-The next safe action is to classify whether GitHub can start any minimal workflow job. That diagnostic does not weaken the protected check list, does not create protected artifact evidence, and does not unblock release approval by itself.
+The diagnostic workflow also failed before creating jobs, so the current root-cause class is `repository-account-platform-startup-gate`. That diagnostic does not weaken the protected check list, does not create protected artifact evidence, and does not unblock release approval by itself.
 
 ## Safety Confirmation
 

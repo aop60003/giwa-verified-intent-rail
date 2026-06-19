@@ -60,6 +60,45 @@ The diagnostic workflow must not:
 - run `deploy:giwa`, `fund:giwa`, `anchor:giwa`, `verify:giwa`, or mint
 - claim protected CI provenance
 
+## Sprint 30 Diagnostic Result
+
+Sprint 30 added and dispatched:
+
+```text
+diagnosticWorkflowPath=.github/workflows/ci-diagnostic.yml
+diagnosticWorkflowName=ci-diagnostic
+diagnosticRunId=27849055389
+diagnosticRunUrl=https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27849055389
+diagnosticRunHeadSha=450df0435910eeeb7f91b68d31c878806ac5157d
+diagnosticRunConclusion=startup_failure
+diagnosticRunJobs=0
+```
+
+The diagnostic workflow is active in GitHub alongside the protected CI candidate workflow:
+
+```text
+ci-diagnostic=.github/workflows/ci-diagnostic.yml active
+ci-source-provenance=.github/workflows/ci.yml active
+```
+
+Repository Actions permissions are not the immediate blocker:
+
+```text
+actionsEnabled=true
+allowedActions=all
+defaultWorkflowPermissions=read
+```
+
+The GitHub billing API probe did not expose billing or private runner minutes with the current CLI auth scope:
+
+```text
+billingProbe=unavailable
+billingProbeStatus=404
+billingProbeRequiredScope=user
+```
+
+Because a minimal workflow with no dependency install, no app command, and no env access also failed before job creation, the root-cause class is now `repository-account-platform-startup-gate`. The protected workflow YAML and package command matrix remain unproven but are no longer the first suspected layer.
+
 ## Branch Protection Status
 
 Observed branch protection attempt:
