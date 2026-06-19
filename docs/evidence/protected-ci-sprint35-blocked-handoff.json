@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1",
+  "authority": "blocked-github-actions-readonly",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "capturedAt": "2026-06-20T07:31:00+09:00",
+  "repository": "https://github.com/aop60003/giwa-verified-intent-rail",
+  "branch": {
+    "name": "main",
+    "protected": true,
+    "currentHeadSha": "11587e18caae0c73bf0ac61ef8f6e096655f8cac"
+  },
+  "latestRealActionsRun": {
+    "runId": 27850867132,
+    "workflowName": "ci-source-provenance",
+    "event": "push",
+    "headSha": "779b63878b37c3b4f3792dd67718ea5bb3e9d92b",
+    "status": "completed",
+    "conclusion": "failure",
+    "firstJob": {
+      "name": "source-provenance",
+      "conclusion": "failure",
+      "steps": []
+    },
+    "downstreamJobs": {
+      "count": 9,
+      "conclusion": "skipped"
+    },
+    "artifacts": {
+      "api": "repos/aop60003/giwa-verified-intent-rail/actions/runs/27850867132/artifacts",
+      "totalCount": 0
+    }
+  },
+  "sprint35Decision": {
+    "billingUnlockConfirmed": false,
+    "rerunExecuted": false,
+    "noActionsRunForCurrentMain": true,
+    "currentMainCommitSkippedCI": true,
+    "sourceBinding": "blocked-no-run-for-current-main",
+    "protectedCI": "blocked-billing-lock",
+    "protectedArtifactGeneration": "blocked",
+    "protectedArtifactUpload": "blocked",
+    "protectedArtifactUploadImplemented": false,
+    "releaseApproval": "blocked",
+    "stagingDryRunExecution": "blocked-protected-ci",
+    "hostedAdapterImplementation": "blocked",
+    "partnerPromotion": "blocked"
+  },
+  "requiredChecks": [
+    "source-provenance",
+    "workflow-command-boundary",
+    "web-checks",
+    "protocol-checks",
+    "contracts-checks",
+    "node-syntax-checks",
+    "safe-scans",
+    "workspace-checks",
+    "artifact-provenance",
+    "protected-ci-gate"
+  ],
+  "forbiddenActionsObserved": {
+    "workflowRerun": false,
+    "workflowDispatch": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "walletTransaction": false,
+    "chainOperationCommand": false,
+    "dependencyInstall": false,
+    "releaseTag": false
+  }
+}

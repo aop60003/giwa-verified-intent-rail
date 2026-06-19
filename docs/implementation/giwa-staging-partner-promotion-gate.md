@@ -75,3 +75,19 @@ protectedCI=blocked-billing-lock
 ```
 
 Partner beta traffic remains blocked until protected CI, adapter implementation approval, storage/restore evidence, auth/tenant/origin gates, incident owner, retention owner, and partner signoff are recorded.
+
+## Sprint 35 Rerun Handoff State
+
+Sprint 35 keeps partner promotion blocked:
+
+```text
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUploadImplemented=false
+partnerPromotion=blocked
+```
+
+Partner-facing handoff remains local/advisory only until protected CI and protected artifacts pass, reviewer signoff exists, incident and retention owners are named, and the blocker register is closed.

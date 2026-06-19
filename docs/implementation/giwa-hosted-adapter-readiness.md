@@ -126,3 +126,23 @@ protectedCI=blocked-billing-lock
 stagingDryRunExecution=blocked-protected-ci
 nextSprint=docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
 ```
+
+## Sprint 35 Rerun Handoff State
+
+Sprint 35 does not unblock hosted adapter implementation:
+
+```text
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUploadImplemented=false
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+cloudSecretManagerConnection=blocked
+```
+
+Hosted adapter implementation requires a later protected-CI pass, protected artifact metadata, adapter owner, storage/restore evidence, auth/tenant/origin gates, rollback owner, and release approval.

@@ -488,6 +488,55 @@ Sprint 34 defines the adapter readiness contract only. It cannot authorize hoste
 | P2 | memory rate or queue state promoted | in-memory bucket or queue is treated as multi-instance evidence | durability gate | require durable behavior or explicit rehearsal limitation |
 | P2 | missing restore owner | backup catalog or restore drill owner absent | restore gate | keep staging dry-run execution blocked |
 
+## Sprint 35 Post-Billing Protected CI Rerun And Artifact Handoff
+
+Sprint 35 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Sprint 35 handoff record:
+
+```text
+docs/implementation/giwa-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Current Sprint 35 blocker state:
+
+```text
+currentMainHead=11587e18caae0c73bf0ac61ef8f6e096655f8cac
+readOnlyEvidence=docs/evidence/protected-ci-sprint35-blocked-handoff.json
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+latestRealActionsRunConclusion=failure
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+sourceBinding=blocked-no-run-for-current-main
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+latestRealActionsRunArtifactTotalCount=0
+releaseApproval=blocked
+stagingDryRunExecution=blocked-protected-ci
+hostedAdapterImplementation=blocked
+partnerPromotion=blocked
+```
+
+Sprint 35 cannot rerun protected CI while billing unlock is unconfirmed. If a later rerun targets a head SHA different from the intended `main` commit, it cannot be used as release evidence.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | rerun before billing unlock | `billingUnlockConfirmed=false` but workflow is rerun or dispatched | billing gate | stop and document the run as non-authoritative |
+| P1 | run head mismatch | protected run `headSha` differs from intended `main` commit | source binding gate | block artifact handoff |
+| P1 | skipped required check | any canonical required check is skipped, missing, or renamed | protected CI gate | block release approval |
+| P1 | no protected artifact metadata | required checks pass but artifact metadata is absent | artifact handoff gate | block release approval and plan artifact handoff work |
+| P1 | workflow has no artifact upload | Actions artifacts API returns zero artifacts after checks pass | artifact upload gate | keep protected artifact upload blocked |
+| P2 | local advisory evidence promoted | `local-*` files are used as protected output | provenance gate | keep staging blocked |
+
 ## Sprint 21 Failure Triage
 
 | Priority | Failure | Signal | Route | Required response |

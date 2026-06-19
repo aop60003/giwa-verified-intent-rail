@@ -247,7 +247,32 @@ Sprint 27 confirms local git and workflow state, but release approval remains bl
 Under the current remote-pushed but protected-CI-blocked state, the safe next sprint is:
 
 ```text
-docs/superpowers/plans/2026-06-20-sprint-34-post-billing-protected-ci-rerun-and-artifact-handoff.md
+docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
 ```
 
 Hosted adapter and staging dry-run execution paths remain blocked until protected source, workflow, artifact, release-owner, rollback-owner, and provenance gates exist.
+
+## Sprint 35 Release Approval Boundary
+
+Sprint 35 adds:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
+docs/implementation/giwa-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Release approval remains blocked:
+
+```text
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+releaseApproval=blocked
+```
+
+Before release approval can advance, a protected CI run must target the intended `main` source commit, pass all ten required checks, expose protected artifact metadata through the GitHub Actions artifacts API, and record release and rollback owners.

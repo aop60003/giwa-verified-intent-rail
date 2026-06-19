@@ -274,6 +274,44 @@ stagingPromotion=blocked
 
 Sprint 33 prepares the dry-run packet for post-billing review only. It does not create protected CI provenance, protected artifacts, release approval, public hosting, deployment, managed infrastructure, wallet actions, or chain-operation commands.
 
+## Sprint 35 Post-Billing Rerun And Artifact Handoff State
+
+Sprint 35 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Sprint 35 handoff record:
+
+```text
+docs/implementation/giwa-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Current state:
+
+```text
+currentMainHead=11587e18caae0c73bf0ac61ef8f6e096655f8cac
+readOnlyEvidence=docs/evidence/protected-ci-sprint35-blocked-handoff.json
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+latestRealActionsRunConclusion=failure
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+sourceBinding=blocked-no-run-for-current-main
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+latestRealActionsRunArtifactTotalCount=0
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 35 does not rerun the workflow because billing unlock is not confirmed. The next authoritative step is external billing resolution followed by a protected workflow rerun or dispatch on the intended `main` commit.
+
 ## Safety Confirmation
 
 Sprint 27 did not:

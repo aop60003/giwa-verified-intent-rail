@@ -112,5 +112,30 @@ protectedArtifactGeneration=blocked
 releaseApproval=blocked
 publicHosting=blocked
 deployment=blocked
-nextSprint=docs/superpowers/plans/2026-06-20-sprint-34-post-billing-protected-ci-rerun-and-artifact-handoff.md
+nextSprint=docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
 ```
+
+## Sprint 35 Rerun Handoff State
+
+Sprint 35 records that billing unlock is still unconfirmed:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
+docs/implementation/giwa-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Current decision:
+
+```text
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+stagingDryRunExecution=blocked-protected-ci
+```
+
+Staging dry-run execution remains blocked until protected CI passes on the intended source commit and protected artifact metadata is recorded.

@@ -342,3 +342,20 @@ commercialReadiness=blocked
 ```
 
 Commercial readiness requires a later protected-CI-backed adapter implementation and release approval. A readiness packet alone cannot authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, or chain-operation commands.
+
+## Sprint 35 Rerun Handoff Gate
+
+Sprint 35 does not change commercial readiness:
+
+```text
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUploadImplemented=false
+releaseApproval=blocked
+commercialReadiness=blocked
+```
+
+Commercial readiness remains blocked until protected CI passes on the intended source commit, protected artifact metadata exists, release and rollback owners approve, and staging/hosted/partner gates are green.

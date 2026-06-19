@@ -623,3 +623,42 @@ stagingPromotion=blocked
 ```
 
 The hosted adapter readiness record cannot substitute for protected artifact evidence, release owner approval, rollback owner approval, or a passing protected-CI run from the intended source commit.
+
+## Sprint 35 Post-Billing Protected CI Rerun Boundary
+
+Sprint 35 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-35-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Sprint 35 handoff record:
+
+```text
+docs/implementation/giwa-post-billing-protected-ci-rerun-and-artifact-handoff.md
+```
+
+Release authority remains blocked:
+
+```text
+currentMainHead=11587e18caae0c73bf0ac61ef8f6e096655f8cac
+readOnlyEvidence=docs/evidence/protected-ci-sprint35-blocked-handoff.json
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+sourceBinding=blocked-no-run-for-current-main
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+protectedArtifactUploadImplemented=false
+latestRealActionsRunArtifactTotalCount=0
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 35 defines the post-billing handoff contract only. Protected CI provenance begins only after a run on the intended source commit passes all ten required checks and exposes staging-named artifact metadata.
+
+If a future protected CI run passes but the Actions artifacts API returns zero artifacts, protected CI can be recorded separately from artifact handoff, but release approval and staging promotion remain blocked until protected artifact upload metadata exists.

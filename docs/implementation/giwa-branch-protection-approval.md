@@ -156,6 +156,23 @@ stagingDryRunExecution=blocked-protected-ci
 
 Branch protection is configured evidence only. It does not authorize staging while the required checks are failing or skipped.
 
+Sprint 35 keeps the same branch boundary:
+
+```text
+currentMainHead=11587e18caae0c73bf0ac61ef8f6e096655f8cac
+latestRealActionsRunId=27850867132
+latestRealActionsRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+branchProtected=true
+requiredChecks=10
+billingUnlockConfirmed=false
+rerunExecuted=false
+noActionsRunForCurrentMain=true
+currentMainCommitSkippedCI=true
+sourceBinding=blocked-no-run-for-current-main
+```
+
+An admin-bypassed direct push updates `main`, but it is not protected merge evidence. Protected CI authority requires a passing run on the intended `main` commit with the canonical required checks.
+
 ## Exit Gate
 
 Branch protection approval is ready only when:

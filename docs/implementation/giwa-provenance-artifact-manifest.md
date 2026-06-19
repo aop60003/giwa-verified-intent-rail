@@ -62,7 +62,7 @@ Those values are recomputed from sanitized public evidence when available and re
     "sourceState": "blocked"
   },
   "ci": {
-    "workflowPath": ".github/workflows/ci-source-provenance.yml",
+    "workflowPath": ".github/workflows/ci.yml",
     "workflowFileSha256": "computed-in-protected-ci",
     "runId": "required-after-protected-ci",
     "runAttempt": "required-after-protected-ci",
@@ -135,7 +135,9 @@ Those values are recomputed from sanitized public evidence when available and re
     "contracts": "pass-or-blocked",
     "workspace": "pass-or-blocked",
     "syntax": "pass-or-blocked",
-    "safeScans": "pass-or-blocked"
+    "safeScans": "pass-or-blocked",
+    "artifactProvenance": "pass-or-blocked",
+    "protectedCiGate": "pass-or-blocked"
   }
 }
 ```
@@ -159,7 +161,7 @@ Those values are recomputed from sanitized public evidence when available and re
     "sourceState": "blocked-until-protected-ci"
   },
   "workflow": {
-    "path": ".github/workflows/ci-source-provenance.yml",
+    "path": ".github/workflows/ci.yml",
     "workflowFileSha256": "computed",
     "runId": "required-after-protected-ci",
     "requiredChecks": [
@@ -171,7 +173,8 @@ Those values are recomputed from sanitized public evidence when available and re
       "node-syntax-checks",
       "safe-scans",
       "workspace-checks",
-      "artifact-provenance"
+      "artifact-provenance",
+      "protected-ci-gate"
     ]
   },
   "approvals": {
@@ -192,6 +195,67 @@ Those values are recomputed from sanitized public evidence when available and re
   "promotionDecision": "blocked-until-release-approval"
 }
 ```
+
+## Protected Artifact Upload Metadata Schema
+
+Protected artifact upload metadata is required before staging release provenance can advance. This metadata must be produced by a passing protected CI run, not by a local advisory script.
+
+```json
+{
+  "schemaVersion": "1",
+  "authority": "protected-ci",
+  "repository": "https://github.com/aop60003/giwa-verified-intent-rail",
+  "workflowPath": ".github/workflows/ci.yml",
+  "workflowFileSha256": "computed-in-protected-ci",
+  "runId": "required-after-protected-ci",
+  "runAttempt": 1,
+  "runUrl": "https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/<run-id>",
+  "headSha": "intended-main-source-commit",
+  "jobName": "artifact-provenance",
+  "uploadedAt": "ISO-8601",
+  "retentionDays": 0,
+  "expiresAt": "ISO-8601",
+  "artifacts": [
+    {
+      "artifactName": "giwa-staging-provenance",
+      "artifactId": "github-artifact-id",
+      "artifactUrl": "github-artifact-url",
+      "sizeBytes": 0,
+      "files": [
+        {
+          "path": "docs/evidence/giwa-staging-artifact-manifest.json",
+          "sha256": "computed-from-downloaded-protected-artifact",
+          "bytes": 0
+        },
+        {
+          "path": "docs/evidence/giwa-staging-provenance-report.json",
+          "sha256": "computed-from-downloaded-protected-artifact",
+          "bytes": 0
+        },
+        {
+          "path": "docs/evidence/giwa-staging-provenance-report.json.sha256",
+          "sha256": "computed-from-downloaded-protected-artifact",
+          "bytes": 0
+        }
+      ]
+    }
+  ],
+  "manifestSha256": "computed-from-downloaded-protected-artifact",
+  "provenanceReportSha256": "computed-from-downloaded-protected-artifact",
+  "provenanceSidecarSha256": "computed-from-downloaded-protected-artifact"
+}
+```
+
+Required protected CI output paths:
+
+```text
+docs/evidence/giwa-staging-artifact-manifest.json
+docs/evidence/giwa-staging-provenance-report.json
+docs/evidence/giwa-staging-provenance-report.json.sha256
+docs/evidence/giwa-staging-artifact-upload-metadata.json
+```
+
+Local advisory reports cannot populate these fields and cannot unblock staging.
 
 ## Public Artifact Policy
 
