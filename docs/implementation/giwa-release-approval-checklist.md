@@ -2,27 +2,35 @@
 
 ## Purpose
 
-This checklist defines what must be true before Sprint 21 can support release provenance. It does not approve public hosting or deployment.
+This checklist defines what must be true before protected CI can support release provenance. It does not approve public hosting or deployment.
 
 ## Current Status
 
 ```text
-.git=False
-.github=False
-.github/workflows=False
+.git=True
+.github=True
+.github/workflows=True
+workflowPath=.github/workflows/ci.yml
+localInitialCommit=9918a5267a79f63ef512be7847b6f89d95ac8081
+remoteGitHubRepository=absent
+githubActionsRun=absent
+requiredCheckStatuses=absent
 protected CI=absent
-artifact manifest=blocked
-provenance report=blocked
+protected artifact manifest=blocked
+protected provenance report=blocked
 release approval=blocked
 ```
 
 ## Required Repository Gates
 
-- Repository transition approved by the user.
-- Workflow-file creation approved by the user.
+- Repository transition approved by the user and completed locally.
+- Workflow-file creation approved by the user and completed locally.
 - `.git=True`.
 - `.github=True`.
-- `.github/workflows/ci-source-provenance.yml` reviewed.
+- `.github/workflows/ci.yml` reviewed.
+- GitHub remote repository recorded.
+- Push approval recorded.
+- Immutable pushed source commit recorded.
 - Protected branch name recorded.
 - Reviewer policy recorded.
 - Merge policy recorded.
@@ -82,7 +90,7 @@ The command-boundary guard may be a standalone required check or a required step
 releaseOwner=<name-or-role>
 approvedAt=<ISO-8601>
 sourceCommit=<protected-ci-commit>
-workflowPath=.github/workflows/ci-source-provenance.yml
+workflowPath=.github/workflows/ci.yml
 ciRunId=<protected-ci-run-id>
 artifactManifestPath=docs/evidence/giwa-staging-artifact-manifest.json
 provenanceReportPath=docs/evidence/giwa-staging-provenance-report.json
@@ -116,9 +124,10 @@ Rollback can replace app artifacts and lock new writes. Rollback cannot reverse 
 
 Release approval remains blocked when any of these are true:
 
-- `.git=False`
-- `.github=False`
-- workflow file absent
+- remote GitHub repository absent
+- pushed source commit absent
+- GitHub Actions run id absent
+- required-check statuses absent
 - protected branch absent
 - required checks not enforced
 - artifact manifest absent
@@ -130,6 +139,16 @@ Release approval remains blocked when any of these are true:
 - static fallback smoke fails
 - receipt opens before `matched`
 - external partner signoff is absent for a partner beta promotion
+
+## Sprint 27 Protected CI Probe
+
+Sprint 27 record:
+
+```text
+docs/implementation/giwa-protected-ci-run-and-release-provenance.md
+```
+
+Sprint 27 confirms local git and workflow state, but release approval remains blocked because there is no configured GitHub remote, no push approval, no GitHub Actions run id, no required-check statuses, no protected artifact generation, no branch protection evidence, no release owner, and no rollback owner.
 
 ## Sprint 22 Recommendation
 

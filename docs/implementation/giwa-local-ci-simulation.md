@@ -25,7 +25,7 @@ protected branch status
 
 Logical protected-CI artifact paths such as the staging artifact manifest and provenance report remain blocked until protected CI exists. Local copies, if a later sprint creates them, are diagnostic only unless tied to a protected GitHub run id and artifact digest.
 
-## Current Non-Git State
+## Current Local Source State
 
 ```powershell
 Test-Path .git
@@ -34,16 +34,16 @@ Test-Path .github\workflows
 Test-Path pnpm-lock.yaml
 ```
 
-Expected current state:
+Expected current state after Sprint 26:
 
 ```text
-False
-False
-False
+True
+True
+True
 True
 ```
 
-This means authoritative source provenance is blocked.
+This means local source and workflow files exist, but authoritative source provenance is still blocked until a GitHub remote, pushed source commit, real workflow run id, required-check statuses, and branch-protection evidence exist.
 
 ## Local Simulation Commands
 

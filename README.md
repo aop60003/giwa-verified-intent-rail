@@ -64,7 +64,7 @@ Sprint 21 CI Workflow Implementation is the next gated execution plan for source
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
 Sprint 23 Provenance Report Local Implementation adds local-advisory report verification, timestamp-aware drift detection, command evidence binding, domain hash classification, and protected CI handoff fields without enabling protected CI or deployment.
 Sprint 24 CI Workflow File Creation After Approval is the next approval-gated plan for repository initialization, workflow file creation, branch protection, command matrix, and artifact upload policy without enabling protected CI or deployment.
-Sprint 25 Git and Workflow Initialization After Approval is the approval-gated execution plan for repository initialization, initial commit policy, workflow file creation, branch protection preparation, and local-advisory to protected-CI handoff. Sprint 26 executed the approved local repository and workflow initialization path. It creates local source provenance and a workflow file, but protected CI, branch protection, public hosting, deployment, and release-grade provenance remain blocked until a remote GitHub repository, push approval, and real CI statuses exist.
+Sprint 25 Git and Workflow Initialization After Approval is the approval-gated execution plan for repository initialization, initial commit policy, workflow file creation, branch protection preparation, and local-advisory to protected-CI handoff. Sprint 26 executed the approved local repository and workflow initialization path. It creates local source provenance and a workflow file, but protected CI, branch protection, public hosting, deployment, and release-grade provenance remain blocked until a remote GitHub repository, push approval, and real CI statuses exist. Sprint 27 records the protected CI run and release provenance probe: no remote GitHub repository or Actions status exists yet, so protected CI, branch protection, release approval, and staging promotion remain blocked.
 
 - [Hosted ops runbook](docs/implementation/giwa-hosted-ops-runbook.md)
 - [Partner beta runbook](docs/implementation/giwa-partner-beta-runbook.md)
@@ -103,6 +103,8 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 25 protected CI transition checklist](docs/implementation/giwa-protected-ci-transition-checklist.md)
 - [Sprint 26 git and workflow initialization execution](docs/implementation/giwa-git-and-workflow-initialization-execution.md)
 - [Sprint 26 GitHub Actions workflow](.github/workflows/ci.yml)
+- [Sprint 27 protected CI run and release provenance plan](docs/superpowers/plans/2026-06-19-sprint-27-protected-ci-run-and-release-provenance.md)
+- [Sprint 27 protected CI run and release provenance record](docs/implementation/giwa-protected-ci-run-and-release-provenance.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)
 - [Sprint 23 local provenance report sidecar](docs/evidence/local-provenance-report.json.sha256)

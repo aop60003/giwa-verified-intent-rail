@@ -296,6 +296,16 @@ docs/implementation/giwa-git-and-workflow-initialization-execution.md
 
 Sprint 26 creates local git source provenance and `.github/workflows/ci.yml`. Commercial readiness remains blocked until a remote GitHub workflow run, exact required-check statuses, branch protection, protected artifact generation, release approval, and rollback owner are recorded. Sprint 26 does not authorize public hosting, deployment, managed infrastructure, wallet actions, or GIWA chain-operation commands.
 
+## Sprint 27 Protected CI Run And Release Provenance Gate
+
+Sprint 27 execution record:
+
+```text
+docs/implementation/giwa-protected-ci-run-and-release-provenance.md
+```
+
+Sprint 27 records that the local git repository and workflow file exist, but commercial readiness remains blocked because there is no configured GitHub remote, pushed source commit, GitHub Actions run id, exact required-check status set, branch protection evidence, protected artifact generation, release owner approval, or rollback owner. Sprint 27 does not authorize public hosting, deployment, managed infrastructure, wallet actions, or GIWA chain-operation commands.
+
 ## Release Gate Checklist
 
 The hosted ops release gate is documented in:

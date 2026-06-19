@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "verificationKind": "local-provenance-verification",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-19T09:32:59.042Z",
+  "generatedAt": "2026-06-19T13:44:09.237Z",
   "manifestPath": "docs/evidence/local-artifact-manifest.json",
   "reportPath": "docs/evidence/local-provenance-report.json",
   "verificationDecision": "pass",
@@ -15,7 +15,7 @@
     "failures": []
   },
   "reportHashPolicy": "external-only",
-  "reportSha256": "8cae49a35ad7db56a9c57167c790f57605779700cabf9af7b9d1c31a96d225f0",
+  "reportSha256": "6a8c7a805d4bb9dc0f9edc31bb4e4252d013f96fdd788cd1f79ea004a6a90f07",
   "sidecar": {
     "path": "docs/evidence/local-provenance-report.json.sha256",
     "decision": "pass"
@@ -30,18 +30,7 @@
       "node_modules"
     ]
   },
-  "knownBlockers": [
-    {
-      "id": "source-provenance",
-      "status": "blocked",
-      "reason": ".git is absent"
-    },
-    {
-      "id": "protected-ci",
-      "status": "blocked",
-      "reason": ".github workflows are absent"
-    }
-  ],
+  "knownBlockers": [],
   "releaseGrade": false,
   "canUnblockStaging": false,
   "failures": []

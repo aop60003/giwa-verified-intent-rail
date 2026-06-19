@@ -25,6 +25,9 @@ Observed Sprint 26 local state:
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
+remoteGitHubRepository=absent
+githubActionsRun=absent
+requiredCheckStatuses=absent
 protected-ci=blocked
 branch-protection=blocked
 ```
@@ -35,6 +38,7 @@ Required before staging dry run:
 | --- | --- |
 | Git-backed workspace | `Test-Path .git` returns `True` |
 | CI workflow path | `Test-Path .github` returns `True` and workflow path is reviewed |
+| Remote GitHub source | configured remote URL, push approval, and immutable pushed source commit |
 | Protected branch policy | recorded branch, reviewer, and merge policy |
 | Source commit | immutable commit id recorded in release manifest |
 | Lockfile state | no unexplained lockfile drift |
@@ -112,7 +116,7 @@ Sprint 20 turns this provenance gate into a future protected-CI plan. It does no
 
 ## Sprint 20 Source Provenance Gate
 
-Current blocker state:
+Historical Sprint 20 blocker state before repository initialization:
 
 ```text
 .git=False
@@ -120,12 +124,26 @@ Current blocker state:
 pnpm-lock.yaml=True
 ```
 
+Current Sprint 27 blocker state after local repository and workflow initialization:
+
+```text
+.git=True
+.github=True
+.github/workflows=True
+workflowPath=.github/workflows/ci.yml
+remoteGitHubRepository=absent
+githubActionsRun=absent
+protected-ci=blocked
+branch-protection=blocked
+authority=local-advisory
+```
+
 Source provenance stays blocked until:
 
-- `.git=True`
-- `.github=True`
 - workflow path is reviewed
+- remote GitHub repository and push approval are recorded
 - immutable source commit is recorded
+- GitHub Actions run id is recorded
 - protected branch, reviewer, and merge policy are recorded
 - root package manager is pinned and honored
 - lockfile drift is absent or approved
@@ -254,7 +272,7 @@ After approval:
 
 ## Sprint 21 Workflow Creation Gate
 
-Workflow creation is blocked until the user explicitly approves `.github/workflows/ci-source-provenance.yml`.
+Workflow creation was approved and executed locally at `.github/workflows/ci.yml`; protected CI remains blocked until that workflow runs from pushed GitHub source.
 
 The planned workflow must:
 
@@ -401,6 +419,29 @@ docs/implementation/giwa-git-and-workflow-initialization-execution.md
 ```
 
 Sprint 26 creates local source provenance and the workflow file at `.github/workflows/ci.yml`. It does not push, create a remote workflow run, configure branch protection, upload artifacts, create release tags, public-host, deploy, connect managed infrastructure, send wallet actions, run chain-operation commands, install dependencies, or create protected CI provenance.
+
+## Sprint 27 Protected CI Run And Release Provenance
+
+Sprint 27 execution record:
+
+```text
+docs/implementation/giwa-protected-ci-run-and-release-provenance.md
+```
+
+Sprint 27 confirms that local git and `.github/workflows/ci.yml` exist, but protected CI remains blocked:
+
+```text
+remoteGitHubRepository=absent
+remotePushApproval=absent
+githubActionsRun=absent
+requiredCheckStatuses=absent
+protectedArtifactGeneration=absent
+releaseApproval=blocked
+branchProtection=blocked
+authority=local-advisory
+```
+
+Local advisory artifact and provenance files can support review only. They cannot be promoted to staging release authority until protected CI regenerates equivalent evidence from pushed immutable source and branch protection enforces the exact required checks.
 
 ## Sprint 25 Readiness And Protected CI Transition
 

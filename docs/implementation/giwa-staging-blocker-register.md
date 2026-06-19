@@ -9,7 +9,15 @@ Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local gi
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-sourceCommit=local-initial-commit
+sourceCommit=local-initial-commit-only
+remoteGitHubRepository=absent
+remotePushApproval=absent
+remotePush=blocked
+githubActionsRun=absent
+requiredCheckStatuses=absent
+protectedArtifactGeneration=absent
+releaseApproval=absent
+rollbackOwner=absent
 protected-ci=blocked
 branch-protection=blocked
 external partner signoff=absent
@@ -24,8 +32,9 @@ backup restore drill=absent
 
 | Blocker | Current status | Required evidence | Sprint 20 impact |
 | --- | --- | --- | --- |
-| Source provenance | blocked | git-backed source, immutable commit, branch policy | blocks deployment dry run |
-| Protected CI | blocked | workflow path, required checks, artifact generation | blocks release provenance |
+| Source provenance | partial-local / remote blocked | remote GitHub repository, push approval, immutable remote commit, and branch policy | blocks deployment dry run |
+| Protected CI | blocked | GitHub workflow run id, exact required-check statuses, and protected artifact generation | blocks release provenance |
+| Branch protection | blocked | branch protection or ruleset evidence with exact required-check names matching workflow jobs | blocks release provenance |
 | Lockfile and dependency policy | partial | pinned pnpm version, frozen lockfile install, approved drift only | blocks release provenance |
 | Host selection | blocked | approved host, owner, origin policy | blocks public binding |
 | Environment contract | partial | names, categories, redacted readiness, activation owner | blocks hosted startup |
@@ -40,7 +49,7 @@ backup restore drill=absent
 | Request and rate gates | blocked | body limits, pre-auth limiting, bounded errors, source, credential, tenant, wallet, and verify buckets | blocks abuse boundary |
 | Public receipt errors | blocked | locked states return bounded not-found without gate details | blocks receipt route |
 | Tenant-safe export | blocked | export selects approved tenant/campaign/run and allowlisted schema | blocks public snapshot |
-| Rollback | blocked | artifact manifest, previous checksums, owner | blocks promotion |
+| Rollback | blocked | protected artifact manifest, previous checksums, rollback owner, and static fallback evidence | blocks promotion |
 | Static fallback | partial | GET smoke and recorded evidence labeling | required before staging |
 | Incident drill | partial | stale state, wrong receipt, timeout, bad export drills | blocks on-call readiness |
 | Partner promotion | blocked | closeout, reviewer signoff, owner approval | blocks beta promotion |
@@ -63,7 +72,7 @@ Sprint 20 plan:
 docs/superpowers/plans/2026-06-19-sprint-20-ci-and-source-provenance.md
 ```
 
-Sprint 20 remains blocked for promotion while `.git=False` or `.github=False`. Local checks are advisory until protected CI repeats them from an immutable git-backed source commit.
+Sprint 20 remains blocked for promotion while remote GitHub source, push approval, protected workflow evidence, real CI status, or branch protection evidence is absent. Local checks are advisory until protected CI repeats them from an immutable pushed source commit.
 
 ## Sprint 21 CI Workflow Implementation
 
@@ -73,7 +82,7 @@ Sprint 21 plan:
 docs/superpowers/plans/2026-06-19-sprint-21-ci-workflow-implementation.md
 ```
 
-Sprint 21 separates repository transition approval, workflow-file creation approval, local advisory checks, protected CI, artifact provenance, branch protection, release approval, failure triage, and rollback routing. Promotion remains blocked while `.git=False`, `.github=False`, or protected CI evidence is absent.
+Sprint 21 separates repository transition approval, workflow-file creation approval, local advisory checks, protected CI, artifact provenance, branch protection, release approval, failure triage, and rollback routing. Promotion remains blocked while remote GitHub source, real protected CI evidence, or branch protection evidence is absent.
 
 Sprint 21 dry-run artifacts:
 
@@ -94,7 +103,7 @@ docs/evidence/local-artifact-manifest.json
 docs/evidence/local-provenance-report.json
 ```
 
-The source provenance and protected CI blockers remain open while `.git=False` or `.github=False`.
+The source provenance and protected CI blockers remain open while remote GitHub source, protected CI evidence, or branch protection evidence is absent.
 
 | Priority | Failure | Signal | Route | Required response |
 | --- | --- | --- | --- | --- |
@@ -115,7 +124,7 @@ docs/evidence/local-provenance-report.json.sha256
 docs/evidence/local-provenance-verification.json
 ```
 
-The source provenance and protected CI blockers remain open while `.git=False`, `.github=False`, or protected workflow evidence is absent.
+The source provenance and protected CI blockers remain open while remote GitHub source, protected workflow evidence, real CI statuses, or branch protection evidence is absent.
 
 | Priority | Failure | Signal | Route | Required response |
 | --- | --- | --- | --- | --- |
@@ -214,12 +223,40 @@ authority=local-advisory
 | P1 | local workflow treated as protected CI | `.github/workflows/ci.yml` exists but no GitHub run id exists | provenance gate | keep release provenance blocked |
 | P2 | helper script absent | `scripts/ci=False` | workflow command boundary | keep helper-based checks out of required evidence |
 
+## Sprint 27 Protected CI Run And Release Provenance
+
+Sprint 27 execution record:
+
+```text
+docs/implementation/giwa-protected-ci-run-and-release-provenance.md
+```
+
+Current blocker state after the protected-CI probe:
+
+```text
+source-provenance=partial-local / remote blocked
+protected-ci=blocked
+branch-protection=blocked
+release-approval=blocked
+rollback=blocked
+authority=local-advisory
+```
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | no configured remote | `git remote -v` has no entries | source provenance gate | stop before push or workflow dispatch and request remote approval |
+| P1 | no real Actions run | no GitHub run id or required-check statuses exist | protected CI gate | keep local evidence advisory |
+| P1 | branch protection attempted without statuses | required checks have not run in GitHub | branch protection gate | keep branch protection blocked |
+| P1 | local source treated as release authority | local commit or workflow file is used as protected CI evidence | release provenance gate | keep staging promotion blocked |
+| P2 | safe scan enforcement not proven | `safe-scans` has not run as a protected required check | evidence boundary | review blocking behavior before release authority |
+| P2 | rollback owner absent | no rollback owner or protected artifact manifest exists | rollback gate | keep promotion blocked until owner and previous checksums are recorded |
+
 ## Sprint 21 Failure Triage
 
 | Priority | Failure | Signal | Route | Required response |
 | --- | --- | --- | --- | --- |
 | P1 | Sprint 21 plan missing | plan path check is false | approval gap | do not execute CI workflow work |
-| P1 | source provenance failed | `.git=False` or `.github=False` | source provenance gate | block staging and keep local checks advisory |
+| P1 | source provenance failed | remote GitHub source or protected CI evidence absent | source provenance gate | block staging and keep local checks advisory |
 | P1 | protected CI absent or failing | workflow path, required checks, or artifact generation missing | protected CI blocker | block release provenance |
 | P1 | artifact hash mismatch | build tree or public artifact hash changes after manifest | no-rebuild promotion gate | stop promotion and regenerate from protected source |
 | P1 | non-matched receipt unlock | pending or failed state opens receipt | commercial receipt gate | lock receipt/export and replay standard RPC evidence |

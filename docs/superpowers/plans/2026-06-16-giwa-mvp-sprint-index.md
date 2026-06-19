@@ -53,6 +53,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 24 | `2026-06-19-sprint-24-ci-workflow-file-creation-after-approval.md` | approval-gated CI workflow file creation plan for repository initialization, workflow file creation, branch protection, command matrix, artifact upload policy, and protected CI handoff | Sprint 23 approval |
 | 25 | `2026-06-19-sprint-25-git-and-workflow-initialization-after-approval.md` | approval-gated final execution plan for repository initialization, initial commit policy, workflow creation, branch-protection preparation, and protected CI handoff without performing those actions during plan-writing | Sprint 24 approval |
 | 26 | `docs/implementation/giwa-git-and-workflow-initialization-execution.md` | approved local git initialization, initial source snapshot, workflow file creation, and branch-protection blocker record | Sprint 25 approval |
+| 27 | `2026-06-19-sprint-27-protected-ci-run-and-release-provenance.md` | protected CI run and release provenance probe that records remote GitHub, pushed source, Actions status, branch protection, release approval, and rollback-owner blockers without pushing or deploying | Sprint 26 approval |
 
 ## Sprint 0 Execution Artifacts
 
@@ -137,6 +138,8 @@ Sprint 25 plans the final approved execution path for repository initialization,
 Sprint 25 execution without the four explicit approvals remains a readiness-only pass. It adds `docs/implementation/giwa-git-and-workflow-initialization-readiness.md`, `docs/implementation/giwa-initial-commit-file-policy.md`, `docs/implementation/giwa-workflow-creation-preflight.md`, and `docs/implementation/giwa-protected-ci-transition-checklist.md`. These documents record the blocked approval gates, first-commit file policy, workflow creation preflight, exact required checks, local-advisory to protected-CI transition rules, and rollback/cleanup boundaries without creating `.git`, `.github`, workflow files, CI scripts, commits, branches, tags, remotes, pushes, protected checks, public hosting, deployment, managed infrastructure, wallet actions, chain-operation commands, fake CI artifacts, dependency changes, or protected CI provenance.
 
 Sprint 26 executes the approved local git and workflow initialization path. It records `docs/implementation/giwa-git-and-workflow-initialization-execution.md`, creates `.github/workflows/ci.yml`, and creates an initial local source snapshot. Sprint 26 does not push, configure remotes, public-host, deploy, connect managed infrastructure, send wallet actions, run chain-operation commands, install dependencies, create release tags, upload CI artifacts, or claim protected CI provenance. Branch protection and required checks remain blocked until a remote GitHub repository, push approval, real workflow run, and exact required-check statuses exist.
+
+Sprint 27 probes the protected CI and release provenance transition after Sprint 26. It records that local git and `.github/workflows/ci.yml` exist, verifies the absence of a configured remote and real GitHub Actions statuses, refreshes local-advisory provenance, updates release/blocker documents, and keeps protected CI, branch protection, release approval, public hosting, deployment, managed infrastructure, wallet actions, chain-operation commands, and dependency installation blocked.
 
 ## Global Stop Conditions
 
