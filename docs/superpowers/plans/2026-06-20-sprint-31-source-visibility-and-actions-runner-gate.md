@@ -65,6 +65,15 @@ Because public source visibility can expose repository contents, Sprint 31 must 
   ```
 - [ ] If diagnostic jobs are created and pass, classify the previous blocker as private repository plan/minutes/visibility-related.
 - [ ] If diagnostic still has zero jobs, classify the blocker as account/platform runner startup gate and stop before branch-protection retry.
+- [ ] Observed result:
+  ```text
+  visibilityAfter=public
+  diagnosticRunId=27849292869
+  diagnosticRunConclusion=failure
+  diagnosticRunJobs=3
+  firstJobAnnotation=account-locked-due-to-billing
+  rootCauseClass=github-account-billing-lock
+  ```
 
 ## Task 4: Protected Workflow Rerun
 
@@ -133,6 +142,7 @@ Sprint 31 exits when one of these is true:
 
 - Public source visibility is enabled, diagnostic/protected workflows create real jobs, required checks are observed, and branch protection is configured or its next blocker is recorded.
 - Public source visibility is enabled but diagnostic workflows still fail before jobs; blocker is updated to account/platform startup gate.
+- Public source visibility is enabled and diagnostic jobs are created, but GitHub blocks runner startup due to account billing lock; blocker is updated to account billing gate.
 - Source-safety checks fail before conversion; repository remains private and blocker is updated.
 
 In all cases:

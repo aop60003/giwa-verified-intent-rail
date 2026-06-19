@@ -553,9 +553,13 @@ latestPushRunJobs=0
 diagnosticRunId=27849055389
 diagnosticRunConclusion=startup_failure
 diagnosticRunJobs=0
+postVisibilityDiagnosticRunId=27849292869
+postVisibilityDiagnosticConclusion=failure
+postVisibilityDiagnosticJobs=3
+postVisibilityDiagnosticAnnotation=account-locked-due-to-billing
 checkRuns=0
 protectedArtifactGeneration=blocked
 protectedArtifactUploadMetadata=blocked
 ```
 
-Protected artifact generation and upload metadata are downstream of successful GitHub job/check contexts. The diagnostic workflow classified the failure as a repository/account/platform startup gate because it also failed with zero jobs. It cannot substitute for the protected `ci-source-provenance` required-check set or release approval.
+Protected artifact generation and upload metadata are downstream of successful GitHub job/check contexts. Public source visibility allowed diagnostic check runs to be created, but the first diagnostic job was not started because the GitHub account is locked due to a billing issue. The diagnostic workflow cannot substitute for the protected `ci-source-provenance` required-check set or release approval.

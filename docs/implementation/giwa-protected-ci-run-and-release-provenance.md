@@ -204,10 +204,14 @@ latestPushRunJobs=0
 diagnosticRunId=27849055389
 diagnosticRunConclusion=startup_failure
 diagnosticRunJobs=0
+postVisibilityDiagnosticRunId=27849292869
+postVisibilityDiagnosticConclusion=failure
+postVisibilityDiagnosticJobs=3
+postVisibilityDiagnosticAnnotation=account-locked-due-to-billing
 checkRuns=0
 ```
 
-The diagnostic workflow also failed before creating jobs, so the current root-cause class is `repository-account-platform-startup-gate`. That diagnostic does not weaken the protected check list, does not create protected artifact evidence, and does not unblock release approval by itself.
+The first diagnostic workflow failed before creating jobs while the repository was private. After public source visibility, diagnostic jobs were created, but the first job was not started because the GitHub account is locked due to a billing issue. The current root-cause class is `github-account-billing-lock`. This does not weaken the protected check list, does not create protected artifact evidence, and does not unblock release approval by itself.
 
 ## Safety Confirmation
 

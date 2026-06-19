@@ -99,6 +99,50 @@ billingProbeRequiredScope=user
 
 Because a minimal workflow with no dependency install, no app command, and no env access also failed before job creation, the root-cause class is now `repository-account-platform-startup-gate`. The protected workflow YAML and package command matrix remain unproven but are no longer the first suspected layer.
 
+## Sprint 31 Public Visibility Diagnostic Result
+
+Sprint 31 converted the GitHub source repository from private to public after local safe scans passed:
+
+```text
+visibilityBefore=private
+visibilityAfter=public
+sourceVisibilityChange=complete
+publicAppHosting=not-run
+deployment=not-run
+```
+
+After public conversion, the diagnostic workflow created GitHub check runs, proving that the prior zero-job `startup_failure` was tied to the private repository visibility or plan gate:
+
+```text
+postVisibilityDiagnosticRunId=27849292869
+postVisibilityDiagnosticRunUrl=https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27849292869
+postVisibilityDiagnosticHeadSha=0debc4873404e35d229c607d7f816b701e495037
+postVisibilityDiagnosticConclusion=failure
+postVisibilityDiagnosticJobs=3
+diagnostic-platform=failure
+diagnostic-checkout=skipped
+diagnostic-windows=skipped
+```
+
+The failing check run annotation gives the current root cause:
+
+```text
+annotationPath=.github
+annotationLevel=failure
+annotationMessage=The job was not started because your account is locked due to a billing issue.
+```
+
+Current root-cause class:
+
+```text
+rootCauseClass=github-account-billing-lock
+protectedCI=blocked-billing-lock
+branchProtection=blocked-no-passing-required-checks
+protectedArtifactGeneration=blocked
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
 ## Branch Protection Status
 
 Observed branch protection attempt:
@@ -137,6 +181,7 @@ No staging release or protected artifact can be claimed until a real GitHub Acti
 | --- | --- | --- |
 | `ci-source-provenance` run has `startup_failure` and zero jobs | protected CI startup gate | keep release blocked and run minimal diagnostic workflow |
 | diagnostic workflow also has zero jobs | repository/account/platform gate | keep protected CI blocked and record GitHub plan, billing, runner, or visibility gate |
+| diagnostic workflow creates jobs but first job has billing-lock annotation | GitHub account billing lock | keep protected CI blocked until account billing state is resolved outside the repository |
 | diagnostic platform job runs but checkout job fails | allowed-actions or checkout policy | keep protected CI blocked and inspect repository Actions policy |
 | diagnostic Linux job runs but Windows job fails | runner availability or Windows runner gate | keep current protected workflow blocked and record runner policy decision |
 | diagnostic workflow passes but `ci.yml` still startup-fails | protected workflow graph or YAML gate | inspect `ci.yml` without dropping required jobs or safe scans |
