@@ -258,10 +258,13 @@ docs/implementation/giwa-staging-dry-run-preparation-under-billing-lock.md
 Latest protected CI state:
 
 ```text
-latestProtectedRunId=27849769064
-latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunId=27850867132
+latestProtectedRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
 latestProtectedRunConclusion=failure
-latestProtectedRunAnnotation=account-locked-due-to-billing
+latestProtectedRunFirstJob=source-provenance
+latestProtectedRunDownstreamJobs=9-skipped
+latestProtectedRunLog=not-found
+rootCauseClass=github-account-billing-lock
 protectedCI=blocked-billing-lock
 protectedArtifactGeneration=blocked
 protectedArtifactUpload=blocked

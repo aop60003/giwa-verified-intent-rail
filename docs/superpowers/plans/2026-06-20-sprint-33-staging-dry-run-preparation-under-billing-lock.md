@@ -19,10 +19,13 @@ defaultBranch=main
 branchProtected=true
 branchProtectionEnforceAdmins=false
 requiredChecks=source-provenance,workflow-command-boundary,web-checks,protocol-checks,contracts-checks,node-syntax-checks,safe-scans,workspace-checks,artifact-provenance,protected-ci-gate
-latestProtectedRunId=27849769064
-latestProtectedRunHeadSha=d8b8f36874a35c2c290a3a1055c0ba9f23b30a03
+latestProtectedRunId=27850867132
+latestProtectedRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
 latestProtectedRunConclusion=failure
-latestProtectedRunAnnotation=account-locked-due-to-billing
+latestProtectedRunFirstJob=source-provenance
+latestProtectedRunDownstreamJobs=9-skipped
+latestProtectedRunLog=not-found
+rootCauseClass=github-account-billing-lock
 protectedCI=blocked-billing-lock
 protectedArtifactGeneration=blocked
 releaseApproval=blocked
@@ -64,12 +67,13 @@ Sprint 33 should incorporate these independent review lenses before exit:
 - [ ] Read the latest protected workflow state without changing source:
   ```powershell
   gh run list --repo aop60003/giwa-verified-intent-rail --limit 3 --json databaseId,headSha,status,conclusion,name,event,createdAt,updatedAt
-  gh run view 27849769064 --repo aop60003/giwa-verified-intent-rail --json databaseId,workflowName,status,conclusion,jobs,url,headSha,event
+  gh run view 27850867132 --repo aop60003/giwa-verified-intent-rail --json databaseId,workflowName,status,conclusion,jobs,url,headSha,event
   ```
 - [ ] Expected result:
   ```text
   latest protected run remains failure
-  first protected job is not started because of GitHub account billing
+  first protected job fails before runner logs and downstream protected jobs are skipped
+  previous diagnostic annotations classify the root cause as GitHub account billing lock
   branch protection remains configured but cannot be satisfied
   ```
 
