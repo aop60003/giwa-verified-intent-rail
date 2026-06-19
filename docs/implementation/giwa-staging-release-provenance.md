@@ -36,13 +36,15 @@ Observed Sprint 29 remote state:
 
 ```text
 repository=https://github.com/aop60003/giwa-verified-intent-rail
-repositoryVisibility=private
+repositoryVisibility=public
 remoteName=origin
-pushedCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
-githubActionsRun=observed-startup-failure
-requiredCheckStatuses=absent
+pushedCommit=7858b34cbac7d7141254b03051c4516048225de1
+githubActionsRun=27849499574
+githubActionsConclusion=failure
+githubActionsFirstJobAnnotation=account-locked-due-to-billing
+requiredCheckStatuses=created-but-failing
 protectedArtifactUploadMetadata=absent
-branchProtection=blocked-github-plan-or-visibility
+branchProtection=configured-required-checks-failing
 ```
 
 Required before staging dry run:

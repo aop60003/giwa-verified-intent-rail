@@ -195,6 +195,16 @@ rootCauseClass=github-account-billing-lock
 branchProtection=configured-required-checks-failing
 ```
 
+Sprint 32 rerun gate:
+
+```text
+plan=docs/superpowers/plans/2026-06-20-sprint-32-github-billing-lock-and-protected-ci-rerun.md
+latestProtectedRunId=27849499574
+latestProtectedRunAnnotation=account-locked-due-to-billing
+billingLockResolution=external-required
+releaseApproval=blocked
+```
+
 Release approval remains blocked until:
 
 - GitHub Actions creates real job/check contexts.

@@ -9,19 +9,21 @@ Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local gi
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-sourceCommit=6cc707a5713c3355bba0a22afe7458a787e1c8d7
+sourceCommit=7858b34cbac7d7141254b03051c4516048225de1
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
+repositoryVisibility=public
 remotePushApproval=approved-2026-06-20
 remotePush=complete
-githubActionsRun=observed-startup-failure
-githubActionsJobs=0
-requiredCheckStatuses=absent
+githubActionsRun=27849499574
+githubActionsConclusion=failure
+githubActionsFirstJobAnnotation=account-locked-due-to-billing
+requiredCheckStatuses=created-but-failing
 protectedArtifactGeneration=absent
 protectedArtifactUploadMetadata=absent
 releaseApproval=absent
 rollbackOwner=absent
-protected-ci=blocked-startup-failure
-branch-protection=blocked-github-plan-or-visibility
+protected-ci=blocked-billing-lock
+branch-protection=configured-required-checks-failing
 external partner signoff=absent
 public host approval=absent
 durable staging storage=absent
@@ -34,9 +36,9 @@ backup restore drill=absent
 
 | Blocker | Current status | Required evidence | Staging impact |
 | --- | --- | --- | --- |
-| Source provenance | partial-remote / branch policy blocked | remote GitHub repository, push approval, immutable remote commit, and branch policy | blocks deployment dry run |
-| Protected CI | blocked-startup-failure | successful GitHub workflow run id, exact required-check statuses including `protected-ci-gate`, protected artifact generation, and protected artifact upload metadata | blocks release provenance |
-| Branch protection | blocked-github-plan-or-visibility | branch protection or ruleset evidence with exact required-check names matching workflow jobs | blocks release provenance |
+| Source provenance | remote-public / branch policy configured | passing protected CI on immutable remote commit | blocks deployment dry run until checks pass |
+| Protected CI | blocked-billing-lock | successful GitHub workflow run id, exact required-check statuses including `protected-ci-gate`, protected artifact generation, and protected artifact upload metadata | blocks release provenance |
+| Branch protection | configured-required-checks-failing | branch protection with exact checks plus passing required-check statuses | blocks release provenance until checks pass |
 | Lockfile and dependency policy | partial | pinned pnpm version, frozen lockfile install, approved drift only | blocks release provenance |
 | Host selection | blocked | approved host, owner, origin policy | blocks public binding |
 | Environment contract | partial | names, categories, redacted readiness, activation owner | blocks hosted startup |
@@ -368,6 +370,31 @@ Every external-state transition in Sprint 30 or later must update this blocker r
 | P1 | branch policy workaround requested | private repo branch protection stays 403 | source-control policy gate | require plan upgrade, explicit public repository conversion, or approved substitute policy |
 | P1 | GitHub account billing lock | check-run annotation says the job was not started because the account is locked due to billing | account billing gate | resolve GitHub account billing outside the repository before claiming protected CI |
 | P1 | branch protection configured while checks fail | `main` requires canonical checks, but `source-provenance` fails before runner steps | release provenance gate | keep release and staging blocked until billing is resolved and checks pass |
+
+## Sprint 32 GitHub Billing Lock And Protected CI Rerun
+
+Sprint 32 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-32-github-billing-lock-and-protected-ci-rerun.md
+```
+
+Current Sprint 32 blocker state:
+
+```text
+repositoryVisibility=public
+branchProtected=true
+requiredChecks=10
+latestProtectedRunId=27849499574
+latestProtectedRunConclusion=failure
+latestProtectedRunAnnotation=account-locked-due-to-billing
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+The next executable step is outside the repository: resolve the GitHub account billing lock. After that, rerun the protected workflow and record whether checks pass, fail by command, or fail by artifact gate.
 
 ## Sprint 21 Failure Triage
 

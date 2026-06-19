@@ -216,6 +216,30 @@ protectedWorkflowCheckRuns=10
 
 The first diagnostic workflow failed before creating jobs while the repository was private. After public source visibility, diagnostic jobs were created, but the first job was not started because the GitHub account is locked due to a billing issue. The current root-cause class is `github-account-billing-lock`. This does not weaken the protected check list, does not create protected artifact evidence, and does not unblock release approval by itself.
 
+## Sprint 32 Billing-Lock Rerun Gate
+
+Sprint 32 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-32-github-billing-lock-and-protected-ci-rerun.md
+```
+
+Current protected CI state:
+
+```text
+latestProtectedRunId=27849499574
+latestProtectedRunHeadSha=7858b34cbac7d7141254b03051c4516048225de1
+latestProtectedRunConclusion=failure
+latestProtectedRunFirstJob=source-provenance
+latestProtectedRunAnnotation=account-locked-due-to-billing
+branchProtected=true
+requiredChecks=10
+protectedArtifactGeneration=blocked
+releaseApproval=blocked
+```
+
+After the GitHub account billing lock is resolved outside the repository, rerun the protected workflow before any staging artifact or release approval work. Do not treat admin-bypassed pushes as protected merge evidence.
+
 ## Safety Confirmation
 
 Sprint 27 did not:

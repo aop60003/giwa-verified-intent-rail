@@ -158,7 +158,7 @@ This is branch policy evidence only. It is not release approval because `source-
 
 ## Branch Protection Status
 
-Observed branch protection attempt:
+Historical Sprint 29 branch protection attempt before public visibility:
 
 ```text
 protectedBranch=main
@@ -167,26 +167,24 @@ branchProtectionErrorClass=github-plan-or-visibility-gate
 branchProtectionErrorSummary=Upgrade to GitHub Pro or make this repository public to enable this feature.
 ```
 
-The repository remains private. Branch protection is blocked until one of these is recorded:
+The repository was private at that time. Sprint 31 later made the source repository public and configured branch protection, so this historical 403 is no longer the current branch-protection state.
 
-- GitHub plan upgrade or repository feature availability changes.
-- Explicit public repository conversion approval and source visibility review.
-- Approved replacement source-control policy for the current private repository.
+Current branch-protection state is recorded in [Branch Protection After Public Visibility](#branch-protection-after-public-visibility).
 
 ## Release Boundary
 
 Current authority remains:
 
 ```text
-sourceProvenance=partial-remote
-protectedCI=blocked-startup-failure
-branchProtection=blocked-github-plan-or-visibility
+sourceProvenance=remote-public-branch-protected
+protectedCI=blocked-billing-lock
+branchProtection=configured-required-checks-failing
 protectedArtifactGeneration=blocked
 releaseApproval=blocked
 stagingPromotion=blocked
 ```
 
-No staging release or protected artifact can be claimed until a real GitHub Actions run creates job/check contexts and the required checks pass from the pushed source commit.
+No staging release or protected artifact can be claimed until the GitHub account billing lock is resolved and the required checks pass from the pushed source commit.
 
 ## Triage Routes
 
