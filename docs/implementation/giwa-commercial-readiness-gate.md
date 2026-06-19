@@ -328,3 +328,17 @@ stagingDryRunExecution=blocked-protected-ci
 ```
 
 Any manual local rehearsal under Sprint 33 is a control rehearsal only. It is not commercial readiness, not a public staging launch, not release approval, and not protected provenance.
+
+## Sprint 34 Hosted Adapter Readiness Gate
+
+Sprint 34 readiness remains advisory:
+
+```text
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+protectedCI=blocked-billing-lock
+commercialReadiness=blocked
+```
+
+Commercial readiness requires a later protected-CI-backed adapter implementation and release approval. A readiness packet alone cannot authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, or chain-operation commands.

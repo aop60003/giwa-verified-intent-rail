@@ -66,3 +66,26 @@ Sprint 33 does not connect a production, managed, or cloud database. It prepares
 | Rate and queue state | local-only | approved multi-instance behavior or explicit rehearsal limitation |
 
 Local SQLite, local snapshots, and local live rehearsal databases remain advisory and cannot unblock staging while `protectedCI=blocked-billing-lock`.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Sprint 34 adds an adapter readiness record:
+
+```text
+docs/implementation/giwa-hosted-adapter-readiness.md
+```
+
+Readiness does not mean connection. Required later evidence remains:
+
+| Gate | Required later evidence |
+| --- | --- |
+| Adapter | approved non-production staging adapter and owner |
+| Migrations | marker inventory, reviewed checksums or equivalent provenance, and incompatible-schema fail-closed behavior |
+| Probe | real hosted adapter probe with redacted result |
+| Backup | isolated staging backup catalog with owner and timestamp |
+| Restore | row-count comparison, public snapshot SHA-256 comparison, `verifierInputHash` recompute, and `receiptHash` recompute |
+| Rate/queue | durable behavior or explicit rehearsal-only limitation |
+| Queue restore | pending, leased, retryable, failed, and dead verification jobs preserve bounded states after restore |
+| Worker crash | lease expiry, retry, dead-letter, and no-duplicate-fanout behavior is table-drilled |
+
+Sprint 34 leaves `managedDatabaseConnection=blocked` and `hostedAdapterImplementation=blocked`.

@@ -75,3 +75,18 @@ Before any staging execution, record:
 | Storage limitation | rollback cannot reverse public chain evidence and cannot assume production restore |
 
 No rollback plan can authorize public hosting or deployment while `protectedCI=blocked-billing-lock`.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Hosted adapter readiness needs rollback evidence before connection:
+
+```text
+artifactManifest=protected-ci-required
+priorChecksums=required
+rollbackOwner=required
+partnerCommsOwner=required
+staticFallbackSmoke=required
+storageRollbackLimitation=required
+```
+
+Sprint 34 does not create protected artifacts or public host bindings. It records that rollback remains blocked until protected CI and adapter gates are green.

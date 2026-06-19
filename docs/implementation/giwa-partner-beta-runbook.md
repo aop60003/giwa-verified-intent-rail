@@ -273,3 +273,15 @@ Flashblocks as non-final fast feedback only
 ```
 
 Do not describe Sprint 33 as a public beta, staging launch, production finance surface, identity service, phishing-prevention service, or safety warranty.
+
+## Sprint 34 Hosted Adapter Readiness Boundary
+
+Sprint 34 can explain that hosted adapter readiness is being prepared, but partner beta traffic remains blocked:
+
+```text
+hostedAdapterReadiness=prepared
+partnerBetaTraffic=blocked
+protectedCI=blocked-billing-lock
+```
+
+Do not ask a partner to use a public hosted surface until protected CI, adapter implementation approval, storage/restore evidence, auth/tenant/origin gates, incident owner, retention owner, and partner signoff are recorded.

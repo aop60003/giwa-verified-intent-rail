@@ -332,3 +332,38 @@ Current runtime blocker notes:
 - `GIWA_LIVE_PARTNER_TENANT_ID` needs explicit staging mapping before public binding
 - `repositoryReady`, `tenantReady`, `rateLimitReady`, backup readiness, and queue readiness need real staging probes before they can be treated as green
 - local SQLite, memory rate limits, and memory verification queue remain local-only unless a later plan approves hosted behavior
+
+## Sprint 34 Hosted Adapter Readiness Boundary
+
+Sprint 34 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-34-hosted-adapter-readiness-under-protected-ci-blocker.md
+```
+
+Sprint 34 readiness record:
+
+```text
+docs/implementation/giwa-hosted-adapter-readiness.md
+```
+
+Sprint 34 does not change runtime behavior. It records that:
+
+- `serve-live.mjs` remains the local live server path
+- local SQLite is not hosted adapter evidence
+- memory rate limits are not multi-instance staging evidence
+- memory verification queue state is not durable staging evidence
+- `tenant_default` or any implicit local tenant is a staging no-go
+- `repositoryReady`, `tenantReady`, `rateLimitReady`, backup readiness, restore readiness, and queue readiness need measured hosted probes
+- hosted modes must use process env only and must not load local env files
+
+Sprint 34 exits with:
+
+```text
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+cloudSecretManagerConnection=blocked
+protectedCI=blocked-billing-lock
+stagingDryRunExecution=blocked-protected-ci
+```

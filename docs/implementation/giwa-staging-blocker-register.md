@@ -447,6 +447,47 @@ Sprint 33 may prepare the dry-run packet only. It cannot authorize public hostin
 | P2 | storage drill absent | no approved adapter, backup catalog, or restore evidence | storage gate | keep dry-run no-go |
 | P2 | rollback path incomplete | static fallback, owner, or artifact manifest is missing | rollback gate | block dry-run execution until fallback smoke and owner are recorded |
 
+## Sprint 34 Hosted Adapter Readiness Under Protected-CI Blocker
+
+Sprint 34 plan:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-34-hosted-adapter-readiness-under-protected-ci-blocker.md
+```
+
+Sprint 34 readiness record:
+
+```text
+docs/implementation/giwa-hosted-adapter-readiness.md
+```
+
+Current Sprint 34 blocker state:
+
+```text
+currentMainHead=0a5fdc235cd49f2bef78087d029f194635833e7c
+latestProtectedRunId=27850867132
+latestProtectedRunHeadSha=779b63878b37c3b4f3792dd67718ea5bb3e9d92b
+latestProtectedRunConclusion=failure
+protectedCI=blocked-billing-lock
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+cloudSecretManagerConnection=blocked
+stagingDryRunExecution=blocked-protected-ci
+publicHosting=blocked
+deployment=blocked
+```
+
+Sprint 34 defines the adapter readiness contract only. It cannot authorize hosted adapter implementation, managed infrastructure connection, public host binding, or staging execution while protected CI remains blocked.
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | hosted adapter implemented under red CI | code or config connects managed infrastructure while protected CI is blocked | source provenance gate | stop and revert the implementation plan to readiness-only |
+| P1 | local SQLite treated as hosted-ready | `GIWA_LIVE_DB_PATH` or local DB probe is used as staging adapter evidence | storage gate | keep adapter implementation blocked |
+| P1 | local env loading in hosted mode | hosted runtime reads local env files | runtime gate | fail closed before staging execution |
+| P2 | memory rate or queue state promoted | in-memory bucket or queue is treated as multi-instance evidence | durability gate | require durable behavior or explicit rehearsal limitation |
+| P2 | missing restore owner | backup catalog or restore drill owner absent | restore gate | keep staging dry-run execution blocked |
+
 ## Sprint 21 Failure Triage
 
 | Priority | Failure | Signal | Route | Required response |

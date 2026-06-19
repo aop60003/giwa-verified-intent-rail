@@ -103,3 +103,18 @@ Before staging execution, record:
 | Alert owners | named owner for receipt gate, wrong chain, mock mode, redaction, backup, verifier, DB write, auth, readiness, and rate-limit alerts |
 
 The billing lock keeps `stagingDryRunExecution=blocked-protected-ci`; local observability checks are advisory only.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Hosted adapter readiness requires observability evidence before connection:
+
+```text
+requestIdCoverage=required
+readyzRedaction=required
+logDenylist=required
+metricCardinalityLimit=required
+alertOwners=required
+protectedCI=blocked-billing-lock
+```
+
+Sprint 34 can define these requirements only. It does not start a hosted runtime, attach a managed logger, or create alerting integrations.

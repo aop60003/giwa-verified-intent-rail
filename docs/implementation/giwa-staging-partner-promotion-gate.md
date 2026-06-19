@@ -62,3 +62,16 @@ protectedCI=blocked-billing-lock
 Partner beta or staging promotion remains blocked while protected CI is red, skipped, or blocked before runner steps. Sprint 33 can rehearse partner review controls locally, but it cannot route partner traffic to a public staging host or present local advisory output as release authority.
 
 Post-billing promotion still requires one partner, one campaign, one mission, one GIWA Sepolia mock vault action, one evidence packet, reviewer signoff, incident owner, retention owner, protected artifact metadata, and an updated blocker register.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Hosted adapter readiness is not partner promotion:
+
+```text
+hostedAdapterReadiness=prepared
+partnerPromotion=blocked
+commercialReadiness=blocked
+protectedCI=blocked-billing-lock
+```
+
+Partner beta traffic remains blocked until protected CI, adapter implementation approval, storage/restore evidence, auth/tenant/origin gates, incident owner, retention owner, and partner signoff are recorded.

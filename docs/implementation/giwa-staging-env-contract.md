@@ -61,3 +61,18 @@ Required post-billing readiness evidence:
 | Storage | approved adapter probe or explicit dry-run block |
 
 Until protected CI passes, all readiness evidence is advisory and `stagingDryRunExecution=blocked-protected-ci`.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Sprint 34 keeps hosted env activation as a contract only:
+
+```text
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+envSource=process-env-only
+localEnvFileLoading=disabled-for-hosted-modes
+redactedReadiness=required
+protectedCI=blocked-billing-lock
+```
+
+No hosted adapter may start from `.env` or `.env.local` contents. The only permitted Sprint 34 output is documentation of variable names, categories, owners, readiness classes, and fail-closed behavior.

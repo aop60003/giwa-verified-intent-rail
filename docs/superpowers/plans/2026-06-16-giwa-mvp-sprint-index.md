@@ -60,6 +60,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 31 | `2026-06-20-sprint-31-source-visibility-and-actions-runner-gate.md` | source visibility safety review, public repository conversion if safe, diagnostic workflow rerun, protected workflow rerun, and branch protection retry routing without public app hosting or deployment | Sprint 30 approval |
 | 32 | `2026-06-20-sprint-32-github-billing-lock-and-protected-ci-rerun.md` | GitHub billing-lock evidence, post-billing protected CI rerun procedure, branch policy verification, protected artifact handoff gate, and staging blocker updates | Sprint 31 approval |
 | 33 | `2026-06-20-sprint-33-staging-dry-run-preparation-under-billing-lock.md` | staging dry-run preparation packet under GitHub billing lock, host/runtime/storage/security/rollback gate alignment, and post-billing handoff without public hosting or deployment | Sprint 32 blocked-billing-lock |
+| 34 | `2026-06-20-sprint-34-hosted-adapter-readiness-under-protected-ci-blocker.md` | hosted adapter readiness packet for runtime, env, storage, migration, backup, restore, rate, queue, observability, security, rollback, and partner gates without implementing or connecting hosted infrastructure | Sprint 33 blocked-protected-ci |
 
 ## Sprint 0 Execution Artifacts
 
@@ -158,6 +159,8 @@ Sprint 31 tests whether source repository visibility is the remaining Actions an
 Sprint 32 records the GitHub account billing lock as the remaining protected CI blocker and defines the exact rerun procedure for after billing is resolved outside the repository. Sprint 32 keeps branch protection configured, keeps staging promotion blocked while checks fail, and does not deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI before required checks pass.
 
 Sprint 33 prepares the staging dry-run packet while the GitHub account billing lock remains open. It records host/runtime/storage/security/rollback/partner go/no-go gates, keeps local static and live rehearsal evidence advisory only, and defines the post-billing protected CI and artifact handoff before any public hosting or deployment. Sprint 33 does not deploy, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, create release tags, or claim protected CI before required checks pass.
+
+Sprint 34 prepares the hosted adapter readiness packet while protected CI remains blocked. It defines adapter selection, process-env activation, redacted readiness, migration guard, backup catalog, restore drill, rate-limit and queue durability, observability, security, rollback, partner, and commercial gates. Sprint 34 does not implement an adapter, connect managed infrastructure, read env contents, output credentials, send wallet actions, run chain-operation commands, install dependencies, public-host, deploy, create release tags, or claim protected CI before required checks pass.
 
 ## Global Stop Conditions
 

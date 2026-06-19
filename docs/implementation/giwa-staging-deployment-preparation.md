@@ -124,3 +124,25 @@ deployment=blocked
 ```
 
 The packet can be reviewed locally, but it cannot be executed as a staging dry run until GitHub billing is resolved outside the repository, all required checks pass from the intended source commit, protected artifact metadata is recorded, and host/runtime/storage/security/rollback/partner gates are approved.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Sprint 34 readiness documents:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-34-hosted-adapter-readiness-under-protected-ci-blocker.md
+docs/implementation/giwa-hosted-adapter-readiness.md
+```
+
+Current state:
+
+```text
+hostedAdapterReadiness=prepared
+hostedAdapterImplementation=blocked
+managedDatabaseConnection=blocked
+cloudSecretManagerConnection=blocked
+protectedCI=blocked-billing-lock
+stagingDryRunExecution=blocked-protected-ci
+```
+
+The hosted adapter readiness packet can define adapter criteria, but it cannot bind a host, connect storage, load hosted credentials, or execute a staging dry run until protected CI, protected artifact metadata, host approval, storage restore evidence, security policy, observability, rollback, and partner gates are green.

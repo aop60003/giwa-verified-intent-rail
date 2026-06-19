@@ -601,3 +601,25 @@ stagingPromotion=blocked
 ```
 
 The staging dry-run packet is prepared for post-billing review only. It cannot supersede protected CI, cannot create release-grade provenance, and cannot authorize public hosting or deployment. After billing is resolved, the next sprint must rerun `ci-source-provenance`, verify all ten required checks, inspect protected artifact metadata, and update this record with run id, source commit, check results, artifact names, hash values, owner, and timestamp before any staging dry-run execution sprint.
+
+## Sprint 34 Hosted Adapter Readiness Boundary
+
+Sprint 34 adds hosted adapter readiness only:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-34-hosted-adapter-readiness-under-protected-ci-blocker.md
+docs/implementation/giwa-hosted-adapter-readiness.md
+```
+
+Release authority remains unchanged:
+
+```text
+protectedCI=blocked-billing-lock
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked
+hostedAdapterImplementation=blocked
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+The hosted adapter readiness record cannot substitute for protected artifact evidence, release owner approval, rollback owner approval, or a passing protected-CI run from the intended source commit.

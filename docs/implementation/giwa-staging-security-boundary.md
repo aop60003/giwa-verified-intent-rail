@@ -88,3 +88,18 @@ Required before staging execution:
 | Public artifact gate | allowlisted schema and checksums for partner-facing exports |
 
 Local in-memory rate limits and local tenant defaults remain local-only. Missing protected CI, missing tenant mapping, wildcard origin, or non-matched receipt access is a staging no-go.
+
+## Sprint 34 Hosted Adapter Readiness
+
+Hosted adapter readiness does not weaken the security boundary:
+
+```text
+credentialToActorTenantScopeMapping=required
+tenantFromAuthContext=required
+exactOriginPolicy=required
+requestAndRateGates=required
+matchedOnlyReceiptGate=required
+protectedCI=blocked-billing-lock
+```
+
+Sprint 34 cannot approve a hosted adapter that defaults tenant state locally, permits wildcard origins, exposes receipt details for locked states, or treats in-memory rate limits as multi-instance staging evidence.
