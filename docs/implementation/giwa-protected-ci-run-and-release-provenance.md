@@ -136,6 +136,60 @@ docs/evidence/giwa-staging-provenance-report.json.sha256
 docs/evidence/giwa-staging-artifact-upload-metadata.json
 ```
 
+## Sprint 29 GitHub Remote Activation
+
+Sprint 29 executed the approved GitHub remote activation path:
+
+```text
+repository=https://github.com/aop60003/giwa-verified-intent-rail
+repositoryVisibility=private
+remoteName=origin
+remoteUrl=https://github.com/aop60003/giwa-verified-intent-rail.git
+targetBranch=main
+pushedCommit=f0a54e684bcd873cedc3623a8416faf356484730
+workflowPath=.github/workflows/ci.yml
+workflowName=ci-source-provenance
+```
+
+Real GitHub Actions runs were observed:
+
+```text
+pushRunId=27848145919
+pushRunUrl=https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27848145919
+pushRunHeadSha=f0a54e684bcd873cedc3623a8416faf356484730
+pushRunConclusion=startup_failure
+pushRunJobs=0
+
+dispatchRunId=27848184212
+dispatchRunUrl=https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27848184212
+dispatchRunHeadSha=f0a54e684bcd873cedc3623a8416faf356484730
+dispatchRunConclusion=startup_failure
+dispatchRunJobs=0
+```
+
+The workflow is active in GitHub, but no jobs were created for either run. Because no job contexts reached GitHub status checks, these runs do not prove protected CI, do not satisfy required checks, and do not produce protected artifact upload metadata.
+
+Observed branch protection attempt:
+
+```text
+branchProtectionAttempt=blocked
+branchProtectionApiStatus=403
+branchProtectionErrorClass=github-plan-or-visibility-gate
+branchProtectionErrorSummary=Upgrade to GitHub Pro or make this repository public to enable this feature.
+```
+
+The repository remains private. Sprint 29 did not make the repository public to work around the branch-protection gate.
+
+Protected provenance remains blocked by:
+
+- Actions startup failure with zero jobs
+- no successful required-check statuses
+- branch protection blocked by GitHub plan or repository visibility
+- no protected artifact generation
+- no protected artifact upload metadata
+- no release owner approval
+- no rollback owner
+
 ## Safety Confirmation
 
 Sprint 27 did not:

@@ -16,6 +16,19 @@ required-checks=blocked
 protected-ci=blocked
 ```
 
+Sprint 29 update:
+
+```text
+repository=https://github.com/aop60003/giwa-verified-intent-rail
+repositoryVisibility=private
+protectedBranch=main
+branchProtectionAttempt=blocked
+branchProtectionApiStatus=403
+branchProtectionErrorClass=github-plan-or-visibility-gate
+branchProtectionErrorSummary=Upgrade to GitHub Pro or make this repository public to enable this feature.
+requiredChecksProduced=false
+```
+
 Branch protection requires a GitHub repository, a reviewed workflow path, and required checks that have run from a protected source context. A local workflow draft alone cannot satisfy this gate.
 
 ## Prerequisites
@@ -98,6 +111,7 @@ It does not authorize:
 | required checks missing or skipped | block release provenance |
 | direct push allowed without approval | block promotion |
 | artifact-provenance check missing | keep protected CI incomplete |
+| GitHub plan or private visibility blocks branch protection | keep branch protection blocked until plan upgrade or explicit public repository conversion approval |
 
 ## Exit Gate
 

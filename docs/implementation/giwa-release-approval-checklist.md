@@ -12,10 +12,10 @@ This checklist defines what must be true before protected CI can support release
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
 localInitialCommit=9918a5267a79f63ef512be7847b6f89d95ac8081
-remoteGitHubRepository=absent
-githubActionsRun=absent
+remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
+githubActionsRun=observed-startup-failure
 requiredCheckStatuses=absent
-protected CI=absent
+protected CI=blocked-startup-failure
 protected artifact manifest=blocked
 protected provenance report=blocked
 protected artifact upload metadata=blocked
@@ -145,6 +145,20 @@ Release approval remains blocked when any of these are true:
 - static fallback smoke fails
 - receipt opens before `matched`
 - external partner signoff is absent for a partner beta promotion
+
+## Sprint 29 Remote Activation Record
+
+```text
+repository=https://github.com/aop60003/giwa-verified-intent-rail
+pushedCommit=f0a54e684bcd873cedc3623a8416faf356484730
+pushRunId=27848145919
+pushRunConclusion=startup_failure
+dispatchRunId=27848184212
+dispatchRunConclusion=startup_failure
+branchProtectionApiStatus=403
+branchProtectionErrorClass=github-plan-or-visibility-gate
+releaseApproval=blocked
+```
 
 ## Sprint 27 Protected CI Probe
 

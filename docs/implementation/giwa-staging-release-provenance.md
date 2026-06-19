@@ -32,6 +32,19 @@ protected-ci=blocked
 branch-protection=blocked
 ```
 
+Observed Sprint 29 remote state:
+
+```text
+repository=https://github.com/aop60003/giwa-verified-intent-rail
+repositoryVisibility=private
+remoteName=origin
+pushedCommit=f0a54e684bcd873cedc3623a8416faf356484730
+githubActionsRun=observed-startup-failure
+requiredCheckStatuses=absent
+protectedArtifactUploadMetadata=absent
+branchProtection=blocked-github-plan-or-visibility
+```
+
 Required before staging dry run:
 
 | Gate | Required evidence |
@@ -502,3 +515,27 @@ docs/evidence/local-provenance-verification.json
 ```
 
 These local files must remain `authority=local-advisory`, `releaseGrade=false`, and `canUnblockStaging=false`.
+
+## Sprint 29 GitHub Remote Activation Result
+
+Sprint 29 moved source provenance from local-only to remote-pushed, but it did not produce protected CI authority:
+
+```text
+repository=https://github.com/aop60003/giwa-verified-intent-rail
+sourceCommit=f0a54e684bcd873cedc3623a8416faf356484730
+pushRunId=27848145919
+pushRunConclusion=startup_failure
+dispatchRunId=27848184212
+dispatchRunConclusion=startup_failure
+jobConclusions=absent
+protectedArtifactUploadMetadata=absent
+```
+
+Branch protection remains blocked by GitHub plan or repository visibility:
+
+```text
+branchProtectionApiStatus=403
+branchProtectionErrorClass=github-plan-or-visibility-gate
+```
+
+Staging dry-run remains blocked until a successful protected CI run produces required check statuses and branch protection is configured or an explicit source-control policy replacement is approved.

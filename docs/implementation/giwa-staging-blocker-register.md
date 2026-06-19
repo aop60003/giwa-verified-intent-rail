@@ -9,18 +9,18 @@ Sprint 19 preparation is blocked for staging dry run. Sprint 26 created local gi
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-sourceCommit=local-initial-commit-only
-remoteGitHubRepository=absent
-remotePushApproval=absent
-remotePush=blocked
-githubActionsRun=absent
+sourceCommit=f0a54e684bcd873cedc3623a8416faf356484730
+remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
+remotePushApproval=approved-2026-06-20
+remotePush=complete
+githubActionsRun=observed-startup-failure
 requiredCheckStatuses=absent
 protectedArtifactGeneration=absent
 protectedArtifactUploadMetadata=absent
 releaseApproval=absent
 rollbackOwner=absent
-protected-ci=blocked
-branch-protection=blocked
+protected-ci=blocked-startup-failure
+branch-protection=blocked-github-plan-or-visibility
 external partner signoff=absent
 public host approval=absent
 durable staging storage=absent
@@ -33,9 +33,9 @@ backup restore drill=absent
 
 | Blocker | Current status | Required evidence | Sprint 20 impact |
 | --- | --- | --- | --- |
-| Source provenance | partial-local / remote blocked | remote GitHub repository, push approval, immutable remote commit, and branch policy | blocks deployment dry run |
-| Protected CI | blocked | GitHub workflow run id, exact required-check statuses including `protected-ci-gate`, protected artifact generation, and protected artifact upload metadata | blocks release provenance |
-| Branch protection | blocked | branch protection or ruleset evidence with exact required-check names matching workflow jobs | blocks release provenance |
+| Source provenance | partial-remote / branch policy blocked | remote GitHub repository, push approval, immutable remote commit, and branch policy | blocks deployment dry run |
+| Protected CI | blocked-startup-failure | successful GitHub workflow run id, exact required-check statuses including `protected-ci-gate`, protected artifact generation, and protected artifact upload metadata | blocks release provenance |
+| Branch protection | blocked-github-plan-or-visibility | branch protection or ruleset evidence with exact required-check names matching workflow jobs | blocks release provenance |
 | Lockfile and dependency policy | partial | pinned pnpm version, frozen lockfile install, approved drift only | blocks release provenance |
 | Host selection | blocked | approved host, owner, origin policy | blocks public binding |
 | Environment contract | partial | names, categories, redacted readiness, activation owner | blocks hosted startup |
@@ -279,6 +279,43 @@ Current protected evidence remains blocked while remote source, push approval, r
 | P1 | artifact upload too early | staging-named provenance files appear without run id and upload metadata | protected artifact gate | quarantine and keep promotion blocked |
 | P1 | local artifact authority confusion | `local-*` evidence is used to unblock staging | release provenance gate | keep `authority=local-advisory` and block promotion |
 | P2 | package command boundary drift | CI-invoked package script calls deploy, serve, wallet, chain, or hosted actions | workflow command boundary | fail CI before package checks |
+
+## Sprint 29 GitHub Remote Activation After User Approval
+
+Sprint 29 plan:
+
+```text
+docs/superpowers/plans/2026-06-19-sprint-29-github-remote-activation-after-user-approval.md
+```
+
+Sprint 29 created the approved private GitHub repository, added `origin`, pushed `main`, and observed real GitHub Actions runs:
+
+```text
+repository=https://github.com/aop60003/giwa-verified-intent-rail
+visibility=private
+pushedCommit=f0a54e684bcd873cedc3623a8416faf356484730
+pushRunId=27848145919
+pushRunConclusion=startup_failure
+dispatchRunId=27848184212
+dispatchRunConclusion=startup_failure
+jobsCreated=0
+protectedArtifactUploadMetadata=absent
+```
+
+Branch protection remains blocked:
+
+```text
+apiStatus=403
+errorClass=github-plan-or-visibility-gate
+summary=Upgrade to GitHub Pro or make this repository public to enable this feature.
+```
+
+| Priority | Failure | Signal | Route | Required response |
+| --- | --- | --- | --- | --- |
+| P1 | GitHub Actions startup failure | real run ids exist but jobs count is zero | protected CI gate | resolve GitHub Actions private repository startup gate before claiming protected CI |
+| P1 | branch protection unavailable | GitHub API returns plan or visibility 403 | branch protection gate | upgrade GitHub plan or explicitly approve public repository conversion before retry |
+| P1 | protected artifact metadata absent | artifacts count is zero for observed run | protected artifact gate | keep staging-named protected artifact outputs blocked |
+| P2 | source remote exists without successful CI | remote and pushed commit exist but checks failed before jobs | release provenance | keep source provenance partial and release approval blocked |
 
 ## Sprint 21 Failure Triage
 
