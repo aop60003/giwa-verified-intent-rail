@@ -21,6 +21,7 @@ branchProtected=true
 branchProtectionEnforceAdmins=false
 requiredChecks=source-provenance,workflow-command-boundary,web-checks,protocol-checks,contracts-checks,node-syntax-checks,safe-scans,workspace-checks,artifact-provenance,protected-ci-gate
 latestProtectedRunId=27849499574
+latestProtectedRunAttempt=2
 latestProtectedRunConclusion=failure
 latestProtectedRunFirstJob=source-provenance
 latestProtectedRunAnnotation=The job was not started because your account is locked due to a billing issue.
@@ -47,7 +48,7 @@ Sprint 32 does not:
 
 ## Task 1: Record Billing-Lock Evidence
 
-- [ ] Confirm the latest protected workflow run still fails because of billing lock.
+- [x] Confirm the latest protected workflow run still fails because of billing lock.
   ```powershell
   gh run view 27849499574 --repo aop60003/giwa-verified-intent-rail --json databaseId,workflowName,status,conclusion,jobs,url,headSha,event
   $jobs = gh run view 27849499574 --repo aop60003/giwa-verified-intent-rail --json jobs | ConvertFrom-Json
@@ -55,6 +56,14 @@ Sprint 32 does not:
   gh api "repos/aop60003/giwa-verified-intent-rail/check-runs/$($first.databaseId)/annotations"
   ```
   Expected result: first job annotation says the account is locked due to a billing issue.
+  Observed result:
+  ```text
+  runId=27849674477
+  attempt=2
+  conclusion=failure
+  sourceProvenanceJob=82426286887
+  annotation=The job was not started because your account is locked due to a billing issue.
+  ```
 
 ## Task 2: Post-Billing Rerun Procedure
 

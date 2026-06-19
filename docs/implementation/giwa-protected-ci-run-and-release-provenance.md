@@ -229,6 +229,7 @@ Current protected CI state:
 ```text
 latestProtectedRunId=27849499574
 latestProtectedRunHeadSha=7858b34cbac7d7141254b03051c4516048225de1
+latestProtectedRunAttempt=2
 latestProtectedRunConclusion=failure
 latestProtectedRunFirstJob=source-provenance
 latestProtectedRunAnnotation=account-locked-due-to-billing

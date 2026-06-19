@@ -386,6 +386,7 @@ repositoryVisibility=public
 branchProtected=true
 requiredChecks=10
 latestProtectedRunId=27849499574
+latestProtectedRunAttempt=2
 latestProtectedRunConclusion=failure
 latestProtectedRunAnnotation=account-locked-due-to-billing
 protectedCI=blocked-billing-lock
@@ -394,7 +395,7 @@ releaseApproval=blocked
 stagingPromotion=blocked
 ```
 
-The next executable step is outside the repository: resolve the GitHub account billing lock. After that, rerun the protected workflow and record whether checks pass, fail by command, or fail by artifact gate.
+The latest rerun attempt also failed before runner steps with the same billing-lock annotation. The next executable step is outside the repository: resolve the GitHub account billing lock. After that, rerun the protected workflow and record whether checks pass, fail by command, or fail by artifact gate.
 
 ## Sprint 21 Failure Triage
 

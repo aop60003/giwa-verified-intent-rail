@@ -143,6 +143,17 @@ releaseApproval=blocked
 stagingPromotion=blocked
 ```
 
+Sprint 32 rerun confirmed the same external blocker:
+
+```text
+rerunProtectedRunId=27849674477
+rerunAttempt=2
+rerunConclusion=failure
+rerunFirstJob=source-provenance
+rerunFirstJobCheckRun=82426286887
+rerunAnnotation=The job was not started because your account is locked due to a billing issue.
+```
+
 ## Branch Protection After Public Visibility
 
 After public source visibility and creation of real check contexts, branch protection was configured for `main`:
