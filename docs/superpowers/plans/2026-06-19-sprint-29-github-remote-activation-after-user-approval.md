@@ -89,7 +89,7 @@ Sprint 29 does not:
 - make the app publicly hosted
 - deploy to a hosting provider
 - connect a production or managed database
-- connect a cloud secret manager
+- do not connect a cloud secret manager
 - read or print real env file contents
 - output private key, mnemonic, bearer token, RPC token, or API key values
 - send wallet transactions

@@ -307,3 +307,27 @@ protectedArtifactMetadata=mixed-repo-workflow-blocker
 externalHostingApproved=false
 managedInfrastructureConnected=false
 ```
+
+## Sprint 40 Local Freeze Boundary
+
+Sprint 40 freezes the partner-facing local-advisory packet:
+
+```text
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Current partner traffic state:
+
+```text
+partnerSignoffPresent=false
+partnerBetaTraffic=blocked
+currentMainCheckRuns=0
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+releaseApproval=blocked
+externalHostingApproved=false
+managedInfrastructureConnected=false
+```
+
+The packet can support local partner review only. It is not a staging launch, public beta, protected-CI approval, release approval, public-hosting approval, or authorization for partner traffic.

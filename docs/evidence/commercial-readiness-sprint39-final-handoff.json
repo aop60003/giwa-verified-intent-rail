@@ -11,6 +11,11 @@
     "protectedCiProvenance": "absent",
     "sourceBinding": "blocked-no-protected-run-for-current-main"
   },
+  "supersededBy": {
+    "sprint": 40,
+    "evidencePath": "docs/evidence/commercial-readiness-sprint40-freeze.json",
+    "currentMainSha": "afe0bf50022717f8011fd7691b00ce0a8af90802"
+  },
   "latestProtectedCiEvidence": {
     "runId": 27873338373,
     "headSha": "2b414c91b1da6ed64287dbf7b2635be7586e287d",
@@ -76,14 +81,14 @@
     "blockerRegister": "external-only-separated"
   },
   "mixedRepoWorkflowBlockers": [
+    "protected_ci_evidence_absent_for_current_main",
     "protected_artifact_metadata_absent",
     "current_main_check_runs_absent",
-    "branch_protection_required_checks_not_satisfied"
+    "branch_protection_required_checks_not_satisfied",
+    "release_approval_absent"
   ],
   "externalOnlyBlockers": [
     "github_account_gate",
-    "protected_ci_evidence_absent_for_current_main",
-    "release_approval_absent",
     "external_partner_signoff_absent",
     "external_hosting_approval_absent",
     "managed_infrastructure_not_connected"

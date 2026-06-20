@@ -192,7 +192,7 @@ function statusRail(evidence: JsonRecord, receiptReady: boolean, executionBlocke
       label: "Verifier checking",
       state: verifierFinished ? "complete" : blockConfirmed ? "active" : "pending",
       finalConfirmation: false,
-      detail: "The Sprint 4 verifier compares confirmed evidence with the signed manifest."
+      detail: "The verifier compares confirmed evidence with the signed manifest."
     },
     {
       id: "matched",
@@ -206,7 +206,7 @@ function statusRail(evidence: JsonRecord, receiptReady: boolean, executionBlocke
       label: "View receipt",
       state: receiptReady ? "complete" : "pending",
       finalConfirmation: false,
-      detail: "Receipt route is enabled only when receiptHash and decisionTxHash exist."
+      detail: "Receipt route opens only when matched receipt evidence is available."
     }
   ];
 }

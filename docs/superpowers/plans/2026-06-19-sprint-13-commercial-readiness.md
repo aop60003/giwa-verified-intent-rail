@@ -44,13 +44,13 @@ Allowed:
 Not allowed:
 
 - read or print `.env` or `.env.local` content
-- request or use a user wallet private key
+- do not request or use a user wallet private key
 - send approve/deposit transactions from server code or scripts
 - run `deploy:giwa`, `fund:giwa`, `anchor:giwa`, `verify:giwa`, or `mint` commands
 - install dependencies
 - expose the live API outside localhost
 - use Flashblocks as final confirmation
-- add claims about production assets, yield, settlement, identity checks, phishing prevention, or security guarantees
+- do not add claims about production assets, yield, settlement, identity checks, phishing prevention, or security guarantees
 - expand into multi-campaign dashboard scope
 
 ## File Structure
@@ -946,4 +946,3 @@ Sprint 13 completion report must include:
 ```text
 docs/superpowers/plans/2026-06-19-sprint-14-verifier-trust-hardening.md
 ```
-

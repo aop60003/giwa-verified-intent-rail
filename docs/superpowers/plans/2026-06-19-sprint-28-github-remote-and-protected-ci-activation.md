@@ -105,7 +105,7 @@ Sprint 28 does not:
 - dispatch GitHub Actions without explicit user approval
 - configure branch protection or rulesets without repository settings authority
 - public-host or deploy
-- connect production, managed DB, managed storage, or cloud secret manager services
+- do not connect production, managed DB, managed storage, or cloud secret manager services
 - read or print real local environment file contents
 - output credential values
 - send wallet transactions

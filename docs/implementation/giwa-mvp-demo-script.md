@@ -1,6 +1,6 @@
 # GIWA Verified Intent Rail Demo Script
 
-Use this script for the final submission demo. Open the fresh live path first when the local live server is running, then use the static path as the recorded fallback.
+Use this script for the final submission demo. Open the local `/demo` control room first when the local live server is running, then use the fresh live path and static path as separate review surfaces.
 
 Commercial UX polish is implemented from:
 
@@ -166,6 +166,7 @@ apps/web/public/partner-snapshot.json
 docs/evidence/live-demo-sprint12-snapshot.json
 docs/evidence/staging-readiness-sprint38-handoff.json
 docs/evidence/commercial-readiness-sprint39-final-handoff.json
+docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
 Close with:
@@ -221,3 +222,14 @@ docs/evidence/commercial-readiness-sprint39-final-handoff.json
 ```
 
 Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, or authorization for partner traffic.
+
+## Sprint 40 Local Freeze Close
+
+Use Sprint 40 as the current readiness boundary:
+
+```text
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Open `/demo` before `/live`. Keep the live receipt hash `0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8` separate from the static fallback receipt hash `0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503`. Sprint 40 is local-advisory only and does not authorize protected CI provenance, public hosting, staging execution, managed infrastructure, partner traffic, or release approval.

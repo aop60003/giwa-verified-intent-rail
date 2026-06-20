@@ -110,7 +110,7 @@
       "label": "Verifier checking",
       "state": "complete",
       "finalConfirmation": false,
-      "detail": "The Sprint 4 verifier compares confirmed evidence with the signed manifest."
+      "detail": "The verifier compares confirmed evidence with the signed manifest."
     },
     {
       "id": "matched",
@@ -124,7 +124,7 @@
       "label": "View receipt",
       "state": "complete",
       "finalConfirmation": false,
-      "detail": "Receipt route is enabled only when receiptHash and decisionTxHash exist."
+      "detail": "Receipt route opens only when matched receipt evidence is available."
     }
   ],
   "receipt": {

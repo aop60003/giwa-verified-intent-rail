@@ -598,6 +598,7 @@ describe("live API contracts", () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error).toBe("receipt_not_found");
+    expect(response.body).not.toHaveProperty("gateReason");
   });
 
   it("returns dynamic receipt payload after matched verification", async () => {

@@ -58,12 +58,12 @@ Not allowed:
 
 - New dependency installation.
 - Public hosting or deployment.
-- Cloud database, managed secret store, or hosted operations launch.
+- No cloud database, managed secret store, or hosted operations launch.
 - Wallet transaction submission from server or scripts.
 - Contract deployment, funding, chain anchor, verifier-chain command, or mint command execution.
 - Sprint 17 operational beta work.
 - Flashblocks as final confirmation.
-- Production asset, yield, fund movement, settlement, identity-service, phishing-prevention, or safety warranty claims.
+- Do not add production asset, yield, fund movement, settlement, identity-service, phishing-prevention, or safety warranty claims.
 - Reading or printing real env file contents.
 
 ## Planned File Structure

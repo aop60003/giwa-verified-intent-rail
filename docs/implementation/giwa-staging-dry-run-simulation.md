@@ -66,3 +66,26 @@ The evaluator separates external-only blockers from local readiness gaps so late
 ## Safety Confirmation
 
 Sprint 38 does not dispatch GitHub Actions after the billing-lock repeat, public-host, deploy, connect managed infrastructure, print credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, create release tags, or claim protected CI provenance.
+
+## Sprint 40 Freeze
+
+Sprint 40 keeps this staging simulation as local-advisory and records the current freeze evidence:
+
+```text
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Current decision:
+
+```text
+currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+currentMainCheckRuns=0
+authority=local-advisory
+releaseGrade=false
+execution=blocked
+canCreatePublicStagingUrl=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+```
+
+The local simulation can support reviewer preparation only. It does not create a staging URL, public host binding, release approval, partner traffic approval, protected CI provenance, or managed infrastructure approval.

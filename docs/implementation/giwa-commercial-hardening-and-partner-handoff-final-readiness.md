@@ -1,6 +1,6 @@
 # GIWA Commercial Hardening And Partner Handoff Final Readiness
 
-Sprint 39 closes the non-external commercial hardening and partner handoff track. It keeps protected CI, partner signoff, external hosting approval, and managed infrastructure as external-only blockers. Protected artifact metadata is a mixed repo/workflow blocker because the latest protected run produced zero artifacts and the workflow still needs protected upload metadata before release approval.
+Sprint 39 closes the non-external commercial hardening and partner handoff track. Sprint 40 supersedes it as the current local-advisory freeze while preserving this record as the Sprint 39 handoff. Protected artifact metadata, protected CI evidence for current `main`, branch-protection satisfaction, and release approval are mixed repo/workflow blockers; external signoff, hosting approval, managed infrastructure approval, and the GitHub account gate remain external blockers.
 
 ## Current Authority
 
@@ -9,13 +9,14 @@ authority=local-advisory
 releaseGrade=false
 canUnblockStaging=false
 protectedCI=blocked-external-github-account
-currentMain=042d58ddabdf16426c4b870c2c63be2bd406a68f
+currentMain=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
+sprint39CapturedMain=042d58ddabdf16426c4b870c2c63be2bd406a68f
 latestBillingLockRun=27873338373
 latestBillingLockRunHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
 ```
 
-The current `main` commit was pushed with `[skip ci]` to avoid another protected CI dispatch while the GitHub account gate remains unresolved. The latest real protected workflow evidence is still the billing-lock failure from run `27873338373`.
+The current `main` commit is newer than the Sprint 39 handoff commit. It has zero check-runs. The latest real protected workflow evidence is still the billing-lock failure from run `27873338373`, and that run is stale for the current source state.
 
 ## Final Demo Opening Order
 
@@ -49,6 +50,8 @@ Give reviewers these local-advisory artifacts:
 | Staging dry-run simulation | `docs/implementation/giwa-staging-dry-run-simulation.md` |
 | Sprint 38 staging readiness evidence | `docs/evidence/staging-readiness-sprint38-handoff.json` |
 | Sprint 39 final handoff evidence | `docs/evidence/commercial-readiness-sprint39-final-handoff.json` |
+| Sprint 40 freeze record | `docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md` |
+| Sprint 40 freeze evidence | `docs/evidence/commercial-readiness-sprint40-freeze.json` |
 
 External partner signoff is absent. Do not mark partner beta promotion complete until a real reviewer signs off and the result is recorded.
 
@@ -72,18 +75,18 @@ External partner signoff is absent. Do not mark partner beta promotion complete 
 | Protected artifact metadata | GitHub billing blocks the current run, and the workflow still needs protected artifact upload metadata before release approval |
 | Current main check-runs | current `main` has zero check-runs because the commit intentionally skipped CI under the external account gate |
 | Branch protection satisfaction | required checks are configured but not satisfied on current `main` |
+| Protected CI evidence | cannot be created until GitHub allows the runner to start and the workflow passes on current `main` |
+| Release approval | depends on protected CI, artifact metadata, owners, and rollback path |
 
 ## External-Only Blockers
 
 | Blocker | Why it remains external |
 | --- | --- |
 | GitHub account gate | protected workflow still fails before runner steps |
-| Protected CI evidence | cannot be created until GitHub allows the runner to start |
-| Release approval | depends on protected CI and artifact metadata |
 | Partner signoff | no external reviewer signoff is recorded |
 | External hosting approval | no hosting target or public URL is approved |
 | Managed infrastructure | no managed DB or cloud credential manager is connected |
 
 ## Safety Confirmation
 
-Sprint 39 does not dispatch or rerun GitHub Actions, public-host, deploy, connect managed infrastructure, print credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, create release tags, invent CI results, invent partner signoff, invent staging URLs, or claim protected CI provenance.
+Sprint 39 and the Sprint 40 freeze do not dispatch or rerun GitHub Actions, public-host, deploy, connect managed infrastructure, print credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, create release tags, invent CI results, invent partner signoff, invent staging URLs, or claim protected CI provenance.

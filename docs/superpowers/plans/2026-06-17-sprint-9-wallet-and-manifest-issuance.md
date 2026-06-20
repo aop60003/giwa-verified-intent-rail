@@ -46,7 +46,7 @@ Not allowed:
 - sending deposit transactions
 - relaying `IntentSubmitted`
 - running `deploy:giwa`, `fund:giwa`, `anchor:giwa`, or `verify:giwa`
-- requesting or storing a user wallet private key
+- do not request or store a user wallet private key
 - exposing server-only role keys or tokenized RPC values in public files
 - replacing the Sprint 7 static recorded demo
 - using Flashblocks as final confirmation

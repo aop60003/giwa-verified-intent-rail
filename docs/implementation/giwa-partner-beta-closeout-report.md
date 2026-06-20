@@ -174,13 +174,15 @@ Confirm before sharing:
 | backup catalog and restore drill |  |  |
 | retention owner |  |  |
 | incident owner |  |  |
-| partner signoff |  |  |
+| partner signoff | absent; do not mark complete | external reviewer or partner owner |
 
-Sprint 39 local-advisory packet:
+Current local-advisory packets:
 
 ```text
 docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
 docs/evidence/commercial-readiness-sprint39-final-handoff.json
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
 Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, or authorization for partner traffic.

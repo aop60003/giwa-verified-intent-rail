@@ -6,6 +6,24 @@ Sprint 8 adds a local runtime server for fresh Live MVP runs while preserving th
 
 Sprint 9 adds browser wallet readiness, GIWA Sepolia chain gating, and a signed wallet-bound manifest preview. It does not send approve or deposit transactions.
 
+## Current Sprint 40 Runtime Summary
+
+The current local live runtime supports the full localhost rehearsal path:
+
+- server-issued wallet-bound manifest preview
+- browser-wallet approve/deposit transaction requests
+- public approve/deposit transaction hash storage
+- standard RPC verifier match
+- dynamic receipt API unlock only after `matched`
+- local `/demo` control room and static fallback links
+
+The server and scripts still do not ask for wallet signing material, do not send approve/deposit transactions, do not send verifier-chain transactions, do not use Flashblocks as final confirmation, and do not expose the live API outside localhost. Sprint 40 records this as a local-advisory freeze only:
+
+```text
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
 ## Runtime Mode
 
 The workspace remains in non-git prototype mode when `Test-Path .\.git` returns `False`.

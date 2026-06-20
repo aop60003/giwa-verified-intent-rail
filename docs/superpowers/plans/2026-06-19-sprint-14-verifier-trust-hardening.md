@@ -56,13 +56,13 @@ Allowed:
 Not allowed:
 
 - read or print `.env` or `.env.local` contents
-- request or use a user wallet private key
+- do not request or use a user wallet private key
 - send wallet approve or deposit transactions from scripts or server code
 - run `deploy:giwa`, `fund:giwa`, `anchor:giwa`, `verify:giwa`, or mint commands
 - install dependencies
 - expose the live API outside localhost
 - use Flashblocks as final confirmation
-- add claims about production asset, production yield, settlement, identity/KYC service, phishing prevention, or safety guarantees
+- do not add claims about production asset, production yield, settlement, identity/KYC service, phishing prevention, or safety guarantees
 - implement hosted auth, tenant isolation, rate limits, or public beta scope; that is Sprint 15+
 
 ## File Structure

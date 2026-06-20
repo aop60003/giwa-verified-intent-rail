@@ -506,7 +506,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           replay: { requireHashRecomputation: true }
         });
         if (!gate.open) {
-          return { status: 404, body: { error: "receipt_not_found", gateReason: gate.reason } };
+          return { status: 404, body: { error: "receipt_not_found" } };
         }
         let payload: unknown;
         try {

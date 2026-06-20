@@ -41,6 +41,8 @@ This document maps the final MVP to the submission artifacts.
 | Sprint 38 local readiness evidence | `docs/evidence/staging-readiness-sprint38-handoff.json` |
 | Sprint 39 final handoff evidence | `docs/evidence/commercial-readiness-sprint39-final-handoff.json` |
 | Sprint 39 final readiness record | `docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md` |
+| Sprint 40 freeze evidence | `docs/evidence/commercial-readiness-sprint40-freeze.json` |
+| Sprint 40 freeze record | `docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md` |
 
 ## Evidence Summary
 
@@ -99,7 +101,7 @@ The artifact promotion plan requires staging verification and matching checksums
 
 Sprint 18 keeps the same local-first boundary and adds the partner beta rehearsal package. Staging remains blocked until the closeout report marks the Sprint 19 blocker register resolved.
 
-Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Protected CI, protected artifact metadata, partner signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
+Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Sprint 40 freezes the current local-advisory readiness state on current `main`, records that check-runs remain absent, and separates external-only blockers from mixed repo/workflow blockers. Protected CI evidence, protected artifact metadata, branch-protection satisfaction, release approval, partner signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
 
 ## Criteria Map
 
@@ -144,3 +146,4 @@ Checked on `2026-06-17`.
 - Official GIWA docs may change after the reference check date.
 - The UI is a dependency-free static demo, not a production web app.
 - Sprint 12 live snapshot files are generated from the matched fresh local live rehearsal.
+- Sprint 40 readiness freeze is local-advisory only because current `main` has no protected CI check-runs and the latest real Actions run is stale for current source.

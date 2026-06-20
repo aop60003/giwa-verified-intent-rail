@@ -8,7 +8,8 @@ const publicFiles = [
   "public/index.html",
   "public/live.html",
   "public/demo.html",
-  "public/demo-control-room.js"
+  "public/demo-control-room.js",
+  "public/flow-data.json"
 ];
 
 function publicCopyCorpus(): string {
@@ -30,6 +31,8 @@ describe("public commercial copy", () => {
     expect(copy).toContain("GIWA Verified Intent Rail");
     expect(copy).not.toMatch(/Loop Rail|GIWA Verified Activation Rail/u);
     expect(copy).not.toMatch(/Sprint 10|Sprint 11|Sprint 12/u);
+    expect(copy).not.toMatch(/Commercial receipt|Sprint 4 verifier/u);
+    expect(copy).not.toContain("Receipt route is enabled only when receiptHash and decisionTxHash exist.");
   });
 
   it("keeps forbidden commercial claims out of public assets", () => {

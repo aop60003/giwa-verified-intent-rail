@@ -412,3 +412,29 @@ commercialReadiness=blocked
 ```
 
 The local packet can be reviewed by a partner or operator, but it does not authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, GIWA chain-operation package commands, or protected CI provenance claims.
+
+## Sprint 40 Local Readiness Freeze Gate
+
+Sprint 40 freezes the maximum safe local-advisory package:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+currentMain=afe0bf50022717f8011fd7691b00ce0a8af90802
+currentMainCheckRuns=0
+latestBillingLockRun=27873338373
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+partnerSignoffPresent=false
+externalHostingApproved=false
+managedInfrastructureConnected=false
+commercialReadiness=blocked
+```
+
+The Sprint 40 packet is ready for local review and operator handoff only. It does not authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, GIWA chain-operation package commands, or protected CI provenance claims. Protected CI evidence for current `main`, protected artifact metadata, branch-protection satisfaction, and release approval remain mixed repository/workflow blockers after the external GitHub account gate clears.

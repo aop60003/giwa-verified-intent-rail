@@ -395,3 +395,14 @@ docs/evidence/commercial-readiness-sprint39-final-handoff.json
 ```
 
 The packet can support a local evidence review. It cannot authorize public hosting, staging execution, partner traffic, protected CI approval, or release approval.
+
+## Sprint 40 Local Freeze
+
+Use the Sprint 40 freeze for the current local-advisory rehearsal packet:
+
+```text
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+The freeze confirms that the local evidence packet is reviewable, but current `main` still has zero check-runs and protected CI provenance is absent. External partner signoff, external hosting approval, managed infrastructure approval, protected artifact metadata, branch-protection satisfaction, and release approval remain open blockers.

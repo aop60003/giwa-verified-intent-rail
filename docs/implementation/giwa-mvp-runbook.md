@@ -386,6 +386,18 @@ docs/evidence/commercial-readiness-sprint39-final-handoff.json
 
 The handoff references Sprint 38 local readiness evidence and keeps protected CI, protected artifact metadata, partner signoff, external hosting approval, and managed infrastructure blocked. It does not authorize public hosting, deployment, managed infrastructure, wallet actions, or GIWA chain-operation package commands.
 
+## Sprint 40 Staging Readiness Freeze
+
+Sprint 40 freezes the current local-advisory handoff packet:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Use Sprint 40 as the current commercial/staging readiness state. It records current `main` `afe0bf50022717f8011fd7691b00ce0a8af90802`, check-runs count `0`, and the latest billing-lock run as stale for current source. The packet is ready for local review only. Public hosting, staging execution, partner traffic, managed infrastructure, protected CI provenance, and release approval remain blocked.
+
 ## Safety Boundaries
 
 - The MVP displays one GIWA Sepolia mock vault action.

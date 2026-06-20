@@ -794,3 +794,29 @@ stagingPromotion=blocked
 ```
 
 Sprint 39 refreshes handoff and demo evidence only. It cannot create protected release provenance, because no protected run has passed on current `main`.
+
+## Sprint 40 Local Freeze Boundary
+
+Sprint 40 outputs:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Release authority remains blocked:
+
+```text
+currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+currentMainCheckRuns=0
+latestBillingLockRun=27873338373
+latestBillingLockRunHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestBillingLockRunStaleForCurrentMain=true
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 40 freezes the local-advisory packet only. It hardens bounded receipt behavior, public copy, and scan rules, then records that current `main` still has no protected check-run evidence. It cannot create protected release provenance, protected artifact metadata, branch-protection satisfaction, release approval, public hosting approval, partner signoff, or managed infrastructure approval.

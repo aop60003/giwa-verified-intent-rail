@@ -53,10 +53,6 @@ function Test-SafeContext {
     return $true
   }
 
-  if ($normalizedPath.StartsWith("docs\superpowers\plans\") -and $RuleId -in @("unsupported-claim", "sensitive-term")) {
-    return $true
-  }
-
   if ($normalizedPath.EndsWith(".test.ts") -and $RuleId -in @("unsupported-claim", "sensitive-term")) {
     return $true
   }
@@ -134,7 +130,20 @@ function Test-SafeContext {
     "non-final",
     "forbidden",
     "not.tomatch",
-    "blocked_keys"
+    "blocked_keys",
+    "secretpattern",
+    "secretsurfacepattern",
+    "secretsurface",
+    "envsecretpattern",
+    'rg -n $secret',
+    "rg -n ""instant",
+    'rg -n "private',
+    "auth context",
+    "credential abstraction",
+    "private[_-]?key",
+    "rpc[_-]?token",
+    "must-not-log",
+    "ruleid:path:line"
   )
 
   foreach ($marker in $guardrailMarkers) {
@@ -177,7 +186,7 @@ $unfinishedPattern = ("TO" + "DO") + "|" + ("FIX" + "ME") + "|" + ("T" + "BD")
 $failures = @()
 $failures += Invoke-Scan "unfinished-marker" $unfinishedPattern
 $failures += Invoke-Scan "unsupported-claim" "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|real yield|real funds|settlement"
-$failures += Invoke-Scan "sensitive-term" "private key|mnemonic|bearer|api key|secret"
+$failures += Invoke-Scan "sensitive-term" "private key|mnemonic|bearer|api[_-]?key|access[_-]?token|authorization|client[_-]?secret|begin private key|rpc[_-]?url|secret"
 
 if ($failures.Count -gt 0) {
   Write-Host "safe_scans=blocked failures=$($failures.Count)"

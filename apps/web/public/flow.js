@@ -250,7 +250,7 @@ function renderReceiptRoute(model, routeAllowed, routeHash) {
     app.append(
       el("section", { className: "hero-flow receipt-hero" }, [
         el("div", { className: "hero-copy" }, [
-          el("p", { className: "eyebrow", text: "Commercial receipt" }),
+          el("p", { className: "eyebrow", text: "Testnet receipt" }),
           el("h1", { text: "Receipt not found or not available" }),
           el("p", {
             className: "lead",
@@ -279,7 +279,7 @@ function renderReceiptRoute(model, routeAllowed, routeHash) {
   app.append(
     el("section", { className: "hero-flow receipt-hero" }, [
       el("div", { className: "hero-copy" }, [
-        el("p", { className: "eyebrow", text: "Commercial receipt" }),
+        el("p", { className: "eyebrow", text: "Testnet receipt" }),
         el("h1", { text: "Receipt ready" }),
         el("p", {
           className: "lead",

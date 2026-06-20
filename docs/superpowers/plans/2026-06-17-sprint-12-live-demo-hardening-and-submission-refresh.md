@@ -52,7 +52,7 @@ Not allowed:
 - send a wallet transaction from server code or a script
 - install dependencies
 - use Flashblocks as final confirmation
-- add claims about production assets, yield, settlement, identity checks, phishing prevention, or security guarantees
+- do not add claims about production assets, yield, settlement, identity checks, phishing prevention, or security guarantees
 - add multi-campaign dashboards or partner analytics beyond the one live run snapshot
 
 ## Fresh-Run Policy
@@ -135,7 +135,7 @@ Allowed Sprint 12 operations:
 Disallowed Sprint 12 operations:
 
 - server-side wallet transaction sending
-- wallet private key handling
+- no wallet private key handling
 - deploy, fund, or anchor commands
 - Flashblocks final confirmation
 - public evidence containing secret values or tokenized RPC URLs

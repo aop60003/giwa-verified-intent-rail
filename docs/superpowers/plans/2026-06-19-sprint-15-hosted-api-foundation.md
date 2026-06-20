@@ -58,7 +58,7 @@ Not allowed:
 - `deploy:giwa`, `fund:giwa`, `anchor:giwa`, `verify:giwa`, or mint commands.
 - `IntentRailV2` implementation or deployment.
 - Flashblocks as final confirmation.
-- Production asset, yield, settlement, identity-service, phishing-prevention, or safety-guarantee claims.
+- Do not add production asset, yield, settlement, identity-service, phishing-prevention, or safety-guarantee claims.
 - Reading or printing real env file contents.
 
 ## Runtime Modes

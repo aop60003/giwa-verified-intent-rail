@@ -66,6 +66,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 37 | `2026-06-20-sprint-37-protected-ci-dispatch-after-reported-billing-unlock.md` | protected CI dispatch after user-reported billing unlock, current-main check results, billing-lock annotation, zero-artifact handoff, and staging/hosted/partner no-go update | Sprint 36 blocked-billing-lock |
 | 38 | `2026-06-20-sprint-38-hosted-adapter-local-contract-and-staging-simulation.md` | local-advisory hosted adapter contract, staging dry-run simulation, safe-track handoff, and external-only blocker register while protected CI remains billing-locked | Sprint 37 blocked-billing-lock-after-dispatch |
 | 39 | `2026-06-20-sprint-39-commercial-hardening-and-partner-handoff-final-readiness.md` | commercial hardening, partner handoff final readiness, final demo packet refresh, and external-only blocker separation without touching protected CI | Sprint 38 local-advisory handoff |
+| 40 | `2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md` | external-only blocker handoff, local staging-readiness freeze, bounded receipt API hardening, public copy hardening, safe-scan tightening, and current-main local-advisory evidence without touching protected CI | Sprint 39 local-advisory handoff |
 
 ## Sprint 0 Execution Artifacts
 
@@ -176,6 +177,8 @@ Sprint 37 dispatches the protected workflow on current `main` after the user rep
 Sprint 38 records the next safe-track handoff after the billing annotation repeats on run `27873338373` for `2b414c91b1da6ed64287dbf7b2635be7586e287d`. It does not dispatch or rerun protected CI. It adds local evaluators for hosted adapter contract status and staging dry-run simulation, writes public-safe handoff evidence, and keeps the authority `local-advisory` until protected CI passes and protected artifact metadata exists.
 
 Sprint 39 closes the commercial hardening and partner handoff safe track. It refreshes the final demo order, partner handoff packet, acceptance checklist, submission evidence map, commercial readiness gate, and blocker register against Sprint 38 evidence while recording current `main` check-runs count `0` and keeping protected CI as an external GitHub account blocker.
+
+Sprint 40 freezes the maximum safe local handoff package on current `main` after Sprint 39. It records `afe0bf50022717f8011fd7691b00ce0a8af90802` with zero check-runs, keeps the latest billing-lock run stale for current source, hardens bounded receipt and public copy guardrails, and separates remaining blockers into external-only and mixed repo/workflow gates. Sprint 40 does not dispatch or rerun protected CI, public-host, deploy, connect managed infrastructure, read env file contents, output credential values, send wallet actions, run chain-operation commands, install dependencies, create release tags, invent CI results, invent partner signoff, invent staging URLs, or claim protected CI provenance.
 
 ## Global Stop Conditions
 

@@ -2,14 +2,14 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 39 records the current `main` state and keeps safe local tracks separate from external and mixed blockers:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 40 records the current `main` state and freezes the local-advisory package while keeping safe local tracks separate from external and mixed blockers:
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-currentMainHead=042d58ddabdf16426c4b870c2c63be2bd406a68f
+currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 latestRealActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
@@ -34,6 +34,7 @@ hostedAdapterLocalContract=blocked-local-advisory
 stagingDryRunSimulation=blocked-local-advisory
 protectedArtifactMetadata=mixed-repo-workflow-blocker
 partnerHandoffPacket=local-advisory-ready
+localReadinessFreeze=docs/evidence/commercial-readiness-sprint40-freeze.json
 external partner signoff=absent
 public host approval=absent
 durable staging storage=absent
@@ -701,6 +702,52 @@ stagingDryRunExecution=blocked
 ```
 
 Sprint 39 closes local partner handoff readiness. Staging execution remains blocked until the external GitHub account gate clears, a protected run passes on current `main`, protected artifact metadata exists, partner signoff is recorded, hosting approval exists, and managed infrastructure is approved.
+
+## Sprint 40 External-Only Blocker Handoff And Staging Readiness Freeze
+
+Sprint 40 plan, record, and freeze evidence:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
+docs/evidence/commercial-readiness-sprint40-freeze.json
+```
+
+Current Sprint 40 blocker state:
+
+```text
+currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+currentMainCheckRuns=0
+sourceBinding=blocked-no-protected-run-for-current-main
+latestRecordedRun=27873338373
+latestRecordedRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestRecordedRunStaleForCurrentMain=true
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+partnerHandoffPacket=local-advisory-ready
+externalPartnerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+stagingDryRunExecution=blocked
+```
+
+External-only blockers:
+
+| Blocker | Required transition |
+| --- | --- |
+| GitHub account billing lock | GitHub account must allow runner startup |
+| External partner signoff | real reviewer or partner signoff must be recorded |
+| External hosting approval | host, origin policy, rollback owner, and operator must be approved |
+| Managed infrastructure approval | durable DB, credential manager, backup target, and restore owner must be approved |
+
+Mixed repo/workflow blockers:
+
+| Blocker | Required transition |
+| --- | --- |
+| Protected CI evidence for current `main` | external account gate clears and all required checks pass on `afe0bf50022717f8011fd7691b00ce0a8af90802` or a later intended source commit |
+| Protected artifact metadata | protected workflow emits staging-named artifact metadata after required checks pass |
+| Branch protection satisfaction | required check contexts pass on the protected branch |
+| Release approval | protected CI, protected artifacts, owners, rollback path, and partner decision are complete |
 
 ## Sprint 21 Failure Triage
 

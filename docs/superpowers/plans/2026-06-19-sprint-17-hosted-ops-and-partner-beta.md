@@ -67,7 +67,7 @@ Not allowed:
 - New dependency installation.
 - Sprint 18 staging deployment or post-beta scope.
 - Flashblocks as final confirmation.
-- Production asset, yield, fund movement, settlement, identity-service, phishing-prevention, or safety warranty claims.
+- Do not add production asset, yield, fund movement, settlement, identity-service, phishing-prevention, or safety warranty claims.
 - Reading, printing, or content-scanning real env files.
 
 ## Planned File Structure
