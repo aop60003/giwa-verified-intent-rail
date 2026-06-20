@@ -192,3 +192,29 @@ cloudSecretManagerConnection=blocked
 ```
 
 Hosted adapter implementation still requires a passing protected-CI run, protected artifact metadata, adapter owner, storage/restore evidence, auth/tenant/origin gates, rollback owner, and release approval.
+
+## Sprint 38 Local Contract State
+
+Sprint 38 adds a code-backed local contract evaluator:
+
+```text
+apps/web/src/lib/live/hostedAdapterContract.ts
+apps/web/src/lib/live/hostedAdapterContract.test.ts
+docs/implementation/giwa-hosted-adapter-local-contract.md
+```
+
+Current decision:
+
+```text
+currentMainHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestWorkflowRunId=27873338373
+latestWorkflowRunConclusion=failure
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactMetadataReady=false
+hostedAdapterLocalContract=blocked-local-advisory
+managedConnectionAttempted=false
+externalConnectionAllowed=false
+blockers=protected_ci_missing,protected_artifact_metadata_missing,rate_limit_durability_missing,queue_durability_missing
+```
+
+The evaluator makes the adapter contract explicit while preserving the no-go state for managed infrastructure, public hosting, deployment, and protected provenance claims.

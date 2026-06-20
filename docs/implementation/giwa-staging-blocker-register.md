@@ -2,20 +2,20 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. Sprint 37 dispatched protected CI after a user-reported billing unlock, but GitHub still returned the account billing annotation before runner steps, so protected CI and release approval remain absent:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 38 advances only safe local tracks:
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-currentMainHead=b769003e733a83faa70b57b4c0bda6ac26821044
-latestRealActionsRunHeadSha=b769003e733a83faa70b57b4c0bda6ac26821044
+currentMainHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestRealActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=public
 remotePushApproval=approved-2026-06-20
 remotePush=complete
-githubActionsRun=27852941488
+githubActionsRun=27873338373
 githubActionsEvent=workflow_dispatch
 githubActionsConclusion=failure
 githubActionsFirstJob=source-provenance
@@ -29,6 +29,8 @@ releaseApproval=absent
 rollbackOwner=absent
 protected-ci=blocked-billing-lock-after-dispatch
 branch-protection=configured-required-checks-failing
+hostedAdapterLocalContract=blocked-local-advisory
+stagingDryRunSimulation=blocked-local-advisory
 external partner signoff=absent
 public host approval=absent
 durable staging storage=absent
@@ -635,6 +637,38 @@ Sprint 37 cannot proceed to staging dry-run execution, hosted adapter implementa
 | P1 | skipped required checks | nine required jobs are skipped | protected CI gate | block release approval |
 | P1 | zero protected artifacts | Actions artifacts total is `0` | artifact handoff gate | block protected artifact upload and staging promotion |
 | P2 | run is used as release authority | run conclusion is failure | provenance gate | record as failed dispatch evidence only |
+
+## Sprint 38 Hosted Adapter Local Contract And Staging Simulation
+
+Sprint 38 plan and handoff evidence:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-38-hosted-adapter-local-contract-and-staging-simulation.md
+docs/implementation/giwa-hosted-adapter-local-contract.md
+docs/implementation/giwa-staging-dry-run-simulation.md
+docs/evidence/staging-readiness-sprint38-handoff.json
+```
+
+Current Sprint 38 blocker state:
+
+```text
+currentMainHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+workflowDispatchAfterRepeatedBillingLock=false
+latestWorkflowRunId=27873338373
+latestWorkflowRunConclusion=failure
+latestWorkflowRunFirstJob=source-provenance
+latestWorkflowRunFirstJobAnnotation=account-locked-due-to-billing
+latestWorkflowRunDownstreamJobs=9-skipped
+latestWorkflowRunArtifactTotalCount=0
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactGeneration=blocked
+protectedArtifactUpload=blocked-no-artifacts
+hostedAdapterLocalContract=blocked-local-advisory
+stagingDryRunSimulation=blocked-local-advisory
+externalOnlyBlockers=github-account-billing-lock,protected-artifact-metadata-absent,partner-signoff-absent,external-hosting-approval-absent
+```
+
+Sprint 38 can continue local hardening, but cannot authorize staging execution while protected CI is failing, artifact metadata is absent, partner signoff is absent, and external hosting approval is absent.
 
 ## Sprint 21 Failure Triage
 

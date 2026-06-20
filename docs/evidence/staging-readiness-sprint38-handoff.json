@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "1",
+  "capturedAt": "2026-06-20T14:21:55Z",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "protectedCi": {
+    "status": "blocked-billing-lock-after-dispatch",
+    "latestDispatch": {
+      "runId": 27873338373,
+      "workflowName": "ci-source-provenance",
+      "event": "workflow_dispatch",
+      "headSha": "2b414c91b1da6ed64287dbf7b2635be7586e287d",
+      "runUrl": "https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27873338373",
+      "conclusion": "failure",
+      "createdAt": "2026-06-20T13:59:30Z",
+      "updatedAt": "2026-06-20T13:59:35Z",
+      "sourceProvenance": {
+        "jobId": 82488680678,
+        "conclusion": "failure",
+        "annotationClass": "github-account-billing-lock",
+        "annotationMessage": "The job was not started because your account is locked due to a billing issue.",
+        "runnerStepsStarted": false
+      },
+      "requiredChecks": [
+        { "name": "source-provenance", "conclusion": "failure" },
+        { "name": "workflow-command-boundary", "conclusion": "skipped" },
+        { "name": "node-syntax-checks", "conclusion": "skipped" },
+        { "name": "safe-scans", "conclusion": "skipped" },
+        { "name": "protocol-checks", "conclusion": "skipped" },
+        { "name": "contracts-checks", "conclusion": "skipped" },
+        { "name": "web-checks", "conclusion": "skipped" },
+        { "name": "workspace-checks", "conclusion": "skipped" },
+        { "name": "protected-ci-gate", "conclusion": "skipped" },
+        { "name": "artifact-provenance", "conclusion": "skipped" }
+      ],
+      "artifactTotalCount": 0
+    }
+  },
+  "hostedAdapterContract": {
+    "authority": "local-advisory",
+    "releaseGrade": false,
+    "activation": "blocked",
+    "adapterKind": "local-sqlite",
+    "externalConnectionAllowed": false,
+    "inputs": {
+      "protectedCiPassed": false,
+      "protectedArtifactMetadataReady": false,
+      "managedConnectionAttempted": false,
+      "processEnvOnly": true,
+      "migrationContractReady": true,
+      "backupContractReady": true,
+      "restoreContractReady": true,
+      "tenantPolicyReady": true,
+      "originPolicyReady": true,
+      "rateLimitDurabilityReady": false,
+      "queueDurabilityReady": false
+    },
+    "blockers": [
+      "protected_ci_missing",
+      "protected_artifact_metadata_missing",
+      "rate_limit_durability_missing",
+      "queue_durability_missing"
+    ]
+  },
+  "stagingDryRunSimulation": {
+    "authority": "local-advisory",
+    "releaseGrade": false,
+    "execution": "blocked",
+    "canCreatePublicStagingUrl": false,
+    "inputs": {
+      "protectedCi": "blocked-billing-lock",
+      "protectedArtifactMetadataReady": false,
+      "hostedAdapterActivation": "blocked",
+      "staticFallbackReady": true,
+      "liveRehearsalReady": true,
+      "commercialReceiptGateReady": true,
+      "partnerSignoffPresent": false,
+      "externalHostingApproved": false
+    },
+    "blockers": [
+      "protected_ci_billing_lock",
+      "protected_artifact_metadata_missing",
+      "hosted_adapter_blocked",
+      "partner_signoff_absent",
+      "external_hosting_not_approved"
+    ],
+    "externalOnlyBlockers": [
+      "protected_ci_billing_lock",
+      "protected_artifact_metadata_missing",
+      "partner_signoff_absent",
+      "external_hosting_not_approved"
+    ]
+  },
+  "localReadiness": {
+    "staticFallbackReady": true,
+    "liveRehearsalReady": true,
+    "commercialReceiptGateReady": true,
+    "localEvaluatorTestsReady": true
+  },
+  "externalOnlyBlockers": [
+    "github_account_billing_lock",
+    "protected_artifact_metadata_absent",
+    "partner_signoff_absent",
+    "external_hosting_approval_absent",
+    "managed_infrastructure_not_connected"
+  ],
+  "forbiddenActionsObserved": {
+    "workflowDispatchOrRerunAfterBillingLockRepeat": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "envFileContentRead": false,
+    "credentialValueOutput": false,
+    "walletTransaction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "fakeCiOrProvenance": false
+  },
+  "nextAllowedAction": "Continue local-advisory hosted adapter, staging simulation, commercial hardening, partner handoff, and final readiness work until GitHub billing/account state is externally resolved."
+}

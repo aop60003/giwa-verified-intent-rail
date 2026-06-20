@@ -196,3 +196,33 @@ stagingDryRunExecution=blocked-protected-ci
 ```
 
 Staging dry-run execution remains no-go because the required checks did not pass and no protected artifact metadata exists.
+
+## Sprint 38 Staging Simulation State
+
+Sprint 38 adds a local staging dry-run simulation evaluator:
+
+```text
+apps/web/src/lib/live/stagingDryRunSimulation.ts
+apps/web/src/lib/live/stagingDryRunSimulation.test.ts
+docs/implementation/giwa-staging-dry-run-simulation.md
+docs/evidence/staging-readiness-sprint38-handoff.json
+```
+
+Current decision:
+
+```text
+currentMainHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestWorkflowRunId=27873338373
+protectedCI=blocked-billing-lock-after-dispatch
+protectedArtifactMetadataReady=false
+hostedAdapterActivation=blocked
+staticFallbackReady=true
+liveRehearsalReady=true
+commercialReceiptGateReady=true
+partnerSignoffPresent=false
+externalHostingApproved=false
+stagingDryRunSimulation=blocked-local-advisory
+canCreatePublicStagingUrl=false
+```
+
+The local static fallback, local live rehearsal, and receipt gate remain useful for review, but staging dry-run execution remains no-go until protected CI, protected artifact metadata, partner signoff, and external hosting approval are present.

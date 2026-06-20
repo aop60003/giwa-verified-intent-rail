@@ -359,3 +359,30 @@ commercialReadiness=blocked
 ```
 
 Commercial readiness remains blocked until protected CI passes on the intended source commit, protected artifact metadata exists, release and rollback owners approve, and staging/hosted/partner gates are green.
+
+## Sprint 38 Safe-Track Handoff Gate
+
+Sprint 38 adds local-advisory evaluators and handoff evidence:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-38-hosted-adapter-local-contract-and-staging-simulation.md
+docs/implementation/giwa-hosted-adapter-local-contract.md
+docs/implementation/giwa-staging-dry-run-simulation.md
+docs/evidence/staging-readiness-sprint38-handoff.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+latestWorkflowRunId=27873338373
+latestWorkflowRunConclusion=failure
+source-provenance=failure
+downstreamRequiredJobs=9-skipped
+workflowRunArtifactTotalCount=0
+protectedCI=blocked-billing-lock-after-dispatch
+hostedAdapterLocalContract=blocked-local-advisory
+stagingDryRunSimulation=blocked-local-advisory
+commercialReadiness=blocked
+```
+
+The Sprint 38 local contract and simulation do not authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, or GIWA chain-operation commands.
