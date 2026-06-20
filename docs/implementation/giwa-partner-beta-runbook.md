@@ -83,8 +83,8 @@ Use this order when the local or staged reviewer surface is available:
 2. /live fresh wallet-run path
 3. /api/receipts/<matchedReceiptHash> after matched receipt exists
 4. / static fallback
-5. /partner evidence packet
-6. /partner-snapshot.json static snapshot
+5. http://127.0.0.1:4176/partner static fallback partner console
+6. http://127.0.0.1:4176/partner-snapshot.json static snapshot
 ```
 
 If live state, wallet readiness, faucet state, RPC readiness, DB readiness, or hosted policy blocks review, switch to the static fallback and label it as recorded GIWA Sepolia testnet evidence.
@@ -285,3 +285,25 @@ protectedCI=blocked-billing-lock
 ```
 
 Do not ask a partner to use a public hosted surface until protected CI, adapter implementation approval, storage/restore evidence, auth/tenant/origin gates, incident owner, retention owner, and partner signoff are recorded.
+
+## Sprint 39 Final Handoff Boundary
+
+Sprint 39 refreshes the local-advisory partner handoff packet:
+
+```text
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+Partner or reviewer signoff, if collected later, confirms review of the local-advisory evidence packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, or authorization for partner traffic.
+
+Current partner traffic state:
+
+```text
+partnerSignoffPresent=false
+partnerBetaTraffic=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+externalHostingApproved=false
+managedInfrastructureConnected=false
+```

@@ -30,7 +30,7 @@ Narration:
 GIWA Verified Intent Rail shows one GIWA Sepolia mock vault action from a wallet-bound signed manifest through browser-wallet execution, standard RPC evidence, verifier match, and a dynamic receipt.
 ```
 
-Then open the dynamic receipt API:
+When using the pre-seeded Sprint 12 live DB, open the dynamic receipt API after confirming the run is `matched`:
 
 ```text
 http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8
@@ -164,6 +164,8 @@ docs/evidence/giwa-sepolia-mvp-evidence.json
 packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json
 apps/web/public/partner-snapshot.json
 docs/evidence/live-demo-sprint12-snapshot.json
+docs/evidence/staging-readiness-sprint38-handoff.json
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
 ```
 
 Close with:
@@ -208,3 +210,14 @@ docs/implementation/giwa-partner-beta-closeout-report.md
 ```
 
 Close the rehearsal by recording only observed results: which local URLs opened, whether the matched receipt was accepted, which fallback drill was run, and whether Sprint 19 staging blockers remain open.
+
+## Sprint 39 Partner Handoff Close
+
+The partner-facing packet is local-advisory:
+
+```text
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, or authorization for partner traffic.

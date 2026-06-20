@@ -87,9 +87,11 @@
     ],
     "externalOnlyBlockers": [
       "protected_ci_billing_lock",
-      "protected_artifact_metadata_missing",
       "partner_signoff_absent",
       "external_hosting_not_approved"
+    ],
+    "mixedRepoWorkflowBlockers": [
+      "protected_artifact_metadata_missing"
     ]
   },
   "localReadiness": {
@@ -100,10 +102,14 @@
   },
   "externalOnlyBlockers": [
     "github_account_billing_lock",
-    "protected_artifact_metadata_absent",
     "partner_signoff_absent",
     "external_hosting_approval_absent",
     "managed_infrastructure_not_connected"
+  ],
+  "mixedRepoWorkflowBlockers": [
+    "protected_artifact_metadata_absent",
+    "rate_limit_durability_missing",
+    "queue_durability_missing"
   ],
   "forbiddenActionsObserved": {
     "workflowDispatchOrRerunAfterBillingLockRepeat": false,

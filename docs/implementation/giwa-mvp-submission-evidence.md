@@ -4,11 +4,12 @@ This document maps the final MVP to the submission artifacts.
 
 ## What To Open First
 
-1. Fresh live flow: `http://127.0.0.1:4190/live`
-2. Dynamic receipt API: `http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8`
-3. Static fallback: `http://127.0.0.1:4176/`
-4. Partner console: `http://127.0.0.1:4176/partner`
-5. Static snapshot: `http://127.0.0.1:4176/partner-snapshot.json`
+1. Demo control room: `http://127.0.0.1:4190/demo`
+2. Fresh live flow: `http://127.0.0.1:4190/live`
+3. Dynamic receipt API after `matched`: `http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8`
+4. Static fallback: `http://127.0.0.1:4176/`
+5. Partner console: `http://127.0.0.1:4176/partner`
+6. Static snapshot: `http://127.0.0.1:4176/partner-snapshot.json`
 
 ## Artifact Map
 
@@ -37,6 +38,9 @@ This document maps the final MVP to the submission artifacts.
 | Demo script | `docs/implementation/giwa-mvp-demo-script.md` |
 | Runbook | `docs/implementation/giwa-mvp-runbook.md` |
 | Acceptance checklist | `docs/implementation/giwa-mvp-acceptance-checklist.md` |
+| Sprint 38 local readiness evidence | `docs/evidence/staging-readiness-sprint38-handoff.json` |
+| Sprint 39 final handoff evidence | `docs/evidence/commercial-readiness-sprint39-final-handoff.json` |
+| Sprint 39 final readiness record | `docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md` |
 
 ## Evidence Summary
 
@@ -82,7 +86,7 @@ Sprint 17 adds hosted operations and partner beta readiness artifacts:
 
 - hosted environment contract
 - release gate checklist
-- CI blocked-state rule for non-git prototype mode
+- CI blocked-state rule for git-backed source with protected CI blocked by external account state
 - artifact promotion manifest shape
 - observability and alert model
 - backup/restore drill
@@ -94,6 +98,8 @@ Sprint 17 adds hosted operations and partner beta readiness artifacts:
 The artifact promotion plan requires staging verification and matching checksums before any later `prod-testnet` promotion. Sprint 17 does not perform that promotion.
 
 Sprint 18 keeps the same local-first boundary and adds the partner beta rehearsal package. Staging remains blocked until the closeout report marks the Sprint 19 blocker register resolved.
+
+Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Protected CI, protected artifact metadata, partner signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
 
 ## Criteria Map
 

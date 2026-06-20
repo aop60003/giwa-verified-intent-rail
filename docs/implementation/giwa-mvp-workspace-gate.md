@@ -4,6 +4,8 @@
 
 Sprint 0 runs in non-git prototype mode.
 
+Current note for Sprint 39: this section is historical Sprint 0 evidence. The workspace has since been converted to a git-backed repository with a workflow file, but protected CI provenance remains blocked by the external GitHub account gate and missing protected artifact metadata. Current readiness records should use the Sprint 39 handoff evidence instead of treating the Sprint 0 non-git observation as the active state.
+
 Evidence:
 
 ```powershell
@@ -16,7 +18,7 @@ Observed result on 2026-06-16:
 False
 ```
 
-Because this folder is not a git repository, commit-based sprint execution is inactive. Later sprint plans may keep commit commands as review guidance, but agents must not report commits, require git history, or assume branch isolation until the user initializes or clones a git-backed workspace.
+At Sprint 0, because this folder was not a git repository, commit-based sprint execution was inactive. Later sprint plans could keep commit commands as review guidance, but agents could not report commits, require git history, or assume branch isolation until the user initialized or cloned a git-backed workspace.
 
 ## Commit Step Policy
 

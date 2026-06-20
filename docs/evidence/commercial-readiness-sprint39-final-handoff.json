@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1",
+  "capturedAt": "2026-06-20T14:38:56Z",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "currentMain": {
+    "sha": "042d58ddabdf16426c4b870c2c63be2bd406a68f",
+    "remote": "origin/main",
+    "checkRunsCount": 0,
+    "protectedCiProvenance": "absent",
+    "sourceBinding": "blocked-no-protected-run-for-current-main"
+  },
+  "latestProtectedCiEvidence": {
+    "runId": 27873338373,
+    "headSha": "2b414c91b1da6ed64287dbf7b2635be7586e287d",
+    "workflowName": "ci-source-provenance",
+    "conclusion": "failure",
+    "failureClass": "github_account_billing_lock",
+    "sourceProvenance": "failure",
+    "downstreamRequiredJobs": "9-skipped",
+    "artifactTotalCount": 0,
+    "runUrl": "https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27873338373",
+    "staleForCurrentMain": true
+  },
+  "sprint38Readiness": {
+    "evidencePath": "docs/evidence/staging-readiness-sprint38-handoff.json",
+    "evidenceSha256": "DFDDBCF91B5374B5B980BE1DFCCFE70364A66469B41933006605E8B6ED97D3C3",
+    "hostedAdapterLocalContract": "blocked-local-advisory",
+    "stagingDryRunSimulation": "blocked-local-advisory",
+    "staticFallbackReady": true,
+    "liveRehearsalReady": true,
+    "commercialReceiptGateReady": true
+  },
+  "hostedAdapterContractReview": {
+    "localReady": [
+      "processEnvOnly",
+      "migrationContractReady",
+      "backupContractReady",
+      "restoreContractReady",
+      "tenantPolicyReady",
+      "originPolicyReady"
+    ],
+    "localRemainingBlockers": [
+      "rate_limit_durability_missing",
+      "queue_durability_missing"
+    ],
+    "activation": "blocked-local-advisory"
+  },
+  "stagingDryRunBlockerReview": {
+    "blockers": [
+      "protected_ci_billing_lock",
+      "protected_artifact_metadata_missing",
+      "hosted_adapter_blocked",
+      "partner_signoff_absent",
+      "external_hosting_not_approved"
+    ],
+    "externalOnlyBlockers": [
+      "github_account_billing_lock",
+      "partner_signoff_absent",
+      "external_hosting_approval_absent",
+      "managed_infrastructure_not_connected"
+    ],
+    "mixedRepoWorkflowBlockers": [
+      "protected_artifact_metadata_absent",
+      "current_main_check_runs_absent",
+      "branch_protection_required_checks_not_satisfied"
+    ]
+  },
+  "sprint39LocalReadiness": {
+    "finalDemoOrder": "recorded",
+    "partnerHandoffPacket": "recorded",
+    "acceptanceChecklist": "refreshed",
+    "submissionEvidenceMap": "refreshed",
+    "commercialReadinessGate": "refreshed",
+    "blockerRegister": "external-only-separated"
+  },
+  "mixedRepoWorkflowBlockers": [
+    "protected_artifact_metadata_absent",
+    "current_main_check_runs_absent",
+    "branch_protection_required_checks_not_satisfied"
+  ],
+  "externalOnlyBlockers": [
+    "github_account_gate",
+    "protected_ci_evidence_absent_for_current_main",
+    "release_approval_absent",
+    "external_partner_signoff_absent",
+    "external_hosting_approval_absent",
+    "managed_infrastructure_not_connected"
+  ],
+  "staleRuns": [
+    {
+      "runId": 27873338373,
+      "headSha": "2b414c91b1da6ed64287dbf7b2635be7586e287d",
+      "conclusion": "failure",
+      "reason": "github_account_billing_lock",
+      "releaseAuthority": false
+    },
+    {
+      "runId": 27852941488,
+      "conclusion": "failure",
+      "reason": "github_account_billing_lock",
+      "releaseAuthority": false
+    },
+    {
+      "runId": 27850867132,
+      "conclusion": "failure",
+      "reason": "github_account_billing_lock",
+      "releaseAuthority": false
+    }
+  ],
+  "forbiddenActionsObserved": {
+    "workflowDispatchOrRerun": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "envFileContentRead": false,
+    "credentialValueOutput": false,
+    "walletTransaction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "fakeCiOrProvenance": false,
+    "fakePartnerSignoff": false,
+    "fakeStagingUrl": false
+  },
+  "nextSprint": "docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md",
+  "exitApproval": {
+    "approvedBy": "local-operator",
+    "approvedAt": "2026-06-20",
+    "evidencePath": "docs/evidence/commercial-readiness-sprint39-final-handoff.json",
+    "nextSprint": "docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md"
+  },
+  "nextAllowedAction": "Freeze the readiness package as external-only blocked, or continue with a Sprint 40 blocker handoff without touching protected CI until the external GitHub account gate is resolved."
+}

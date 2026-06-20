@@ -386,3 +386,29 @@ commercialReadiness=blocked
 ```
 
 The Sprint 38 local contract and simulation do not authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, or GIWA chain-operation commands.
+
+## Sprint 39 Commercial Handoff Gate
+
+Sprint 39 closes the local-advisory commercial hardening and partner handoff packet:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-39-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+currentMain=042d58ddabdf16426c4b870c2c63be2bd406a68f
+currentMainCheckRuns=0
+latestBillingLockRun=27873338373
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+partnerSignoffPresent=false
+externalHostingApproved=false
+managedInfrastructureConnected=false
+commercialReadiness=blocked
+```
+
+The local packet can be reviewed by a partner or operator, but it does not authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, GIWA chain-operation package commands, or protected CI provenance claims.

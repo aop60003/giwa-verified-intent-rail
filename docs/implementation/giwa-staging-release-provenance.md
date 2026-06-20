@@ -768,3 +768,29 @@ stagingPromotion=blocked
 ```
 
 The hosted adapter contract and staging dry-run simulation are useful for readiness review only. They cannot supersede protected CI, protected artifact metadata, release owner approval, rollback owner approval, partner signoff, or hosting approval.
+
+## Sprint 39 Commercial Handoff Boundary
+
+Sprint 39 outputs:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-39-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+Release authority remains blocked:
+
+```text
+currentMainHead=042d58ddabdf16426c4b870c2c63be2bd406a68f
+currentMainCheckRuns=0
+latestBillingLockRun=27873338373
+latestBillingLockRunHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestBillingLockRunStaleForCurrentMain=true
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Sprint 39 refreshes handoff and demo evidence only. It cannot create protected release provenance, because no protected run has passed on current `main`.

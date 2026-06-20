@@ -23,10 +23,11 @@ releaseGrade=false
 execution=blocked
 canCreatePublicStagingUrl=false
 blockers=protected_ci_billing_lock,protected_artifact_metadata_missing,hosted_adapter_blocked,partner_signoff_absent,external_hosting_not_approved
-externalOnlyBlockers=protected_ci_billing_lock,protected_artifact_metadata_missing,partner_signoff_absent,external_hosting_not_approved
+externalOnlyBlockers=protected_ci_billing_lock,partner_signoff_absent,external_hosting_not_approved
+mixedRepoWorkflowBlockers=protected_artifact_metadata_missing
 ```
 
-The local static fallback, local live rehearsal, and matched-only receipt gate remain available for review. They do not replace protected CI, protected artifact metadata, partner signoff, or hosting approval.
+The local static fallback, local live rehearsal, and matched-only receipt gate remain available for review. They do not replace protected CI, protected artifact metadata, partner signoff, or hosting approval. Protected artifact metadata remains mixed because it depends on both the external account gate and repository workflow upload metadata.
 
 ## Simulation Boundary
 

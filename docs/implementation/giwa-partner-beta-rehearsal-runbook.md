@@ -358,7 +358,7 @@ Test-Path .git
 Test-Path .github
 ```
 
-Both values can be `False` in the current prototype workspace, so CI provenance and artifact promotion remain blocked.
+Current source state is git-backed with `.git=True` and `.github=True`, but current `main` has zero check-runs and protected CI remains blocked by the external GitHub account gate. CI provenance and artifact promotion remain blocked.
 
 ## Sprint 18 Exit Gate
 
@@ -384,3 +384,14 @@ Sprint 18 rehearsal documentation is ready when:
 - `docs/implementation/giwa-partner-beta-feedback-form.md`
 - `docs/implementation/giwa-partner-beta-closeout-report.md`
 - `docs/implementation/giwa-partner-beta-rehearsal-checklist.md`
+
+## Sprint 39 Final Handoff
+
+Use the Sprint 39 packet for local-advisory partner review:
+
+```text
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+The packet can support a local evidence review. It cannot authorize public hosting, staging execution, partner traffic, protected CI approval, or release approval.

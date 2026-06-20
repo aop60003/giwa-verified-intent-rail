@@ -19,7 +19,9 @@ one partner evidence packet
 
 ## CI Blocked State
 
-The current workspace can be non-git prototype mode. When either `.git` or `.github` is absent, authoritative CI, branch protection, release provenance, and artifact promotion are blocked.
+Historical hosted-ops planning allowed the workspace to be non-git prototype mode. When either `.git` or `.github` is absent, authoritative CI, branch protection, release provenance, and artifact promotion are blocked.
+
+Current Sprint 39 posture: `.git`, `.github`, and `.github/workflows/ci.yml` exist, but current `main` has zero check-runs, the latest observed Actions run is stale and failed before runner steps with the GitHub billing/account annotation, and protected artifact metadata is absent. Hosted beta, public release, and staging dry-run execution remain blocked until protected CI passes on current `main` and protected artifact metadata exists.
 
 Check:
 
@@ -28,13 +30,13 @@ Test-Path .git
 Test-Path .github
 ```
 
-Expected current prototype posture:
+Historical prototype posture:
 
 ```text
 At least one value may be False. No hosted beta or public release is approved from this state.
 ```
 
-Do not create hosted release artifacts from a workspace without a protected source-control and CI path.
+Do not create hosted release artifacts from a workspace without a protected source-control and CI path, or from a git-backed workspace whose protected CI is still blocked.
 
 ## Environment Contract
 
@@ -321,11 +323,13 @@ docs/implementation/giwa-staging-blocker-register.md
 
 Current Sprint 19 blocker state:
 
-- `.git` and `.github` are absent in the current prototype workspace
-- protected CI and release provenance are blocked
+- Historical Sprint 19 planning began from a prototype posture; current Sprint 39 is git-backed, but protected CI and release provenance remain blocked
+- current `main` has zero check-runs
+- latest real Actions evidence is stale for current `main` and failed before runner steps with the GitHub account gate
+- protected artifact metadata is absent
 - staging host selection is absent
 - durable staging storage and restore evidence are absent
-- hosted readiness currently needs real repository, tenant, rate-limit, queue, and backup probes before public binding
+- hosted readiness currently needs protected CI, protected artifact metadata, tenant, rate-limit, queue, and backup probes before public binding
 - external partner signoff is absent
 
 ## Hosted Ops Exit Gate
@@ -334,7 +338,7 @@ Hosted ops readiness is met only when:
 
 - environment contract and redacted readiness are documented
 - release gate checklist is complete
-- CI remains blocked when `.git` or `.github` is absent
+- CI remains blocked when `.git` or `.github` is absent, or when protected CI has not passed on current `main`
 - artifact promotion manifest is defined
 - observability events, metrics, and alerts are defined
 - backup/restore and retention policy is linked

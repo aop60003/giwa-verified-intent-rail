@@ -2,14 +2,15 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 38 advances only safe local tracks:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 39 records the current `main` state and keeps safe local tracks separate from external and mixed blockers:
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-currentMainHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
+currentMainHead=042d58ddabdf16426c4b870c2c63be2bd406a68f
+currentMainCheckRuns=0
 latestRealActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=public
@@ -31,6 +32,8 @@ protected-ci=blocked-billing-lock-after-dispatch
 branch-protection=configured-required-checks-failing
 hostedAdapterLocalContract=blocked-local-advisory
 stagingDryRunSimulation=blocked-local-advisory
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+partnerHandoffPacket=local-advisory-ready
 external partner signoff=absent
 public host approval=absent
 durable staging storage=absent
@@ -665,10 +668,39 @@ protectedArtifactGeneration=blocked
 protectedArtifactUpload=blocked-no-artifacts
 hostedAdapterLocalContract=blocked-local-advisory
 stagingDryRunSimulation=blocked-local-advisory
-externalOnlyBlockers=github-account-billing-lock,protected-artifact-metadata-absent,partner-signoff-absent,external-hosting-approval-absent
+externalOnlyBlockers=github-account-billing-lock,partner-signoff-absent,external-hosting-approval-absent
+mixedRepoWorkflowBlockers=protected-artifact-metadata-absent,current-main-check-runs-absent,branch-protection-required-checks-not-satisfied
 ```
 
 Sprint 38 can continue local hardening, but cannot authorize staging execution while protected CI is failing, artifact metadata is absent, partner signoff is absent, and external hosting approval is absent.
+
+## Sprint 39 Commercial Handoff Final Readiness
+
+Sprint 39 plan and handoff evidence:
+
+```text
+docs/superpowers/plans/2026-06-20-sprint-39-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+Current Sprint 39 blocker state:
+
+```text
+currentMainHead=042d58ddabdf16426c4b870c2c63be2bd406a68f
+currentMainCheckRuns=0
+sourceBinding=blocked-no-protected-run-for-current-main
+latestRecordedRun=27873338373
+latestRecordedRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestRecordedRunStaleForCurrentMain=true
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+partnerHandoffPacket=local-advisory-ready
+externalPartnerSignoff=absent
+stagingDryRunExecution=blocked
+```
+
+Sprint 39 closes local partner handoff readiness. Staging execution remains blocked until the external GitHub account gate clears, a protected run passes on current `main`, protected artifact metadata exists, partner signoff is recorded, hosting approval exists, and managed infrastructure is approved.
 
 ## Sprint 21 Failure Triage
 

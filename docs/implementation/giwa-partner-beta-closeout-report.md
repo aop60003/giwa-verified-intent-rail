@@ -158,11 +158,11 @@ Confirm before sharing:
 
 | Blocker | Current status | Required owner |
 | --- | --- | --- |
-| git-backed workspace | blocked in current prototype mode |  |
-| protected CI path | blocked in current prototype mode |  |
-| source provenance | blocked until git-backed release path |  |
-| artifact checksum manifest |  |  |
-| no-rebuild promotion process |  |  |
+| git-backed workspace | present locally and pushed to public GitHub source |  |
+| protected CI path | blocked by external GitHub account gate |  |
+| source provenance | remote source exists, protected CI provenance absent |  |
+| artifact checksum manifest | local-advisory only |  |
+| no-rebuild promotion process | blocked until protected artifact metadata exists |  |
 | approved host and owner |  |  |
 | exact origin policy |  |  |
 | hosted auth and tenant isolation |  |  |
@@ -175,6 +175,15 @@ Confirm before sharing:
 | retention owner |  |  |
 | incident owner |  |  |
 | partner signoff |  |  |
+
+Sprint 39 local-advisory packet:
+
+```text
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, or authorization for partner traffic.
 
 ## Recommendation
 

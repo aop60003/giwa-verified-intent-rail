@@ -29,14 +29,14 @@ externalConnectionAllowed=false
 blockers=protected_ci_missing,protected_artifact_metadata_missing,rate_limit_durability_missing,queue_durability_missing
 ```
 
-The result means the local contract shape is explicit, but hosted adapter activation remains blocked. Protected CI and protected artifact metadata are still external gates, and rate-limit plus verification-queue durability are still implementation gates for a later hosted adapter sprint.
+The result means the local contract shape is explicit, but hosted adapter activation remains blocked. Protected CI is an external gate. Protected artifact metadata is a mixed repo/workflow gate because the workflow must produce upload metadata after a protected run can start. Rate-limit plus verification-queue durability are still implementation gates for a later hosted adapter sprint.
 
 ## Contract Boundary
 
 | Gate | Sprint 38 contract | Staging requirement |
 | --- | --- | --- |
 | Source authority | local-advisory | passing protected CI on current `main` |
-| Artifact metadata | absent | protected artifact metadata from CI |
+| Artifact metadata | mixed blocker | protected artifact metadata from CI after workflow upload metadata exists |
 | Adapter kind | `local-sqlite` | approved hosted adapter |
 | Env source | process env only | hosted process env with redacted readiness |
 | Managed connection | not attempted | separate approved hosted adapter sprint |

@@ -113,6 +113,8 @@ Sprint 8 and Sprint 9 local live mode is documented in:
 docs/implementation/giwa-live-mvp-runtime-gate.md
 ```
 
+The `4177` examples below are historical local live regression defaults. The current final demo order uses port `4190` for the demo control room and fresh live path, and port `4176` for the static fallback.
+
 Start the live mock server for API contract and storage regression checks:
 
 ```powershell
@@ -372,6 +374,17 @@ Reviewer order for Sprint 18 remains:
 ```
 
 Use the feedback form and closeout report only for observed partner or reviewer input. Do not prefill success claims before a rehearsal or dry run is actually completed.
+
+## Sprint 39 Final Readiness Handoff
+
+Sprint 39 closes the local-advisory partner handoff packet:
+
+```text
+docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
+docs/evidence/commercial-readiness-sprint39-final-handoff.json
+```
+
+The handoff references Sprint 38 local readiness evidence and keeps protected CI, protected artifact metadata, partner signoff, external hosting approval, and managed infrastructure blocked. It does not authorize public hosting, deployment, managed infrastructure, wallet actions, or GIWA chain-operation package commands.
 
 ## Safety Boundaries
 
