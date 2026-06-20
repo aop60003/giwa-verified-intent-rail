@@ -14,7 +14,7 @@
   "supersededBy": {
     "sprint": 40,
     "evidencePath": "docs/evidence/commercial-readiness-sprint40-freeze.json",
-    "currentMainSha": "afe0bf50022717f8011fd7691b00ce0a8af90802"
+    "freezeInputMainSha": "afe0bf50022717f8011fd7691b00ce0a8af90802"
   },
   "latestProtectedCiEvidence": {
     "runId": 27873338373,

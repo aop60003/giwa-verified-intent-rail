@@ -9,14 +9,14 @@ authority=local-advisory
 releaseGrade=false
 canUnblockStaging=false
 protectedCI=blocked-external-github-account
-currentMain=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMain=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 sprint39CapturedMain=042d58ddabdf16426c4b870c2c63be2bd406a68f
 latestBillingLockRun=27873338373
 latestBillingLockRunHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
 ```
 
-The current `main` commit is newer than the Sprint 39 handoff commit. It has zero check-runs. The latest real protected workflow evidence is still the billing-lock failure from run `27873338373`, and that run is stale for the current source state.
+The Sprint 40 freeze input commit is newer than the Sprint 39 handoff commit. It had zero check-runs at capture time. The latest real protected workflow evidence is still the billing-lock failure from run `27873338373`, and that run is stale for the freeze input source state.
 
 ## Final Demo Opening Order
 

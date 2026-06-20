@@ -5,12 +5,12 @@
   "releaseGrade": false,
   "canUnblockStaging": false,
   "freezeDecision": "commercial-ready-local-handoff-freeze",
-  "currentMain": {
+  "freezeInputMain": {
     "sha": "afe0bf50022717f8011fd7691b00ce0a8af90802",
     "remote": "origin/main",
     "checkRunsCount": 0,
     "protectedCiProvenance": "absent",
-    "sourceBinding": "blocked-no-protected-run-for-current-main"
+    "sourceBinding": "blocked-no-protected-run-for-freeze-input"
   },
   "latestProtectedCiEvidence": {
     "runId": 27873338373,

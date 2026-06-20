@@ -78,7 +78,7 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 Current decision:
 
 ```text
-currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 authority=local-advisory
 releaseGrade=false

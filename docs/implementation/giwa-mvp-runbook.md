@@ -396,7 +396,7 @@ docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-fre
 docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
-Use Sprint 40 as the current commercial/staging readiness state. It records current `main` `afe0bf50022717f8011fd7691b00ce0a8af90802`, check-runs count `0`, and the latest billing-lock run as stale for current source. The packet is ready for local review only. Public hosting, staging execution, partner traffic, managed infrastructure, protected CI provenance, and release approval remain blocked.
+Use Sprint 40 as the current commercial/staging readiness state. It records freeze input `afe0bf50022717f8011fd7691b00ce0a8af90802`, check-runs count `0` at capture time, and the latest billing-lock run as stale for that input source. The packet is ready for local review only. Public hosting, staging execution, partner traffic, managed infrastructure, protected CI provenance, and release approval remain blocked.
 
 ## Safety Boundaries
 

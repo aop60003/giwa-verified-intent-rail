@@ -8,14 +8,14 @@ Sprint 40 freezes the maximum safe local-advisory handoff package while protecte
 authority=local-advisory
 releaseGrade=false
 canUnblockStaging=false
-currentMain=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMain=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 latestBillingLockRun=27873338373
 latestBillingLockRunHead=2b414c91b1da6ed64287dbf7b2635be7586e287d
 protectedCI=blocked-external-github-account
 ```
 
-The current `main` commit is newer than the latest real protected workflow run. Current `main` has no check-runs. The latest real protected workflow evidence remains the billing-lock failure from run `27873338373`, which is stale for the current source state.
+The Sprint 40 freeze input commit is newer than the latest real protected workflow run. It had no check-runs at capture time. The latest real protected workflow evidence remains the billing-lock failure from run `27873338373`, which is stale for the freeze input source state.
 
 ## Frozen Local Packet
 

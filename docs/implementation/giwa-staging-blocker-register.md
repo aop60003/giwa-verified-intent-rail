@@ -2,14 +2,14 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 40 records the current `main` state and freezes the local-advisory package while keeping safe local tracks separate from external and mixed blockers:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 40 records the freeze input source state and freezes the local-advisory package while keeping safe local tracks separate from external and mixed blockers:
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 latestRealActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
@@ -716,7 +716,7 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 Current Sprint 40 blocker state:
 
 ```text
-currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 sourceBinding=blocked-no-protected-run-for-current-main
 latestRecordedRun=27873338373
@@ -744,7 +744,7 @@ Mixed repo/workflow blockers:
 
 | Blocker | Required transition |
 | --- | --- |
-| Protected CI evidence for current `main` | external account gate clears and all required checks pass on `afe0bf50022717f8011fd7691b00ce0a8af90802` or a later intended source commit |
+| Protected CI evidence for the freeze input | external account gate clears and all required checks pass on the intended source commit |
 | Protected artifact metadata | protected workflow emits staging-named artifact metadata after required checks pass |
 | Branch protection satisfaction | required check contexts pass on the protected branch |
 | Release approval | protected CI, protected artifacts, owners, rollback path, and partner decision are complete |

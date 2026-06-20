@@ -808,7 +808,7 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 Release authority remains blocked:
 
 ```text
-currentMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 latestBillingLockRun=27873338373
 latestBillingLockRunHead=2b414c91b1da6ed64287dbf7b2635be7586e287d

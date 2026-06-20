@@ -44,7 +44,7 @@ Sprint 40 does not dispatch or rerun protected CI, public-host, deploy, connect 
   - Keep live and static receipt hashes clearly separated.
 
 - [x] **Task 5: Create Sprint 40 evidence**
-  - Record current `main`, check-run count, latest billing-lock run, closed safe tracks, external-only blockers, mixed blockers, and forbidden-action confirmation.
+  - Record the freeze input `main` source, check-run count, latest billing-lock run, closed safe tracks, external-only blockers, mixed blockers, and forbidden-action confirmation.
   - Keep evidence public-safe and `releaseGrade=false`.
 
 - [x] **Task 6: Verify local-advisory package**
@@ -56,7 +56,7 @@ Sprint 40 does not dispatch or rerun protected CI, public-host, deploy, connect 
 Sprint 40 exits when:
 
 - plan, implementation record, and public-safe evidence exist
-- current `main` source state and zero check-runs are recorded
+- freeze input source state and zero check-runs are recorded
 - locked receipt API responses are bounded
 - public copy avoids stale sprint/internal commercial wording
 - safe scans no longer blanket-allow all plan files for unsupported and sensitive terms

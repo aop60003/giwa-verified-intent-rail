@@ -426,7 +426,7 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 Commercial readiness remains blocked:
 
 ```text
-currentMain=afe0bf50022717f8011fd7691b00ce0a8af90802
+freezeInputMain=afe0bf50022717f8011fd7691b00ce0a8af90802
 currentMainCheckRuns=0
 latestBillingLockRun=27873338373
 protectedCI=blocked-external-github-account
