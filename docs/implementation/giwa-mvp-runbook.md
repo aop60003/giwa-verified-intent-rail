@@ -4,6 +4,13 @@ This runbook is the final handoff for running and verifying the completed GIWA S
 
 ## Final Demo Opening Order
 
+Start with the Sprint 41 first-read handoff package:
+
+```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/partner-customer-handoff-sprint41.json
+```
+
 ```text
 Demo control room:   http://127.0.0.1:4190/demo
 Fresh live path:     http://127.0.0.1:4190/live
@@ -22,7 +29,9 @@ Use the Sprint 16 demo control room first when the local live server is running.
 - Do not print `.env.local` or any secret value.
 - Do not place private keys or server-only env values in public web files.
 
-## Verification Commands
+## Internal Verification Commands
+
+These commands are for maintainers validating the local-advisory package. They are not required partner/customer demo steps.
 
 Run package checks:
 
@@ -44,7 +53,7 @@ node --check apps/web/public/live-flow.js
 node --check apps/web/scripts/serve-live.mjs
 ```
 
-Manual historical verifier idempotency check:
+Manual historical verifier idempotency check, not part of Sprint 41 partner/customer handoff:
 
 ```powershell
 pnpm --filter @giwa/contracts --fail-if-no-match verify:giwa
@@ -113,7 +122,7 @@ Sprint 8 and Sprint 9 local live mode is documented in:
 docs/implementation/giwa-live-mvp-runtime-gate.md
 ```
 
-The `4177` examples below are historical local live regression defaults. The current final demo order uses port `4190` for the demo control room and fresh live path, and port `4176` for the static fallback.
+The `4177` examples below are historical local live regression defaults. They are not partner/customer demo entrypoints. The current final demo order uses port `4190` for the demo control room and fresh live path, and port `4176` for the static fallback.
 
 Start the live mock server for API contract and storage regression checks:
 
@@ -397,6 +406,17 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
 Use Sprint 40 as the current commercial/staging readiness state. It records freeze input `afe0bf50022717f8011fd7691b00ce0a8af90802`, check-runs count `0` at capture time, and the latest billing-lock run as stale for that input source. The packet is ready for local review only. Public hosting, staging execution, partner traffic, managed infrastructure, protected CI provenance, and release approval remain blocked.
+
+## Sprint 41 Partner Customer Handoff
+
+Sprint 41 is the current partner/customer first-read package:
+
+```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/partner-customer-handoff-sprint41.json
+```
+
+Use it before running the demo. It keeps the fresh live receipt hash `0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8` separate from the recorded static fallback receipt hash `0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503`. It is local-advisory only and does not authorize protected CI provenance, staging dry-run execution, public hosting, managed infrastructure, partner traffic, release approval, or partner/customer signoff.
 
 ## Safety Boundaries
 

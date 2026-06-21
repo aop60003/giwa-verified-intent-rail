@@ -179,13 +179,15 @@ Confirm before sharing:
 Current local-advisory packets:
 
 ```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/partner-customer-handoff-sprint41.json
 docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md
 docs/evidence/commercial-readiness-sprint39-final-handoff.json
 docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
 docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
-Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, or authorization for partner traffic.
+Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, managed infrastructure approval, or authorization for partner traffic. Sprint 41 provides the first-read packet for that review, but it does not prefill any observed result or signoff field in this closeout report.
 
 ## Recommendation
 

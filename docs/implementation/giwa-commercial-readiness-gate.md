@@ -438,3 +438,14 @@ commercialReadiness=blocked
 ```
 
 The Sprint 40 packet is ready for local review and operator handoff only. It does not authorize partner traffic, public hosting, deployment, managed infrastructure, wallet actions, GIWA chain-operation package commands, or protected CI provenance claims. Protected CI evidence for current `main`, protected artifact metadata, branch-protection satisfaction, and release approval remain mixed repository/workflow blockers after the external GitHub account gate clears.
+
+## Sprint 41 Partner Customer Handoff Gate
+
+Sprint 41 finalizes the local-advisory partner/customer handoff package:
+
+```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/partner-customer-handoff-sprint41.json
+```
+
+This package is partner review-ready only in local-advisory mode. Commercial readiness remains blocked until protected CI passes on the intended source commit, protected artifact metadata exists, release and rollback owners approve, real partner/customer signoff is recorded, external hosting is approved, and managed infrastructure is approved in a separate gate.

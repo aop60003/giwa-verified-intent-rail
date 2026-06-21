@@ -16,6 +16,7 @@ The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](d
 
 Open these first:
 
+- [Partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
 - [Demo script](docs/implementation/giwa-mvp-demo-script.md)
 - [Runbook](docs/implementation/giwa-mvp-runbook.md)
 - [Acceptance checklist](docs/implementation/giwa-mvp-acceptance-checklist.md)
@@ -36,7 +37,7 @@ Run the static demo:
 
 ```powershell
 $env:PORT=4176
-pnpm --filter @giwa/web --fail-if-no-match dev
+pnpm --filter @giwa/web --fail-if-no-match serve
 ```
 
 Local URLs:
@@ -59,7 +60,7 @@ Evidence paths:
 
 Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18 adds the partner beta rehearsal package. Sprint 19 adds staging deployment preparation gates. These are gates and runbooks only; they do not authorize public hosting or deployment.
 
-Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the current local-advisory staging-readiness freeze.
+Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the current partner/customer handoff package; it is ready for local review only and keeps protected CI, protected artifacts, partner signoff, public hosting, managed infrastructure, release approval, and staging execution blocked.
 Sprint 20 CI and Source Provenance is the next source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the next gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
@@ -134,6 +135,9 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 40 external-only blocker handoff and staging readiness freeze plan](docs/superpowers/plans/2026-06-20-sprint-40-external-only-blocker-handoff-and-staging-readiness-freeze.md)
 - [Sprint 40 freeze record](docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md)
 - [Sprint 40 freeze evidence](docs/evidence/commercial-readiness-sprint40-freeze.json)
+- [Sprint 41 partner/customer handoff plan](docs/superpowers/plans/2026-06-21-sprint-41-partner-customer-handoff-package-finalization.md)
+- [Sprint 41 partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
+- [Sprint 41 partner/customer handoff evidence](docs/evidence/partner-customer-handoff-sprint41.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)

@@ -35,8 +35,13 @@ stagingDryRunSimulation=blocked-local-advisory
 protectedArtifactMetadata=mixed-repo-workflow-blocker
 partnerHandoffPacket=local-advisory-ready
 localReadinessFreeze=docs/evidence/commercial-readiness-sprint40-freeze.json
+partnerCustomerHandoffPackage=docs/evidence/partner-customer-handoff-sprint41.json
+partnerCustomerHandoffState=local-advisory-finalized
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
 external partner signoff=absent
 public host approval=absent
+managed infrastructure approval=absent
 durable staging storage=absent
 explicit tenant mapping=absent
 hosted DB probe=absent
@@ -748,6 +753,51 @@ Mixed repo/workflow blockers:
 | Protected artifact metadata | protected workflow emits staging-named artifact metadata after required checks pass |
 | Branch protection satisfaction | required check contexts pass on the protected branch |
 | Release approval | protected CI, protected artifacts, owners, rollback path, and partner decision are complete |
+
+## Sprint 41 Partner Customer Handoff Package
+
+Sprint 41 plan, handoff package, and evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-41-partner-customer-handoff-package-finalization.md
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/partner-customer-handoff-sprint41.json
+```
+
+Current Sprint 41 blocker state:
+
+```text
+handoffInputMain=4a3510d429fd02760c8164560fa266661b088a15
+currentMainCheckRuns=0
+protectedCI=blocked-external-github-account
+partnerCustomerHandoffPackage=local-advisory-finalized
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+externalPartnerOrCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+managedInfrastructureConnection=blocked-unapproved
+```
+
+Sprint 41 can be shared for local partner/customer review only. It cannot unblock staging dry-run execution because protected CI provenance, protected artifact metadata, branch-protection satisfaction, release approval, external signoff, hosting approval, and managed infrastructure approval are still absent.
+
+External-only blockers:
+
+| Blocker | Required outside the repository |
+| --- | --- |
+| GitHub account gate | GitHub must allow protected workflow runner startup |
+| Partner/customer signoff | A real reviewer must sign the local-advisory handoff package |
+| External hosting approval | Host, origin policy, rollback owner, and operator must be approved |
+| Managed infrastructure approval | Durable database, credential manager, backup target, and restore owner must be approved before any connection work |
+
+Mixed repo/workflow blockers:
+
+| Blocker | Required transition |
+| --- | --- |
+| Protected CI evidence for handoff input | external account gate clears and required checks pass on the intended source commit |
+| Protected artifact metadata | protected workflow emits staging-named artifact metadata after required checks pass |
+| Branch protection satisfaction | required check contexts pass on the protected branch |
+| Release approval | protected CI, protected artifacts, owners, rollback path, and partner/customer decision are complete |
 
 ## Sprint 21 Failure Triage
 

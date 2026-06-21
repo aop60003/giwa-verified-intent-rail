@@ -63,7 +63,7 @@ http://127.0.0.1:4176/
    - Standard RPC receipt status and block data are the confirmation source.
    - Verifier matched only after comparing the signed manifest and confirmed chain evidence.
 
-5. Open receipt route:
+5. Open the recorded static fallback receipt route:
 
 ```text
 http://127.0.0.1:4176/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503
@@ -167,12 +167,14 @@ docs/evidence/live-demo-sprint12-snapshot.json
 docs/evidence/staging-readiness-sprint38-handoff.json
 docs/evidence/commercial-readiness-sprint39-final-handoff.json
 docs/evidence/commercial-readiness-sprint40-freeze.json
+docs/evidence/partner-customer-handoff-sprint41.json
+docs/implementation/giwa-partner-customer-handoff-package.md
 ```
 
 Close with:
 
 ```text
-This MVP is a testnet-only mock action evidence rail. It proves the manifest, wallet action, standard RPC confirmation, verifier decision, and receipt path for one GIWA Sepolia flow.
+This MVP is a testnet-only mock action evidence rail. It demonstrates the local GIWA Sepolia testnet evidence path for the manifest, wallet action, standard RPC confirmation, verifier decision, and receipt route for one GIWA Sepolia flow.
 ```
 
 ## Hosted Ops and Partner Beta Note
@@ -233,3 +235,14 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
 Open `/demo` before `/live`. Keep the live receipt hash `0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8` separate from the static fallback receipt hash `0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503`. Sprint 40 is local-advisory only and does not authorize protected CI provenance, public hosting, staging execution, managed infrastructure, partner traffic, or release approval.
+
+## Sprint 41 Partner Customer Handoff Close
+
+Use Sprint 41 as the current first-read package for partner or customer review:
+
+```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/partner-customer-handoff-sprint41.json
+```
+
+State the boundary plainly: the package is local-advisory and partner review-ready, but commercial readiness, staging dry-run execution, protected CI provenance, protected artifact metadata, public hosting, managed infrastructure, release approval, and real partner/customer signoff remain blocked. The live `0x057b...74be8` receipt is the fresh local rehearsal receipt, and the static `0x710c...1503` receipt is the recorded fallback receipt.

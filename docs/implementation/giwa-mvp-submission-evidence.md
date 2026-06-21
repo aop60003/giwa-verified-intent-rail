@@ -4,12 +4,13 @@ This document maps the final MVP to the submission artifacts.
 
 ## What To Open First
 
-1. Demo control room: `http://127.0.0.1:4190/demo`
-2. Fresh live flow: `http://127.0.0.1:4190/live`
-3. Dynamic receipt API after `matched`: `http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8`
-4. Static fallback: `http://127.0.0.1:4176/`
-5. Partner console: `http://127.0.0.1:4176/partner`
-6. Static snapshot: `http://127.0.0.1:4176/partner-snapshot.json`
+1. Handoff package: `docs/implementation/giwa-partner-customer-handoff-package.md`
+2. Demo control room: `http://127.0.0.1:4190/demo`
+3. Fresh live flow: `http://127.0.0.1:4190/live`
+4. Dynamic receipt API after `matched`: `http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8`
+5. Static fallback: `http://127.0.0.1:4176/`
+6. Partner console: `http://127.0.0.1:4176/partner`
+7. Static snapshot: `http://127.0.0.1:4176/partner-snapshot.json`
 
 ## Artifact Map
 
@@ -43,6 +44,8 @@ This document maps the final MVP to the submission artifacts.
 | Sprint 39 final readiness record | `docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readiness.md` |
 | Sprint 40 freeze evidence | `docs/evidence/commercial-readiness-sprint40-freeze.json` |
 | Sprint 40 freeze record | `docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md` |
+| Sprint 41 partner/customer handoff package | `docs/implementation/giwa-partner-customer-handoff-package.md` |
+| Sprint 41 partner/customer handoff evidence | `docs/evidence/partner-customer-handoff-sprint41.json` |
 
 ## Evidence Summary
 
@@ -82,6 +85,25 @@ The fresh live evidence is exported to both `docs/evidence/live-demo-sprint12-sn
 
 The recorded static fallback remains available for reviewers who do not run the local live server.
 
+| Field | Value |
+| --- | --- |
+| Static receipt hash | `0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503` |
+| Static decision transaction | `0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df` |
+| Static partner snapshot | `apps/web/public/partner-snapshot.json` |
+| Static snapshot SHA-256 | `C1F2CF08AF6EF7DE9279C986CA5BC098A3C2C0FC9D4D2DECCACB7826B7B33B3D` |
+
+## Sprint 41 Handoff Summary
+
+| Field | Value |
+| --- | --- |
+| Handoff package | `docs/implementation/giwa-partner-customer-handoff-package.md` |
+| Handoff evidence | `docs/evidence/partner-customer-handoff-sprint41.json` |
+| Authority | `local-advisory` |
+| Commercial readiness | `blocked` |
+| Staging dry-run execution | `blocked` |
+| Protected CI for current handoff input | absent |
+| Latest real protected workflow evidence | stale billing-lock failure with zero artifacts |
+
 ## Operations Readiness Evidence
 
 Sprint 17 adds hosted operations and partner beta readiness artifacts:
@@ -109,7 +131,7 @@ Sprint 39 closes the local-advisory commercial hardening and partner handoff pac
 | --- | --- |
 | GIWA ecosystem fit | Uses GIWA Sepolia chain id `91342`, GIWA explorer links, standard RPC receipts, and Flashblocks only for non-final feedback. |
 | Originality | Turns quest-style completion into signed manifest evidence, verifier decision output, receipt hash, and partner proof snapshot. |
-| Feasibility | Deployed contracts, recorded wallet transactions, and verifier command are present in the repository. |
+| Feasibility | GIWA Sepolia testnet mock-contract evidence, recorded wallet transactions, and verifier artifacts are present in the repository. |
 | Marketability | Partner console summarizes one mock testnet activation with transaction links and a downloadable JSON snapshot. |
 | GIWA Wallet integration path | The flow keeps wallet actions user-controlled and avoids private key handling in the browser. |
 | Implementation level | Sprints 3 through 6 produced chain anchor, verifier, receipt, guided flow, and partner console artifacts. |

@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "1",
+  "capturedAt": "2026-06-21T01:21:30Z",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "handoffDecision": "partner-customer-handoff-package-finalized",
+  "commercialReadiness": "blocked",
+  "stagingDryRunExecution": "blocked",
+  "partnerCustomerHandoffPackage": "local-advisory-finalized",
+  "handoffInputMain": {
+    "sha": "4a3510d429fd02760c8164560fa266661b088a15",
+    "remote": "origin/main",
+    "checkRunsCount": 0,
+    "protectedCiProvenance": "absent",
+    "sourceBinding": "blocked-no-protected-run-for-handoff-input"
+  },
+  "sprint40Baseline": {
+    "evidencePath": "docs/evidence/commercial-readiness-sprint40-freeze.json",
+    "evidenceSha256": "768DC90A549D4838D22E9BA00C9FBDB2F3A06E7539B7033211D15F3E1F64304A",
+    "releaseGrade": false,
+    "canUnblockStaging": false,
+    "authority": "local-advisory"
+  },
+  "latestFailedProtectedCiDispatch": {
+    "runId": 27873338373,
+    "headSha": "2b414c91b1da6ed64287dbf7b2635be7586e287d",
+    "workflowName": "ci-source-provenance",
+    "conclusion": "failure",
+    "failureClass": "github_account_billing_lock",
+    "sourceProvenance": "failure",
+    "downstreamRequiredJobs": "9-skipped",
+    "artifactTotalCount": 0,
+    "staleForHandoffInput": true,
+    "runUrl": "https://github.com/aop60003/giwa-verified-intent-rail/actions/runs/27873338373"
+  },
+  "handoffSurfaces": [
+    {
+      "label": "demo-control-room",
+      "url": "http://127.0.0.1:4190/demo",
+      "mode": "local-live"
+    },
+    {
+      "label": "fresh-live-flow",
+      "url": "http://127.0.0.1:4190/live",
+      "mode": "local-live"
+    },
+    {
+      "label": "dynamic-receipt-api",
+      "url": "http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8",
+      "mode": "local-live",
+      "receiptHash": "0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8"
+    },
+    {
+      "label": "static-fallback",
+      "url": "http://127.0.0.1:4176/",
+      "mode": "recorded-static"
+    },
+    {
+      "label": "partner-console",
+      "url": "http://127.0.0.1:4176/partner",
+      "mode": "recorded-static"
+    },
+    {
+      "label": "static-snapshot",
+      "url": "http://127.0.0.1:4176/partner-snapshot.json",
+      "mode": "recorded-static"
+    }
+  ],
+  "receiptModes": {
+    "freshLocalLiveRehearsal": {
+      "receiptHash": "0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8",
+      "decisionTxHash": null,
+      "source": "live",
+      "status": "matched",
+      "snapshotPath": "docs/evidence/live-demo-sprint12-snapshot.json",
+      "snapshotSha256": "E6EDD7A6032FB4B7ABDF68AFFB2DC16CA5A306215D73594A273514FAF32059D6"
+    },
+    "recordedStaticFallback": {
+      "receiptHash": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+      "decisionTxHash": "0x2eb0cd03c3b71fb53664cf9364916453c442de8c05f5b436f3537414636f85df",
+      "source": "fixture",
+      "status": "matched",
+      "snapshotPath": "apps/web/public/partner-snapshot.json",
+      "snapshotSha256": "C1F2CF08AF6EF7DE9279C986CA5BC098A3C2C0FC9D4D2DECCACB7826B7B33B3D"
+    }
+  },
+  "packageDocs": [
+    "docs/implementation/giwa-partner-customer-handoff-package.md",
+    "docs/implementation/giwa-mvp-demo-script.md",
+    "docs/implementation/giwa-mvp-runbook.md",
+    "docs/implementation/giwa-mvp-acceptance-checklist.md",
+    "docs/implementation/giwa-mvp-submission-evidence.md",
+    "docs/implementation/giwa-staging-blocker-register.md",
+    "docs/implementation/giwa-partner-beta-closeout-report.md"
+  ],
+  "externalOnlyBlockers": [
+    {
+      "blocker": "github_account_gate",
+      "requiredTransition": "GitHub account must allow protected workflow runner startup."
+    },
+    {
+      "blocker": "external_partner_or_customer_signoff_absent",
+      "requiredTransition": "A real reviewer must sign the local-advisory packet."
+    },
+    {
+      "blocker": "external_hosting_approval_absent",
+      "requiredTransition": "Host, origin policy, rollback owner, and operator must be approved."
+    },
+    {
+      "blocker": "managed_infrastructure_approval_absent",
+      "requiredTransition": "Durable database, credential manager, backup target, and restore owner must be approved before any connection work."
+    }
+  ],
+  "mixedRepoWorkflowBlockers": [
+    {
+      "blocker": "protected_ci_evidence_absent_for_handoff_input",
+      "requiredTransition": "All required checks must pass on the intended source commit after the external GitHub account gate clears."
+    },
+    {
+      "blocker": "protected_artifact_metadata_absent",
+      "requiredTransition": "Protected workflow must emit staging-named artifact metadata after required checks pass."
+    },
+    {
+      "blocker": "branch_protection_required_checks_not_satisfied",
+      "requiredTransition": "Required check contexts must pass on the protected branch."
+    },
+    {
+      "blocker": "release_approval_absent",
+      "requiredTransition": "Protected CI, protected artifacts, owners, rollback path, and partner decision must be complete."
+    }
+  ],
+  "publicEvidenceBoundary": {
+    "allowed": [
+      "public wallet addresses",
+      "public transaction hashes",
+      "receipt hashes",
+      "verifier hashes",
+      "block numbers",
+      "block hashes",
+      "commit-safe snapshots"
+    ],
+    "excluded": [
+      "wallet signing material",
+      "credential values",
+      "local environment file contents",
+      "server-only configuration values",
+      "raw request bodies",
+      "raw upstream errors",
+      "tokenized urls"
+    ]
+  },
+  "forbiddenActionsObserved": {
+    "workflowDispatchOrRerun": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "envFileContentRead": false,
+    "credentialValueOutput": false,
+    "walletTransaction": false,
+    "chainOperationPackageCommand": false,
+    "mintCommand": false,
+    "dependencyInstall": false,
+    "fakeCiOrProvenance": false,
+    "fakePartnerSignoff": false,
+    "fakeDeployUrl": false,
+    "fakeStagingUrl": false,
+    "flashblocksFinalConfirmation": false
+  },
+  "nextAllowedActions": [
+    "review_partner_customer_handoff_package_locally",
+    "record_real_partner_or_customer_feedback_without_invented_signoff",
+    "resolve_github_account_gate_outside_repository",
+    "run_one_protected_ci_dispatch_only_after_unlock_confirmation",
+    "collect_real_required_checks_and_protected_artifact_metadata",
+    "approve_hosting_and_managed_infrastructure_in_separate_sprint"
+  ],
+  "exitApproval": {
+    "approvedBy": "local-operator",
+    "approvedAt": "2026-06-21",
+    "evidencePath": "docs/evidence/partner-customer-handoff-sprint41.json",
+    "nextSprint": "external-github-account-unlock-or-approved-hosted-adapter-implementation"
+  }
+}
