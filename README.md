@@ -16,6 +16,7 @@ The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](d
 
 Open these first:
 
+- [External blocker monitoring and staging handoff](docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md)
 - [Partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
 - [Demo script](docs/implementation/giwa-mvp-demo-script.md)
 - [Runbook](docs/implementation/giwa-mvp-runbook.md)
@@ -60,9 +61,9 @@ Evidence paths:
 
 Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18 adds the partner beta rehearsal package. Sprint 19 adds staging deployment preparation gates. These are gates and runbooks only; they do not authorize public hosting or deployment.
 
-Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the current partner/customer handoff package; it is ready for local review only and keeps protected CI, protected artifacts, partner signoff, public hosting, managed infrastructure, release approval, and staging execution blocked. Sprint 42 hardens the hosted adapter commercial boundary with local-advisory code, tests, docs, and evidence while keeping managed infrastructure unconnected.
-Sprint 20 CI and Source Provenance is the next source-control and protected-check planning package.
-Sprint 21 CI Workflow Implementation is the next gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
+Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the partner/customer handoff package. Sprint 42 hardens the hosted adapter commercial boundary with local-advisory code, tests, docs, and evidence while keeping managed infrastructure unconnected. Sprint 43 is the current external blocker monitoring and staging handoff freeze: it is ready for local review only and keeps protected CI, protected artifacts, partner/customer signoff, public hosting, managed infrastructure, release approval, and staging execution blocked until those external conditions change.
+Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
+Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
 Sprint 23 Provenance Report Local Implementation adds local-advisory report verification, timestamp-aware drift detection, command evidence binding, domain hash classification, and protected CI handoff fields without enabling protected CI or deployment.
 Sprint 24 CI Workflow File Creation After Approval is the next approval-gated plan for repository initialization, workflow file creation, branch protection, command matrix, and artifact upload policy without enabling protected CI or deployment.
@@ -141,6 +142,9 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 42 hosted adapter commercial boundary plan](docs/superpowers/plans/2026-06-21-sprint-42-hosted-adapter-commercial-boundary-hardening.md)
 - [Sprint 42 hosted adapter commercial boundary](docs/implementation/giwa-hosted-adapter-commercial-boundary.md)
 - [Sprint 42 hosted adapter commercial boundary evidence](docs/evidence/hosted-adapter-commercial-boundary-sprint42.json)
+- [Sprint 43 external blocker monitoring plan](docs/superpowers/plans/2026-06-21-sprint-43-external-blocker-monitoring-and-staging-handoff.md)
+- [Sprint 43 external blocker monitoring and staging handoff](docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md)
+- [Sprint 43 staging handoff evidence](docs/evidence/staging-handoff-sprint43-external-blockers.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)

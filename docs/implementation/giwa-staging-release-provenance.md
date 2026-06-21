@@ -820,3 +820,34 @@ stagingPromotion=blocked
 ```
 
 Sprint 40 freezes the local-advisory packet only. It hardens bounded receipt behavior, public copy, and scan rules, then records that current `main` still has no protected check-run evidence. It cannot create protected release provenance, protected artifact metadata, branch-protection satisfaction, release approval, public hosting approval, partner signoff, or managed infrastructure approval.
+
+## Sprint 43 External Blocker Monitoring Boundary
+
+Sprint 43 outputs:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-43-external-blocker-monitoring-and-staging-handoff.md
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+```
+
+Release authority remains blocked:
+
+```text
+handoffInputMain=db9e6a8ec321f7d0223b49cb733c8b983698e3ae
+authority=local-advisory
+releaseGrade=false
+commercialReadyLocalHandoffFreeze=true
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+branchProtectionSatisfaction=blocked-current-head-checks-absent
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+releaseApproval=blocked
+stagingPromotion=blocked
+```
+
+Protected CI recovery after Sprint 43 must target the exact current `main` SHA selected at recovery time, run the protected workflow once, record all ten required check names and conclusions, capture protected artifact metadata, and verify branch protection satisfaction. If the run fails before runner logs, skips required jobs, emits zero artifacts, or targets a stale SHA, the result remains blocker evidence only.
+
+Sprint 43 is the current local-advisory handoff freeze. It cannot create protected release provenance, protected artifact metadata, branch-protection satisfaction, release approval, public hosting approval, partner/customer signoff, or managed infrastructure approval.

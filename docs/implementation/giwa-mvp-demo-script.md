@@ -8,7 +8,7 @@ Commercial UX polish is implemented from:
 docs/superpowers/plans/2026-06-19-sprint-16-commercial-ux-polish.md
 ```
 
-Open the local `/demo` control room first when the Sprint 16 live server is running. If the local live server is unavailable, continue with the fresh live path or recorded static fallback below.
+Open the local `/demo` control room first when the local live server is running. If the local live server is unavailable, continue with the fresh live path or recorded static fallback below.
 
 ## Opening
 
@@ -131,6 +131,8 @@ Demo steps:
 6. Select `Verify receipt`.
 7. When the status is `matched`, open the displayed dynamic receipt API path.
 
+These wallet steps are operator-only for a live rehearsal. A partner/customer reviewer should not be asked to connect a wallet or submit approve/deposit transactions unless a separate live rehearsal has been explicitly approved.
+
 Fresh rehearsal evidence:
 
 ```text
@@ -168,7 +170,10 @@ docs/evidence/staging-readiness-sprint38-handoff.json
 docs/evidence/commercial-readiness-sprint39-final-handoff.json
 docs/evidence/commercial-readiness-sprint40-freeze.json
 docs/evidence/partner-customer-handoff-sprint41.json
+docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
+docs/evidence/staging-handoff-sprint43-external-blockers.json
 docs/implementation/giwa-partner-customer-handoff-package.md
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
 ```
 
 Close with:
@@ -227,7 +232,7 @@ Partner or reviewer signoff confirms review of the local-advisory packet only. I
 
 ## Sprint 40 Local Freeze Close
 
-Use Sprint 40 as the current readiness boundary:
+Sprint 40 remains the local readiness freeze input:
 
 ```text
 docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
@@ -238,7 +243,7 @@ Open `/demo` before `/live`. Keep the live receipt hash `0x057b0c02076123b1f30ab
 
 ## Sprint 41 Partner Customer Handoff Close
 
-Use Sprint 41 as the current first-read package for partner or customer review:
+Use Sprint 41 as the partner/customer package, then use Sprint 43 for the current stop condition:
 
 ```text
 docs/implementation/giwa-partner-customer-handoff-package.md
@@ -246,3 +251,14 @@ docs/evidence/partner-customer-handoff-sprint41.json
 ```
 
 State the boundary plainly: the package is local-advisory and partner review-ready, but commercial readiness, staging dry-run execution, protected CI provenance, protected artifact metadata, public hosting, managed infrastructure, release approval, and real partner/customer signoff remain blocked. The live `0x057b...74be8` receipt is the fresh local rehearsal receipt, and the static `0x710c...1503` receipt is the recorded fallback receipt.
+
+## Sprint 43 External Blocker Handoff Close
+
+Use Sprint 43 as the current stop condition:
+
+```text
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+```
+
+Close by stating that the safe internal handoff is frozen at local-advisory authority. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, public hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until a real external blocker state change is recorded.

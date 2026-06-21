@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1",
+  "capturedAt": "2026-06-21T02:15:00Z",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "handoffInputMain": "db9e6a8ec321f7d0223b49cb733c8b983698e3ae",
+  "commercialReadyLocalHandoffFreeze": true,
+  "evidenceInputs": {
+    "sprint40Freeze": {
+      "path": "docs/evidence/commercial-readiness-sprint40-freeze.json",
+      "sha256": "768DC90A549D4838D22E9BA00C9FBDB2F3A06E7539B7033211D15F3E1F64304A"
+    },
+    "sprint41PartnerCustomerHandoff": {
+      "path": "docs/evidence/partner-customer-handoff-sprint41.json",
+      "sha256": "80A2EA69F9E4DB25B1CAD9C08B507E44211DA4B1102016ECF2E60F4297AD9E94"
+    },
+    "sprint42HostedAdapterCommercialBoundary": {
+      "path": "docs/evidence/hosted-adapter-commercial-boundary-sprint42.json",
+      "sha256": "CEF54B9AE1F41BA6037C6822A7383BDA4D734B71EF95B26FE8FD92BEC617D594"
+    }
+  },
+  "externalBlockers": [
+    {
+      "id": "github_account_runner_startup",
+      "status": "blocked",
+      "monitorSignal": "GitHub Billing and Actions UI show account and workflow can run",
+      "resumeCondition": "Account lock warning absent and protected workflow runner can queue or start for the selected current main SHA",
+      "requiredEvidence": [
+        "selectedCurrentMainSha",
+        "workflowRunId",
+        "workflowName",
+        "headSha",
+        "runnerQueuedOrStarted"
+      ],
+      "stopCondition": "Billing annotation, startup failure before logs, stale SHA, skipped required jobs, or repeated dispatch without confirmed unlock"
+    },
+    {
+      "id": "partner_customer_signoff",
+      "status": "absent",
+      "monitorSignal": "Signed or recorded reviewer response",
+      "resumeCondition": "Reviewer identity, date, reviewed packet hash, reviewed URLs, receipt hashes, blocker acknowledgement, and no-release-approval attestation are recorded",
+      "requiredEvidence": [
+        "reviewerIdentity",
+        "reviewDate",
+        "reviewedEvidenceHashes",
+        "reviewedLocalUrls",
+        "receiptHashes",
+        "localAdvisoryAcknowledgement"
+      ],
+      "stopCondition": "Fake signoff or signoff interpreted as release, staging, hosting, managed infrastructure, or protected CI approval"
+    },
+    {
+      "id": "external_hosting_approval",
+      "status": "absent",
+      "monitorSignal": "Hosting approval packet",
+      "resumeCondition": "Host, exact origin policy, operator, rollback owner, observability route, and stop conditions approved",
+      "requiredEvidence": [
+        "hostOwner",
+        "originPolicy",
+        "operator",
+        "rollbackOwner",
+        "observabilityRoute"
+      ],
+      "stopCondition": "Public URL is invented or public hosting starts before approval"
+    },
+    {
+      "id": "managed_infrastructure_approval",
+      "status": "absent",
+      "monitorSignal": "Managed infrastructure approval packet",
+      "resumeCondition": "Durable DB, credential manager, backup target, queue design, restore owner, and connection plan approved",
+      "requiredEvidence": [
+        "durableDatabaseDecision",
+        "credentialManagerDecision",
+        "backupTarget",
+        "queueDesign",
+        "restoreOwner",
+        "connectionPlan"
+      ],
+      "stopCondition": "Managed DB, cloud credential manager, queue, or backup target is connected before approval"
+    }
+  ],
+  "mixedRepoWorkflowBlockers": [
+    {
+      "id": "protected_ci_required_checks",
+      "status": "blocked-current-head-checks-absent",
+      "resumeCondition": "All ten required checks pass on the selected current main SHA",
+      "stopCondition": "Any missing, skipped, renamed, failing, or non-current required check"
+    },
+    {
+      "id": "protected_artifact_metadata",
+      "status": "absent",
+      "resumeCondition": "Protected workflow emits staging-named artifact manifest, provenance report, sidecar, and upload metadata",
+      "stopCondition": "Zero artifacts or local-advisory files promoted as protected evidence"
+    },
+    {
+      "id": "branch_protection_satisfaction",
+      "status": "blocked-required-checks-not-passing",
+      "resumeCondition": "Required checks are configured and passing on the protected branch",
+      "stopCondition": "Bypass, missing contexts, or mismatch between configured and canonical check names"
+    },
+    {
+      "id": "release_approval",
+      "status": "absent",
+      "resumeCondition": "Protected CI, protected artifacts, branch protection, rollback owner, partner/customer decision, hosting approval, and managed infrastructure approval are complete",
+      "stopCondition": "Any local-advisory result is used as release authority"
+    }
+  ],
+  "localSafeTrackAudit": {
+    "demoPackage": "complete-local-advisory",
+    "freshLiveEvidence": "complete-local-advisory",
+    "staticFallback": "complete-local-advisory",
+    "partnerCustomerHandoff": "complete-local-advisory",
+    "hostedAdapterCommercialBoundary": "complete-local-advisory",
+    "externalBlockerMonitoring": "complete-local-advisory",
+    "remainingInternalSafeTrackWork": "none-known"
+  },
+  "forbiddenActionsObserved": {
+    "protectedCiDispatchOrRerun": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "envFileContentRead": false,
+    "credentialValueOutput": false,
+    "walletTransaction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "fakeCiOrProvenance": false,
+    "fakePartnerSignoff": false,
+    "fakeDeployOrStagingUrl": false
+  },
+  "finalDecision": {
+    "status": "commercial-ready-local-handoff-freeze",
+    "commercialReadiness": "blocked",
+    "stagingDryRunExecution": "blocked",
+    "nextAction": "Wait for external blocker state change before creating any further execution sprint."
+  }
+}

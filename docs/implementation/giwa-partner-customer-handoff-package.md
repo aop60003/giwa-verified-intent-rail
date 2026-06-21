@@ -1,12 +1,14 @@
 # GIWA Partner Customer Handoff Package
 
-Sprint 41 is the first-read package for a partner, customer reviewer, or operator who needs to understand the current `GIWA Verified Intent Rail` state without starting staging, public hosting, protected CI, wallet actions, or chain-operation commands.
+Sprint 41 is the partner/customer package for a reviewer or operator who needs to understand the `GIWA Verified Intent Rail` local handoff. Sprint 43 is the current staging handoff freeze and should be opened first when checking remaining external blockers.
 
 ## Authority
 
 ```text
 authority=local-advisory
 partnerCustomerHandoffPackage=local-advisory-finalized
+externalBlockerMonitoring=complete-local-advisory
+commercialReadyLocalHandoffFreeze=true
 releaseGrade=false
 canUnblockStaging=false
 commercialReadiness=blocked
@@ -74,7 +76,9 @@ Flashblocks and preconfirmation language are limited to non-final fast feedback.
 
 | Item | Path | SHA-256 |
 | --- | --- | --- |
-| Sprint 41 handoff evidence | `docs/evidence/partner-customer-handoff-sprint41.json` | Generated in Sprint 41; use `Get-FileHash` after artifact regeneration |
+| Sprint 43 external blocker handoff | `docs/evidence/staging-handoff-sprint43-external-blockers.json` | `D28B96DFCDB339EFBA75765AE69FBC38880BF4A4D6529C3633222CBA9E878A35` |
+| Sprint 42 hosted adapter commercial boundary | `docs/evidence/hosted-adapter-commercial-boundary-sprint42.json` | `CEF54B9AE1F41BA6037C6822A7383BDA4D734B71EF95B26FE8FD92BEC617D594` |
+| Sprint 41 handoff evidence | `docs/evidence/partner-customer-handoff-sprint41.json` | `80A2EA69F9E4DB25B1CAD9C08B507E44211DA4B1102016ECF2E60F4297AD9E94` |
 | Sprint 40 freeze evidence | `docs/evidence/commercial-readiness-sprint40-freeze.json` | `768DC90A549D4838D22E9BA00C9FBDB2F3A06E7539B7033211D15F3E1F64304A` |
 | Sprint 38 staging readiness evidence | `docs/evidence/staging-readiness-sprint38-handoff.json` | `DFDDBCF91B5374B5B980BE1DFCCFE70364A66469B41933006605E8B6ED97D3C3` |
 | Fresh live snapshot | `docs/evidence/live-demo-sprint12-snapshot.json` | `E6EDD7A6032FB4B7ABDF68AFFB2DC16CA5A306215D73594A273514FAF32059D6` |
@@ -85,6 +89,8 @@ Flashblocks and preconfirmation language are limited to non-final fast feedback.
 | Local provenance verification | `docs/evidence/local-provenance-verification.json` | Local-advisory; regenerated after Sprint 41 edits |
 
 The Sprint 41 evidence JSON is public-safe. It records paths, hashes, blockers, and action boundaries, not credential values or local environment file contents.
+
+Open the Sprint 43 evidence JSON for the current stop conditions and restart signals. It records monitorable external blockers, mixed repo/workflow blockers, and the final local safe-track audit.
 
 ## Reviewer Checklist
 
@@ -103,6 +109,8 @@ The Sprint 41 evidence JSON is public-safe. It records paths, hashes, blockers, 
 Public evidence may include public wallet addresses, public transaction hashes, receipt hashes, verifier hashes, block numbers, block hashes, and commit-safe snapshots.
 
 Public evidence must exclude wallet signing material, credential values, local environment file contents, server-only configuration values, raw request bodies, raw upstream errors, and tokenized URLs.
+
+Reviewers should not be asked to connect a wallet or submit approve/deposit transactions unless a separate live rehearsal has been explicitly approved. The pre-seeded live receipt and static fallback are enough for handoff review.
 
 ## External-Only Blockers
 
@@ -124,5 +132,10 @@ Public evidence must exclude wallet signing material, credential values, local e
 
 ## Handoff Close
 
-Give reviewers this package, the Sprint 41 evidence JSON, and the demo/runbook/submission docs. Record only observed partner or customer feedback in the closeout report. Do not prefill success, signoff, release approval, staging approval, or hosted approval.
+Give reviewers the Sprint 43 external blocker handoff, this package, the Sprint 41 evidence JSON, and the demo/runbook/submission docs. Record only observed partner or customer feedback in the closeout report. Do not prefill success, signoff, release approval, staging approval, or hosted approval.
 
+## Partner Signoff Contract
+
+A valid partner/customer signoff artifact must include reviewer identity, reviewer role, review date, reviewed handoff package path, reviewed evidence paths and hashes, reviewed local URLs, the dynamic live receipt hash, the recorded static receipt hash, acknowledgement that the packet is local-advisory only, and acknowledgement that signoff is not release approval, staging approval, public-hosting approval, managed infrastructure approval, or protected CI approval.
+
+Do not fabricate this artifact. Record only a real reviewer response.

@@ -46,6 +46,10 @@ This document maps the final MVP to the submission artifacts.
 | Sprint 40 freeze record | `docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md` |
 | Sprint 41 partner/customer handoff package | `docs/implementation/giwa-partner-customer-handoff-package.md` |
 | Sprint 41 partner/customer handoff evidence | `docs/evidence/partner-customer-handoff-sprint41.json` |
+| Sprint 42 hosted adapter commercial boundary | `docs/implementation/giwa-hosted-adapter-commercial-boundary.md` |
+| Sprint 42 hosted adapter boundary evidence | `docs/evidence/hosted-adapter-commercial-boundary-sprint42.json` |
+| Sprint 43 external blocker handoff | `docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md` |
+| Sprint 43 staging handoff evidence | `docs/evidence/staging-handoff-sprint43-external-blockers.json` |
 
 ## Evidence Summary
 
@@ -104,6 +108,23 @@ The recorded static fallback remains available for reviewers who do not run the 
 | Protected CI for current handoff input | absent |
 | Latest real protected workflow evidence | stale billing-lock failure with zero artifacts |
 
+## Sprint 43 Handoff Summary
+
+| Field | Value |
+| --- | --- |
+| External blocker handoff | `docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md` |
+| Handoff evidence | `docs/evidence/staging-handoff-sprint43-external-blockers.json` |
+| Authority | `local-advisory` |
+| Commercial-ready local handoff freeze | `true` |
+| Commercial readiness | `blocked` |
+| Staging dry-run execution | `blocked` |
+| Protected CI | `blocked-external-github-account` |
+| Protected artifact metadata | `absent` |
+| Partner/customer signoff | `absent` |
+| External hosting approval | `absent` |
+| Managed infrastructure approval | `absent` |
+| Remaining internal safe-track work | `none-known` |
+
 ## Operations Readiness Evidence
 
 Sprint 17 adds hosted operations and partner beta readiness artifacts:
@@ -123,7 +144,7 @@ The artifact promotion plan requires staging verification and matching checksums
 
 Sprint 18 keeps the same local-first boundary and adds the partner beta rehearsal package. Staging remains blocked until the closeout report marks the Sprint 19 blocker register resolved.
 
-Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Sprint 40 freezes the current local-advisory readiness state on current `main`, records that check-runs remain absent, and separates external-only blockers from mixed repo/workflow blockers. Protected CI evidence, protected artifact metadata, branch-protection satisfaction, release approval, partner signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
+Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Sprint 40 freezes the current local-advisory readiness state on current `main`, records that check-runs remain absent, and separates external-only blockers from mixed repo/workflow blockers. Sprint 42 hardens the hosted adapter commercial boundary without connecting managed infrastructure. Sprint 43 freezes the external blocker monitoring and staging handoff state. Protected CI evidence, protected artifact metadata, branch-protection satisfaction, release approval, partner/customer signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
 
 ## Criteria Map
 
@@ -169,3 +190,4 @@ Checked on `2026-06-17`.
 - The UI is a dependency-free static demo, not a production web app.
 - Sprint 12 live snapshot files are generated from the matched fresh local live rehearsal.
 - Sprint 40 readiness freeze is local-advisory only because current `main` has no protected CI check-runs and the latest real Actions run is stale for current source.
+- Sprint 43 is the final local-advisory handoff freeze. The remaining blockers require external state changes before another execution sprint should begin.

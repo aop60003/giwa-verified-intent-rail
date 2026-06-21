@@ -115,3 +115,14 @@ docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
 ```
 
 The evidence is public-safe and records blocker state only. It does not include local env-file contents, credential values, raw managed infrastructure config, wallet actions, or chain-operation output.
+
+## Sprint 43 Handoff Link
+
+Sprint 43 freezes the current monitorable external blocker state:
+
+```text
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+```
+
+Use Sprint 43 as the current staging handoff decision. Sprint 42 remains the hosted adapter boundary input to that handoff.

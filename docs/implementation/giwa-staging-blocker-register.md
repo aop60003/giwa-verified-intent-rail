@@ -2,14 +2,14 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 40 records the freeze input source state and freezes the local-advisory package while keeping safe local tracks separate from external and mixed blockers:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions:
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-freezeInputMainHead=afe0bf50022717f8011fd7691b00ce0a8af90802
+handoffInputMainHead=db9e6a8ec321f7d0223b49cb733c8b983698e3ae
 currentMainCheckRuns=0
 latestRealActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
@@ -34,9 +34,13 @@ hostedAdapterLocalContract=blocked-local-advisory
 stagingDryRunSimulation=blocked-local-advisory
 protectedArtifactMetadata=mixed-repo-workflow-blocker
 partnerHandoffPacket=local-advisory-ready
+externalBlockerMonitoring=complete-local-advisory
+commercialReadyLocalHandoffFreeze=true
 localReadinessFreeze=docs/evidence/commercial-readiness-sprint40-freeze.json
 partnerCustomerHandoffPackage=docs/evidence/partner-customer-handoff-sprint41.json
 partnerCustomerHandoffState=local-advisory-finalized
+hostedAdapterCommercialBoundary=docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
+stagingHandoffEvidence=docs/evidence/staging-handoff-sprint43-external-blockers.json
 commercialReadiness=blocked
 stagingDryRunExecution=blocked
 external partner signoff=absent
@@ -860,6 +864,56 @@ Local contract blockers:
 | Rollback owner | named owner and static fallback smoke evidence |
 
 Sprint 42 cannot unblock staging dry-run execution. It only makes the hosted adapter commercial boundary reviewable and test-backed while managed infrastructure remains unconnected.
+
+## Sprint 43 External Blocker Monitoring And Staging Handoff
+
+Sprint 43 plan, handoff record, and evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-43-external-blocker-monitoring-and-staging-handoff.md
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+```
+
+Current Sprint 43 blocker state:
+
+```text
+handoffInputMain=db9e6a8ec321f7d0223b49cb733c8b983698e3ae
+authority=local-advisory
+releaseGrade=false
+commercialReadyLocalHandoffFreeze=true
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+branchProtectionSatisfaction=blocked-current-head-checks-absent
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+publicHosting=false
+managedInfrastructureConnection=false
+remainingInternalSafeTrackWork=none-known
+```
+
+Monitorable external blockers:
+
+| Blocker | Resume condition | Stop condition |
+| --- | --- | --- |
+| GitHub account runner startup | GitHub Billing and Actions UI show no account lock and a selected current `main` run reaches queued or started state | billing annotation, pre-runner failure, skipped jobs, stale source SHA, or repeated dispatch without confirmed unlock |
+| Partner/customer signoff | real reviewer records identity, date, reviewed packet/hash/URLs/receipts, blocker acknowledgement, and no-release-approval attestation | fake signoff or signoff treated as release, staging, hosting, infrastructure, or protected CI approval |
+| External hosting approval | host, origin policy, operator, rollback owner, observability route, and stop conditions approved | public URL invented or public hosting started before approval |
+| Managed infrastructure approval | durable DB, credential manager, backup target, queue design, restore owner, and connection plan approved | managed database, cloud credential manager, queue, or backup target connected before approval |
+
+Mixed repo/workflow blockers:
+
+| Blocker | Required transition |
+| --- | --- |
+| Protected CI required checks | all ten required checks pass on the exact selected current `main` SHA |
+| Protected artifact metadata | protected workflow emits staging-named artifact manifest, provenance report, sidecar, and upload metadata |
+| Branch protection satisfaction | required check contexts pass on the protected branch |
+| Release approval | protected CI, protected artifacts, owners, rollback path, and real partner/customer decision are complete |
+
+Sprint 43 closes the internal safe-track handoff. Staging execution remains blocked until the monitorable external blockers and mixed repo/workflow blockers change state.
 
 ## Sprint 21 Failure Triage
 

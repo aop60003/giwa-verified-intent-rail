@@ -4,9 +4,11 @@ This runbook is the final handoff for running and verifying the completed GIWA S
 
 ## Final Demo Opening Order
 
-Start with the Sprint 41 first-read handoff package:
+Start with the Sprint 43 external blocker handoff, then open the Sprint 41 partner/customer package:
 
 ```text
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
 docs/implementation/giwa-partner-customer-handoff-package.md
 docs/evidence/partner-customer-handoff-sprint41.json
 ```
@@ -20,7 +22,7 @@ Partner console:     http://127.0.0.1:4176/partner
 Static snapshot:     http://127.0.0.1:4176/partner-snapshot.json
 ```
 
-Use the Sprint 16 demo control room first when the local live server is running. Use the static fallback when live wallet, local DB, or RPC state is unavailable during review.
+Use the current local demo control room first when the local live server is running. Use the static fallback when live wallet, local DB, or RPC state is unavailable during review.
 
 ## Prerequisites
 
@@ -53,7 +55,7 @@ node --check apps/web/public/live-flow.js
 node --check apps/web/scripts/serve-live.mjs
 ```
 
-Manual historical verifier idempotency check, not part of Sprint 41 partner/customer handoff:
+Manual historical verifier idempotency check, not part of the Sprint 43 handoff or partner/customer review:
 
 ```powershell
 pnpm --filter @giwa/contracts --fail-if-no-match verify:giwa
@@ -405,11 +407,11 @@ docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-fre
 docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
-Use Sprint 40 as the current commercial/staging readiness state. It records freeze input `afe0bf50022717f8011fd7691b00ce0a8af90802`, check-runs count `0` at capture time, and the latest billing-lock run as stale for that input source. The packet is ready for local review only. Public hosting, staging execution, partner traffic, managed infrastructure, protected CI provenance, and release approval remain blocked.
+Sprint 40 remains the local commercial/staging readiness freeze input. It records freeze input `afe0bf50022717f8011fd7691b00ce0a8af90802`, check-runs count `0` at capture time, and the latest billing-lock run as stale for that input source. The packet is ready for local review only. Public hosting, staging execution, partner traffic, managed infrastructure, protected CI provenance, and release approval remain blocked.
 
 ## Sprint 41 Partner Customer Handoff
 
-Sprint 41 is the current partner/customer first-read package:
+Sprint 41 is the partner/customer package:
 
 ```text
 docs/implementation/giwa-partner-customer-handoff-package.md
@@ -417,6 +419,19 @@ docs/evidence/partner-customer-handoff-sprint41.json
 ```
 
 Use it before running the demo. It keeps the fresh live receipt hash `0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8` separate from the recorded static fallback receipt hash `0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503`. It is local-advisory only and does not authorize protected CI provenance, staging dry-run execution, public hosting, managed infrastructure, partner traffic, release approval, or partner/customer signoff.
+
+## Sprint 43 External Blocker Monitoring And Staging Handoff
+
+Sprint 43 is the current local-advisory stop condition:
+
+```text
+docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+```
+
+Use Sprint 43 before deciding whether more internal work should continue. It records that the demo package, partner/customer handoff, hosted adapter boundary, evidence packet, and scans are complete at local-advisory authority. Commercial readiness and staging dry-run execution remain blocked until protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, and release approval change state.
+
+Do not dispatch protected CI, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent signoff, invent staging URLs, or claim protected provenance from this handoff.
 
 ## Safety Boundaries
 

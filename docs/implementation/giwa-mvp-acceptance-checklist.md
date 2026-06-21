@@ -1,6 +1,6 @@
 # GIWA Verified Intent Rail Acceptance Checklist
 
-This checklist records the Sprint 7 acceptance matrix for the single GIWA Sepolia mock vault flow.
+This checklist records the current acceptance matrix for the single GIWA Sepolia mock vault flow and the local-advisory handoff package.
 
 | Case | Verifier fixture or source | UI expected state | Partner summary | Evidence field |
 | --- | --- | --- | --- | --- |
@@ -41,6 +41,8 @@ This checklist records the Sprint 7 acceptance matrix for the single GIWA Sepoli
 | Sprint 39 partner handoff readiness | `docs/evidence/commercial-readiness-sprint39-final-handoff.json` | Final demo, partner packet, and blocker register are refreshed | External partner signoff remains absent | `authority=local-advisory` |
 | Sprint 40 local readiness freeze | `docs/evidence/commercial-readiness-sprint40-freeze.json` | Current `main` has zero check-runs, locked receipts are bounded, and public copy/scans are hardened | Partner packet remains local-advisory only | `releaseGrade=false`, `canUnblockStaging=false` |
 | Sprint 41 partner/customer handoff | `docs/evidence/partner-customer-handoff-sprint41.json` | First-read handoff package, demo order, receipt mode separation, and blocker state are aligned | Partner/customer review can start locally only | `partnerCustomerHandoffPackage=local-advisory-finalized`, `commercialReadiness=blocked` |
+| Sprint 42 hosted adapter boundary | `docs/evidence/hosted-adapter-commercial-boundary-sprint42.json` | Hosted storage, migration, backup, queue, rate, origin, tenant, logging, and failure blockers are stateful | Managed infrastructure remains unconnected | `commercialReadiness=blocked`, `externalConnectionAllowed=false` |
+| Sprint 43 external blocker handoff | `docs/evidence/staging-handoff-sprint43-external-blockers.json` | Remaining blockers are monitorable with resume and stop conditions | Safe internal work is frozen until external state changes | `commercialReadyLocalHandoffFreeze=true`, `remainingInternalSafeTrackWork=none-known` |
 | Sprint 19 storage and restore gate | `docs/implementation/giwa-staging-storage-and-restore.md` | Local SQLite and memory queues stay local-only | Hosted storage remains blocked | restore drill required |
 | Sprint 19 security and observability gates | `docs/implementation/giwa-staging-security-boundary.md` and `docs/implementation/giwa-staging-observability.md` | Staging requires auth, tenant, origin, rate, readiness, request id, and alert gates | Partner API remains blocked until gates pass | bounded public errors |
 | Incident read-only fallback | `docs/implementation/giwa-incident-response.md` | GET-only fallback stays available while POST actions are blocked | Recorded evidence remains reviewable | no new live receipt during incident |
@@ -60,3 +62,5 @@ This checklist records the Sprint 7 acceptance matrix for the single GIWA Sepoli
 - Sprint 39 refreshes final demo and partner handoff documents while keeping protected CI, artifact metadata, partner signoff, hosting approval, and managed infrastructure blocked.
 - Sprint 40 freezes the local readiness package while keeping protected CI, artifact metadata, branch protection satisfaction, release approval, partner signoff, hosting approval, and managed infrastructure blocked.
 - Sprint 41 finalizes the partner/customer handoff package and evidence while keeping the package local-advisory, not release-grade, and not staging-authorizing.
+- Sprint 42 hardens the hosted adapter commercial boundary while keeping all managed infrastructure unconnected.
+- Sprint 43 freezes the external blocker monitoring and staging handoff state. No further internal safe-track work is known until protected CI, artifact metadata, branch protection, partner/customer signoff, hosting approval, managed infrastructure approval, or release approval changes state.
