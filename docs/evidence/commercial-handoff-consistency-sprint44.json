@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1",
+  "capturedAt": "2026-06-21T12:10:00+09:00",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "sprint": 44,
+  "handoffInputMain": "dcb0b9c08c5318f9f250178b86b17b2159c32169",
+  "theme": "commercial-handoff-consistency-and-evidence-guard-hardening",
+  "improvements": [
+    {
+      "area": "documentation-consistency",
+      "summary": "submission evidence opens the Sprint 43 external blocker handoff and evidence before demo routes"
+    },
+    {
+      "area": "evidence-integrity",
+      "summary": "checked-in tests bind local provenance verification to the current provenance sidecar and Sprint 43 evidence semantics"
+    },
+    {
+      "area": "request-safety",
+      "summary": "POST API requests without a JSON content type fail closed"
+    },
+    {
+      "area": "public-artifact-guard",
+      "summary": "public artifact guard rejects credential-like strings in generic values"
+    },
+    {
+      "area": "operator-readiness",
+      "summary": "runbook and handoff copy distinguish local review from future owner-approved protected CI recovery"
+    }
+  ],
+  "testsAddedOrUpdated": [
+    "apps/web/src/lib/live/liveRequestSafety.test.ts",
+    "apps/web/src/lib/verifier/publicArtifactGuard.test.ts",
+    "apps/web/src/lib/provenance/checkedInProvenanceArtifacts.test.ts"
+  ],
+  "externalBlockersUnchanged": [
+    "github-account-runner-startup",
+    "protected-ci-required-checks",
+    "protected-artifact-metadata",
+    "branch-protection-satisfaction",
+    "partner-customer-signoff",
+    "external-hosting-approval",
+    "managed-infrastructure-approval",
+    "release-staging-promotion-approval"
+  ],
+  "forbiddenActionsObserved": {
+    "protectedCiDispatchOrRerun": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "envFileContentRead": false,
+    "credentialValueOutput": false,
+    "walletTransaction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "fakeCiOrProvenance": false,
+    "fakePartnerSignoff": false,
+    "fakeDeployOrStagingUrl": false
+  },
+  "finalDecision": {
+    "status": "local-advisory-handoff-hardened",
+    "commercialReadiness": "blocked",
+    "stagingDryRunExecution": "blocked",
+    "nextAction": "wait for external blocker evidence or continue only with non-external internal quality hardening"
+  }
+}

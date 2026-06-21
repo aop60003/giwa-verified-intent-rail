@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions. Sprint 44 hardens handoff consistency and local guards without changing the external blocker state:
 
 ```text
 .git=True
@@ -41,6 +41,7 @@ partnerCustomerHandoffPackage=docs/evidence/partner-customer-handoff-sprint41.js
 partnerCustomerHandoffState=local-advisory-finalized
 hostedAdapterCommercialBoundary=docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
 stagingHandoffEvidence=docs/evidence/staging-handoff-sprint43-external-blockers.json
+commercialHandoffConsistencyEvidence=docs/evidence/commercial-handoff-consistency-sprint44.json
 commercialReadiness=blocked
 stagingDryRunExecution=blocked
 external partner signoff=absent
@@ -914,6 +915,34 @@ Mixed repo/workflow blockers:
 | Release approval | protected CI, protected artifacts, owners, rollback path, and real partner/customer decision are complete |
 
 Sprint 43 closes the internal safe-track handoff. Staging execution remains blocked until the monitorable external blockers and mixed repo/workflow blockers change state.
+
+## Sprint 44 Commercial Handoff Consistency And Evidence Guard Hardening
+
+Sprint 44 plan and evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-44-commercial-handoff-consistency-and-evidence-guard-hardening.md
+docs/evidence/commercial-handoff-consistency-sprint44.json
+```
+
+Current Sprint 44 blocker state:
+
+```text
+handoffInputMain=dcb0b9c08c5318f9f250178b86b17b2159c32169
+authority=local-advisory
+releaseGrade=false
+canUnblockStaging=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+branchProtectionSatisfaction=blocked-required-checks-not-passing
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+```
+
+Sprint 44 adds internal regression coverage for checked-in provenance, Sprint 43 handoff evidence semantics, submission evidence opening order, POST request content-type safety, and public artifact credential-like value scanning. It does not dispatch or rerun protected CI, change GitHub billing state, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
 
 ## Sprint 21 Failure Triage
 

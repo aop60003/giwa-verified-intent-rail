@@ -21,6 +21,14 @@ describe("public artifact guard", () => {
     ).toThrow("public artifact contains blocked key");
   });
 
+  it("rejects secret-like string values even when the key is generic", () => {
+    expect(() =>
+      assertPublicArtifactSafe({
+        note: "Authorization: Bearer example"
+      })
+    ).toThrow("public artifact contains blocked value");
+  });
+
   it("rejects forbidden public claims", () => {
     expect(() =>
       assertPublicArtifactSafe({

@@ -6,11 +6,13 @@ This repository contains the final submission pack for the GASOK MVP concept. Th
 
 Use [03_giwa_verified_intent_rail_positioning.md](03_giwa_verified_intent_rail_positioning.md) as the source of truth for external pitch decks, submission copy, MVP scope, and product positioning.
 
-## Current Execution Plan
+## Current Routing / Stop Condition
 
 Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md) as the current implementation routing document.
 
 The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
+
+Current state is a commercial-ready local handoff freeze. Open the Sprint 43 blocker handoff before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
 
 ## Final Demo Pack
 
@@ -62,6 +64,7 @@ Evidence paths:
 Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18 adds the partner beta rehearsal package. Sprint 19 adds staging deployment preparation gates. These are gates and runbooks only; they do not authorize public hosting or deployment.
 
 Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the partner/customer handoff package. Sprint 42 hardens the hosted adapter commercial boundary with local-advisory code, tests, docs, and evidence while keeping managed infrastructure unconnected. Sprint 43 is the current external blocker monitoring and staging handoff freeze: it is ready for local review only and keeps protected CI, protected artifacts, partner/customer signoff, public hosting, managed infrastructure, release approval, and staging execution blocked until those external conditions change.
+Sprint 44 tightens the local handoff consistency and evidence guardrails only. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, or release promotion.
 Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.

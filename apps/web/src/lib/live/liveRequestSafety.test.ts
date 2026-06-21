@@ -38,4 +38,16 @@ describe("evaluateLiveRequestSafety", () => {
       })
     ).toEqual({ ok: false, status: 415, code: "unsupported_media_type" });
   });
+
+  it("rejects missing content type for POST API requests", () => {
+    expect(
+      evaluateLiveRequestSafety({
+        method: "POST",
+        pathname: "/api/runs",
+        origin: "https://partner.example",
+        allowedOrigins: ["https://partner.example"],
+        contentType: undefined
+      })
+    ).toEqual({ ok: false, status: 415, code: "unsupported_media_type" });
+  });
 });

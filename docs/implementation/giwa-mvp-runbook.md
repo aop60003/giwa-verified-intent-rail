@@ -429,7 +429,7 @@ docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
 docs/evidence/staging-handoff-sprint43-external-blockers.json
 ```
 
-Use Sprint 43 before deciding whether more internal work should continue. It records that the demo package, partner/customer handoff, hosted adapter boundary, evidence packet, and scans are complete at local-advisory authority. Commercial readiness and staging dry-run execution remain blocked until protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, and release approval change state.
+Use Sprint 43 to decide whether an external blocker state has changed. If no external blocker has changed, stay at the local-advisory handoff and do not start protected CI, hosting, managed infrastructure, wallet, or chain-operation work. The package records that the demo package, partner/customer handoff, hosted adapter boundary, evidence packet, and scans are complete at local-advisory authority. Commercial readiness and staging dry-run execution remain blocked until protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, and release approval change state.
 
 Do not dispatch protected CI, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent signoff, invent staging URLs, or claim protected provenance from this handoff.
 

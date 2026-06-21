@@ -71,9 +71,9 @@ The reviewer should not be asked to connect a wallet or submit approve/deposit t
 | External hosting approval | absent | Hosting approval record | Host, origin policy, operator, rollback owner, observability, and stop conditions approved | Approval record with no public URL until deploy sprint |
 | Managed infrastructure approval | absent | Infrastructure approval record | Durable DB, credential manager, backup target, queue design, restore owner, and connection plan approved | Approval record with no connection attempt |
 
-## Protected CI Recovery Rule
+## Future Owner-Approved Protected CI Recovery Rule
 
-Do not dispatch or rerun protected CI from this handoff. A future recovery run must:
+Do not dispatch or rerun protected CI from this handoff. This section is a future owner-approved recovery rule, not an operator checklist for local handoff review. A future recovery run must:
 
 1. Select the exact current `main` SHA at the time of recovery.
 2. Confirm GitHub Billing and Actions UI no longer show an account lock or disabled workflow state.

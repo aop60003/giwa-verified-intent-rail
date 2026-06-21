@@ -33,6 +33,10 @@ export function assertPublicArtifactSafe(value: unknown): void {
   if (BLOCKED_CLAIM_PATTERN.test(serialized)) throw new Error("public artifact contains blocked claim");
 
   const scan = (entry: unknown): void => {
+    if (typeof entry === "string") {
+      if (BLOCKED_KEY_PATTERN.test(entry)) throw new Error("public artifact contains blocked value");
+      return;
+    }
     if (Array.isArray(entry)) {
       for (const item of entry) scan(item);
       return;

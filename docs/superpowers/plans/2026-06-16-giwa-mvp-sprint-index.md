@@ -16,6 +16,10 @@ Do not execute `docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.
 
 Use this sprint index and the per-sprint documents instead. Each sprint must stop at its exit gate, record evidence, and receive approval before the next sprint starts.
 
+## Current State After Sprint 44
+
+The repo is in a commercial-ready local handoff freeze with Sprint 44 internal consistency hardening applied. Sprint 43 remains the first-read stop-condition packet. Protected CI provenance, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked. Further work must either respond to real external blocker evidence or improve internal local-advisory quality without touching protected CI, hosting, managed infrastructure, wallet actions, chain operations, or dependencies.
+
 ## Canonical Inputs
 
 - `03_giwa_verified_intent_rail_positioning.md`
@@ -70,6 +74,7 @@ Use this sprint index and the per-sprint documents instead. Each sprint must sto
 | 41 | `2026-06-21-sprint-41-partner-customer-handoff-package-finalization.md` | partner/customer first-read handoff package, demo order alignment, evidence map refresh, acceptance closeout, blocker separation, and local-advisory evidence without touching protected CI | Sprint 40 local-advisory freeze |
 | 42 | `2026-06-21-sprint-42-hosted-adapter-commercial-boundary-hardening.md` | hosted adapter commercial boundary hardening for storage, migration, backup, queue, rate, origin, tenant, logging, and failure blockers without connecting managed infrastructure | Sprint 41 local-advisory handoff |
 | 43 | `2026-06-21-sprint-43-external-blocker-monitoring-and-staging-handoff.md` | external blocker monitoring, staging handoff freeze, restart conditions, evidence binding, and final local-advisory stop conditions without external execution | Sprint 42 local-advisory boundary |
+| 44 | `2026-06-21-sprint-44-commercial-handoff-consistency-and-evidence-guard-hardening.md` | commercial handoff consistency, checked-in provenance drift guard, request safety, public artifact guard, and local-advisory evidence refresh without external execution | Sprint 43 local-advisory freeze |
 
 ## Sprint 0 Execution Artifacts
 
@@ -188,6 +193,8 @@ Sprint 41 finalizes the partner/customer first-read handoff package after the Sp
 Sprint 42 hardens the hosted adapter commercial boundary after the Sprint 41 handoff. It adds local-advisory code and evidence that separate external approval blockers, mixed repo/workflow blockers, and local contract blockers for storage, migration, backup, queue, rate, origin, tenant, logging, rollback, and failure handling. Sprint 42 does not dispatch or rerun protected CI, public-host, deploy, connect managed infrastructure, read env file contents, output credential values, send wallet actions, run chain-operation commands, install dependencies, create release tags, invent CI results, invent partner signoff, invent staging URLs, or claim protected CI provenance.
 
 Sprint 43 freezes the external blocker monitoring and staging handoff state after Sprint 42. It binds Sprint 40, Sprint 41, and Sprint 42 evidence into one monitorable handoff, names exact resume conditions for protected CI, partner/customer signoff, hosting approval, managed infrastructure approval, branch protection satisfaction, artifact metadata, and release approval, and records that no further internal safe-track work is known. Sprint 43 does not dispatch or rerun protected CI, public-host, deploy, connect managed infrastructure, read env file contents, output credential values, send wallet actions, run chain-operation commands, install dependencies, create release tags, invent CI results, invent partner signoff, invent staging URLs, or claim protected CI provenance.
+
+Sprint 44 hardens the already frozen local handoff by fixing first-read document order, adding checked-in provenance and handoff evidence regression tests, rejecting missing JSON content type for POST API requests, and rejecting credential-like public artifact string values. Sprint 44 does not dispatch or rerun protected CI, public-host, deploy, connect managed infrastructure, read env file contents, output credential values, send wallet actions, run chain-operation commands, install dependencies, create release tags, invent CI results, invent partner signoff, invent staging URLs, or claim protected CI provenance.
 
 ## Global Stop Conditions
 

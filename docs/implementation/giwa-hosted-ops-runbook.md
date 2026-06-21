@@ -21,7 +21,7 @@ one partner evidence packet
 
 Historical hosted-ops planning allowed the workspace to be non-git prototype mode. When either `.git` or `.github` is absent, authoritative CI, branch protection, release provenance, and artifact promotion are blocked.
 
-Current Sprint 40 posture: `.git`, `.github`, and `.github/workflows/ci.yml` exist, but current `main` has zero check-runs, the latest observed Actions run is stale and failed before runner steps with the GitHub billing/account annotation, and protected artifact metadata is absent. Hosted beta, public release, and staging dry-run execution remain blocked until protected CI passes on current `main`, protected artifact metadata exists, external partner signoff is recorded, hosting is approved, managed infrastructure is approved, and release or rollback owners sign off.
+Current Sprint 43 posture: `.git`, `.github`, and `.github/workflows/ci.yml` exist, but current `main` has zero check-runs, the latest observed Actions run is stale and failed before runner steps with the GitHub billing/account annotation, and protected artifact metadata is absent. Hosted beta, public release, and staging dry-run execution remain blocked until protected CI passes on current `main`, protected artifact metadata exists, external partner/customer signoff is recorded, hosting is approved, managed infrastructure is approved, and release or rollback owners sign off.
 
 Check:
 

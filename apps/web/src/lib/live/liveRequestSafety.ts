@@ -28,8 +28,7 @@ export function evaluateLiveRequestSafety(input: LiveRequestSafetyInput): LiveRe
   if (
     input.pathname.startsWith("/api/") &&
     input.method === "POST" &&
-    input.contentType !== undefined &&
-    !input.contentType.toLowerCase().startsWith("application/json")
+    (input.contentType === undefined || !input.contentType.toLowerCase().startsWith("application/json"))
   ) {
     return { ok: false, status: 415, code: "unsupported_media_type" };
   }

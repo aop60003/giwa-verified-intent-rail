@@ -4,13 +4,15 @@ This document maps the final MVP to the submission artifacts.
 
 ## What To Open First
 
-1. Handoff package: `docs/implementation/giwa-partner-customer-handoff-package.md`
-2. Demo control room: `http://127.0.0.1:4190/demo`
-3. Fresh live flow: `http://127.0.0.1:4190/live`
-4. Dynamic receipt API after `matched`: `http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8`
-5. Static fallback: `http://127.0.0.1:4176/`
-6. Partner console: `http://127.0.0.1:4176/partner`
-7. Static snapshot: `http://127.0.0.1:4176/partner-snapshot.json`
+1. External blocker handoff: `docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md`
+2. Sprint 43 handoff evidence: `docs/evidence/staging-handoff-sprint43-external-blockers.json`
+3. Partner/customer handoff package: `docs/implementation/giwa-partner-customer-handoff-package.md`
+4. Demo control room: `http://127.0.0.1:4190/demo`
+5. Fresh live flow: `http://127.0.0.1:4190/live`
+6. Dynamic receipt API after `matched`: `http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8`
+7. Static fallback: `http://127.0.0.1:4176/`
+8. Partner console: `http://127.0.0.1:4176/partner`
+9. Static snapshot: `http://127.0.0.1:4176/partner-snapshot.json`
 
 ## Artifact Map
 
@@ -50,6 +52,7 @@ This document maps the final MVP to the submission artifacts.
 | Sprint 42 hosted adapter boundary evidence | `docs/evidence/hosted-adapter-commercial-boundary-sprint42.json` |
 | Sprint 43 external blocker handoff | `docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md` |
 | Sprint 43 staging handoff evidence | `docs/evidence/staging-handoff-sprint43-external-blockers.json` |
+| Sprint 44 commercial handoff consistency evidence | `docs/evidence/commercial-handoff-consistency-sprint44.json` |
 
 ## Evidence Summary
 
