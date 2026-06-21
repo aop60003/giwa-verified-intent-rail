@@ -60,7 +60,7 @@ Evidence paths:
 
 Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18 adds the partner beta rehearsal package. Sprint 19 adds staging deployment preparation gates. These are gates and runbooks only; they do not authorize public hosting or deployment.
 
-Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the current partner/customer handoff package; it is ready for local review only and keeps protected CI, protected artifacts, partner signoff, public hosting, managed infrastructure, release approval, and staging execution blocked.
+Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the current partner/customer handoff package; it is ready for local review only and keeps protected CI, protected artifacts, partner signoff, public hosting, managed infrastructure, release approval, and staging execution blocked. Sprint 42 hardens the hosted adapter commercial boundary with local-advisory code, tests, docs, and evidence while keeping managed infrastructure unconnected.
 Sprint 20 CI and Source Provenance is the next source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the next gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
@@ -138,6 +138,9 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 41 partner/customer handoff plan](docs/superpowers/plans/2026-06-21-sprint-41-partner-customer-handoff-package-finalization.md)
 - [Sprint 41 partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
 - [Sprint 41 partner/customer handoff evidence](docs/evidence/partner-customer-handoff-sprint41.json)
+- [Sprint 42 hosted adapter commercial boundary plan](docs/superpowers/plans/2026-06-21-sprint-42-hosted-adapter-commercial-boundary-hardening.md)
+- [Sprint 42 hosted adapter commercial boundary](docs/implementation/giwa-hosted-adapter-commercial-boundary.md)
+- [Sprint 42 hosted adapter commercial boundary evidence](docs/evidence/hosted-adapter-commercial-boundary-sprint42.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)

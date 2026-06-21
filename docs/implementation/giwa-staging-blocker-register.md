@@ -777,6 +777,7 @@ externalPartnerOrCustomerSignoff=absent
 externalHostingApproval=absent
 managedInfrastructureApproval=absent
 managedInfrastructureConnection=blocked-unapproved
+hostedAdapterCommercialBoundary=blocked-local-advisory
 ```
 
 Sprint 41 can be shared for local partner/customer review only. It cannot unblock staging dry-run execution because protected CI provenance, protected artifact metadata, branch-protection satisfaction, release approval, external signoff, hosting approval, and managed infrastructure approval are still absent.
@@ -798,6 +799,67 @@ Mixed repo/workflow blockers:
 | Protected artifact metadata | protected workflow emits staging-named artifact metadata after required checks pass |
 | Branch protection satisfaction | required check contexts pass on the protected branch |
 | Release approval | protected CI, protected artifacts, owners, rollback path, and partner/customer decision are complete |
+
+## Sprint 42 Hosted Adapter Commercial Boundary
+
+Sprint 42 plan, commercial boundary record, and evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-42-hosted-adapter-commercial-boundary-hardening.md
+docs/implementation/giwa-hosted-adapter-commercial-boundary.md
+docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
+```
+
+Current Sprint 42 blocker state:
+
+```text
+handoffInputMain=d782a5746364b5b1395d362dd0d442329a30a138
+currentMainCheckRuns=0
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+hostedAdapterCommercialBoundary=blocked-local-advisory
+commercialReadiness=blocked
+externalConnectionAllowed=false
+partnerTrafficAllowed=false
+managedInfrastructureConnectionAllowed=false
+externalPartnerOrCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+```
+
+External-only blockers:
+
+| Blocker | Required outside the repository |
+| --- | --- |
+| GitHub account gate | GitHub must allow protected workflow runner startup |
+| Partner/customer signoff | A real reviewer must sign the local-advisory handoff package |
+| External hosting approval | Host, origin policy, rollback owner, and operator must be approved |
+| Managed infrastructure approval | Durable database, credential manager, backup target, queue design, and restore owner must be approved before any connection work |
+
+Mixed repo/workflow blockers:
+
+| Blocker | Required transition |
+| --- | --- |
+| Protected CI evidence for handoff input | external account gate clears and required checks pass on the intended source commit |
+| Protected artifact metadata | protected workflow emits staging-named artifact metadata after required checks pass |
+| Branch protection satisfaction | required check contexts pass on the protected branch |
+| Release approval | protected CI, protected artifacts, owners, rollback path, and partner/customer decision are complete |
+
+Local contract blockers:
+
+| Blocker | Required transition |
+| --- | --- |
+| Hosted storage probe | approved adapter and measured hosted probe |
+| Migration marker and checksum validation | marker inventory plus checksum drift and incompatible schema fail-closed evidence |
+| Backup and restore drill | backup catalog, snapshot hash, row counts, verifier input hash, and receipt hash recomputation |
+| Verification queue durability | durable pending, leased, retryable, terminal, lease recovery, and tenant-scoped dedupe behavior |
+| Rate-limit durability | durable source, credential, tenant, wallet, and verify buckets |
+| Origin policy | exact allowlist, missing-origin decision, and hosted policy module |
+| Tenant isolation | tenant-bound secondary lookups and no local default tenant promotion |
+| Redacted logging | allowlisted metadata, bounded event and error names, and query stripping |
+| Rollback owner | named owner and static fallback smoke evidence |
+
+Sprint 42 cannot unblock staging dry-run execution. It only makes the hosted adapter commercial boundary reviewable and test-backed while managed infrastructure remains unconnected.
 
 ## Sprint 21 Failure Triage
 

@@ -71,6 +71,19 @@ apps/web/src/lib/live/hostedAdapterContract.test.ts
 
 The evaluator is intentionally small. It records blocker categories and never upgrades authority beyond `local-advisory`.
 
+## Sprint 42 Commercial Boundary Follow-Up
+
+Sprint 42 keeps this Sprint 38 local evaluator intact but adds a stricter commercial boundary evaluator:
+
+```text
+apps/web/src/lib/live/hostedAdapterCommercialBoundary.ts
+apps/web/src/lib/live/hostedAdapterCommercialBoundary.test.ts
+docs/implementation/giwa-hosted-adapter-commercial-boundary.md
+docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
+```
+
+The Sprint 42 evaluator tracks storage probe, migration checksum drift, backup catalog, restore drill, queue lease recovery, tenant-scoped queue dedupe, durable rate limits, exact origin policy, tenant isolation, redacted logging, bounded failures, rollback owner, protected CI, protected artifact metadata, and managed infrastructure approval. Its result remains `local-advisory`, `releaseGrade=false`, and `externalConnectionAllowed=false`.
+
 ## Safety Confirmation
 
 Sprint 38 does not public-host, deploy, connect managed infrastructure, print credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, create release tags, or claim protected CI provenance.

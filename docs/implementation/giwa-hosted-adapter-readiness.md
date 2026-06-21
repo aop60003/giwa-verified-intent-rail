@@ -218,3 +218,31 @@ blockers=protected_ci_missing,protected_artifact_metadata_missing,rate_limit_dur
 ```
 
 The evaluator makes the adapter contract explicit while preserving the no-go state for managed infrastructure, public hosting, deployment, and protected provenance claims.
+
+## Sprint 42 Commercial Boundary State
+
+Sprint 42 adds a separate commercial boundary evaluator:
+
+```text
+apps/web/src/lib/live/hostedAdapterCommercialBoundary.ts
+apps/web/src/lib/live/hostedAdapterCommercialBoundary.test.ts
+docs/implementation/giwa-hosted-adapter-commercial-boundary.md
+docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
+```
+
+Current decision:
+
+```text
+handoffInputMain=d782a5746364b5b1395d362dd0d442329a30a138
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+externalConnectionAllowed=false
+partnerTrafficAllowed=false
+managedInfrastructureConnectionAllowed=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+managedInfrastructureApproval=absent
+```
+
+This boundary prevents `activation=ready` from the Sprint 38 local contract from being interpreted as commercial hosted activation. Hosted adapter promotion remains blocked until protected CI, protected artifact metadata, external approvals, durable storage, migration, backup, restore, queue, rate, origin, tenant, logging, rollback, and failure-mode gates are proven.

@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-21T01:31:42.463Z",
+  "generatedAt": "2026-06-21T02:00:53.213Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -245,6 +245,16 @@
         "schemaPath": null
       },
       {
+        "path": "docs/evidence/hosted-adapter-commercial-boundary-sprint42.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "cef54b9ae1f41ba6037c6822a7383bda4d734b71ef95b26fe8fd92bec617d594",
+        "bytes": 7142,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
         "path": "docs/evidence/live-demo-sprint12-snapshot.json",
         "role": "public-evidence",
         "required": true,
@@ -390,8 +400,8 @@
         "path": "docs/implementation/giwa-commercial-readiness-gate.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "21c61f70d4bbaf86c59ebcd30322606ce21617fc6432411a9a796fdcc4df10ad",
-        "bytes": 19417,
+        "sha256": "3052b7dc13686c99371ab2bec3b6c8b771756094dbaabe14a27d6f05702c8ca9",
+        "bytes": 20644,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -457,11 +467,21 @@
         "schemaPath": null
       },
       {
+        "path": "docs/implementation/giwa-hosted-adapter-commercial-boundary.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "3fe672e8da5726e37dacef80b54ff667db522cbf2f0f910203b92040ca42eef6",
+        "bytes": 6374,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
         "path": "docs/implementation/giwa-hosted-adapter-local-contract.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "39fb56036574fb6a529a9b2b35686602c2747090404598a87e9d417cdec7fed8",
-        "bytes": 3418,
+        "sha256": "0484fd6cd9f501a23bfa3e2e6b02ecf17c7111a22e6168a77dfec5ed0ab55cb1",
+        "bytes": 4270,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -470,8 +490,8 @@
         "path": "docs/implementation/giwa-hosted-adapter-readiness.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "b4348dfb4fc2f9c83edbcea3e64dba2840d99caffe712c85d45866452d388758",
-        "bytes": 9090,
+        "sha256": "93b848cbf8e8bb80639e95369fa80790b98e95e5a8dfb22ec439dc5faf1946d8",
+        "bytes": 10219,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -740,8 +760,8 @@
         "path": "docs/implementation/giwa-staging-blocker-register.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "4cdb7731eaa48ea7215e195c9a2daf2c0b2bc35871763483a23a33e5e7e8379d",
-        "bytes": 40477,
+        "sha256": "00f72c4d9368b2a1dd2ee0e5701a6c851934986656f01127764641bf83f899b5",
+        "bytes": 43606,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -770,8 +790,8 @@
         "path": "docs/implementation/giwa-staging-dry-run-simulation.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "e628a056aceb56460aa333ed85d219fd5401f030ed37dbf5fa7abca293149125",
-        "bytes": 3718,
+        "sha256": "17c23578493d0c0ae86f16e3007375a79d82273d8be5eec4b422f8018f34cc61",
+        "bytes": 4711,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -923,6 +943,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "d62eb9ec0879067f38ba31eda74bbb155b745b0fa39b7a96c3dba4124aba1d6c",
+  "buildTreeSha256": "5fa86ab6c511ee1a8dee59e58389782322eb41625447e2a09411898fa57d3237",
   "unmanifestedFilePolicy": "fail"
 }

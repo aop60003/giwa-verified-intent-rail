@@ -449,3 +449,31 @@ docs/evidence/partner-customer-handoff-sprint41.json
 ```
 
 This package is partner review-ready only in local-advisory mode. Commercial readiness remains blocked until protected CI passes on the intended source commit, protected artifact metadata exists, release and rollback owners approve, real partner/customer signoff is recorded, external hosting is approved, and managed infrastructure is approved in a separate gate.
+
+## Sprint 42 Hosted Adapter Commercial Boundary Gate
+
+Sprint 42 local-advisory outputs are:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-42-hosted-adapter-commercial-boundary-hardening.md
+docs/implementation/giwa-hosted-adapter-commercial-boundary.md
+docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
+apps/web/src/lib/live/hostedAdapterCommercialBoundary.ts
+```
+
+Commercial readiness remains blocked:
+
+```text
+handoffInputMain=d782a5746364b5b1395d362dd0d442329a30a138
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+externalConnectionAllowed=false
+partnerTrafficAllowed=false
+managedInfrastructureConnectionAllowed=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=mixed-repo-workflow-blocker
+managedInfrastructureApproval=absent
+```
+
+The Sprint 42 evaluator is a boundary check only. It documents missing hosted storage, migration, backup, restore, queue, rate, origin, tenant, logging, failure, rollback, protected CI, artifact metadata, and managed infrastructure gates. It does not authorize partner traffic, public hosting, deployment, managed infrastructure connection, wallet actions, chain-operation package commands, or protected provenance claims.

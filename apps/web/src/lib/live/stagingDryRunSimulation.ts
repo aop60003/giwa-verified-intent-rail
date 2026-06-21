@@ -10,10 +10,11 @@ export type StagingDryRunSimulationInput = {
   commercialReceiptGateReady: boolean;
   partnerSignoffPresent: boolean;
   externalHostingApproved: boolean;
+  managedInfrastructureApproved: boolean;
 };
 
 export type StagingDryRunBlocker =
-  | "protected_ci_billing_lock"
+  | "github_account_billing_lock"
   | "protected_ci_failed"
   | "protected_ci_absent"
   | "protected_artifact_metadata_missing"
@@ -22,7 +23,8 @@ export type StagingDryRunBlocker =
   | "live_rehearsal_missing"
   | "commercial_receipt_gate_missing"
   | "partner_signoff_absent"
-  | "external_hosting_not_approved";
+  | "external_hosting_not_approved"
+  | "managed_infrastructure_not_approved";
 
 export type StagingDryRunSimulation = {
   authority: "local-advisory";
@@ -31,11 +33,26 @@ export type StagingDryRunSimulation = {
   canCreatePublicStagingUrl: false;
   blockers: StagingDryRunBlocker[];
   externalOnlyBlockers: StagingDryRunBlocker[];
+  mixedRepoWorkflowBlockers: StagingDryRunBlocker[];
+  localContractBlockers: StagingDryRunBlocker[];
 };
+
+const EXTERNAL_ONLY_BLOCKERS = new Set<StagingDryRunBlocker>([
+  "github_account_billing_lock",
+  "partner_signoff_absent",
+  "external_hosting_not_approved",
+  "managed_infrastructure_not_approved"
+]);
+
+const MIXED_REPO_WORKFLOW_BLOCKERS = new Set<StagingDryRunBlocker>([
+  "protected_ci_failed",
+  "protected_ci_absent",
+  "protected_artifact_metadata_missing"
+]);
 
 function protectedCiBlocker(state: ProtectedCiState): StagingDryRunBlocker | null {
   if (state === "passed") return null;
-  if (state === "blocked-billing-lock") return "protected_ci_billing_lock";
+  if (state === "blocked-billing-lock") return "github_account_billing_lock";
   if (state === "failed") return "protected_ci_failed";
   return "protected_ci_absent";
 }
@@ -51,14 +68,12 @@ export function buildStagingDryRunSimulation(input: StagingDryRunSimulationInput
   if (!input.commercialReceiptGateReady) blockers.push("commercial_receipt_gate_missing");
   if (!input.partnerSignoffPresent) blockers.push("partner_signoff_absent");
   if (!input.externalHostingApproved) blockers.push("external_hosting_not_approved");
+  if (!input.managedInfrastructureApproved) blockers.push("managed_infrastructure_not_approved");
 
-  const externalOnlyBlockers = blockers.filter((blocker) =>
-    [
-      "protected_ci_billing_lock",
-      "protected_artifact_metadata_missing",
-      "partner_signoff_absent",
-      "external_hosting_not_approved"
-    ].includes(blocker)
+  const externalOnlyBlockers = blockers.filter((blocker) => EXTERNAL_ONLY_BLOCKERS.has(blocker));
+  const mixedRepoWorkflowBlockers = blockers.filter((blocker) => MIXED_REPO_WORKFLOW_BLOCKERS.has(blocker));
+  const localContractBlockers = blockers.filter(
+    (blocker) => !EXTERNAL_ONLY_BLOCKERS.has(blocker) && !MIXED_REPO_WORKFLOW_BLOCKERS.has(blocker)
   );
 
   return {
@@ -67,6 +82,8 @@ export function buildStagingDryRunSimulation(input: StagingDryRunSimulationInput
     execution: blockers.length === 0 ? "ready" : "blocked",
     canCreatePublicStagingUrl: false,
     blockers,
-    externalOnlyBlockers
+    externalOnlyBlockers,
+    mixedRepoWorkflowBlockers,
+    localContractBlockers
   };
 }

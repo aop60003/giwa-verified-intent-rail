@@ -13,6 +13,7 @@ liveRehearsalReady=true
 commercialReceiptGateReady=true
 partnerSignoffPresent=false
 externalHostingApproved=false
+managedInfrastructureApproved=false
 ```
 
 ## Current Decision
@@ -22,9 +23,10 @@ authority=local-advisory
 releaseGrade=false
 execution=blocked
 canCreatePublicStagingUrl=false
-blockers=protected_ci_billing_lock,protected_artifact_metadata_missing,hosted_adapter_blocked,partner_signoff_absent,external_hosting_not_approved
-externalOnlyBlockers=protected_ci_billing_lock,partner_signoff_absent,external_hosting_not_approved
+blockers=github_account_billing_lock,protected_artifact_metadata_missing,hosted_adapter_blocked,partner_signoff_absent,external_hosting_not_approved,managed_infrastructure_not_approved
+externalOnlyBlockers=github_account_billing_lock,partner_signoff_absent,external_hosting_not_approved,managed_infrastructure_not_approved
 mixedRepoWorkflowBlockers=protected_artifact_metadata_missing
+localContractBlockers=hosted_adapter_blocked
 ```
 
 The local static fallback, local live rehearsal, and matched-only receipt gate remain available for review. They do not replace protected CI, protected artifact metadata, partner signoff, or hosting approval. Protected artifact metadata remains mixed because it depends on both the external account gate and repository workflow upload metadata.
@@ -41,6 +43,7 @@ The local static fallback, local live rehearsal, and matched-only receipt gate r
 | Commercial receipt gate | ready | advisory only |
 | Partner signoff | absent | no-go |
 | External hosting approval | absent | no-go |
+| Managed infrastructure approval | absent | no-go |
 
 ## Failure Drill
 
@@ -89,3 +92,16 @@ protectedArtifactMetadata=mixed-repo-workflow-blocker
 ```
 
 The local simulation can support reviewer preparation only. It does not create a staging URL, public host binding, release approval, partner traffic approval, protected CI provenance, or managed infrastructure approval.
+
+## Sprint 42 Blocker Taxonomy Hardening
+
+Sprint 42 refines the evaluator output so protected artifact metadata is no longer grouped as external-only. Current taxonomy:
+
+```text
+externalOnlyBlockers=github_account_billing_lock,partner_signoff_absent,external_hosting_not_approved,managed_infrastructure_not_approved
+mixedRepoWorkflowBlockers=protected_artifact_metadata_missing
+localContractBlockers=hosted_adapter_blocked
+canCreatePublicStagingUrl=false
+```
+
+The managed infrastructure approval field is explicit in the evaluator input. The simulation remains local-advisory and cannot create a public staging URL or substitute for protected CI, protected artifact metadata, release approval, partner/customer signoff, external hosting approval, or managed infrastructure approval.
