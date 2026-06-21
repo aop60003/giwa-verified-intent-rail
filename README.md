@@ -12,7 +12,7 @@ Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpower
 
 The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
 
-Current state is a local-review handoff freeze with Sprint 46 public boundary hardening applied after the Sprint 43 blocker handoff. Open the Sprint 43 blocker handoff and Sprint 46 evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current state is a local-review handoff freeze with Sprint 47 client-side public error-copy hardening applied after the Sprint 43 blocker handoff. Open the Sprint 43 blocker handoff and Sprint 47 evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
 
 ## Final Demo Pack
 
@@ -62,6 +62,7 @@ Evidence paths:
 - [docs/evidence/commercial-handoff-consistency-sprint44.json](docs/evidence/commercial-handoff-consistency-sprint44.json)
 - [docs/evidence/bounded-failure-redaction-sprint45.json](docs/evidence/bounded-failure-redaction-sprint45.json)
 - [docs/evidence/public-boundary-final-hardening-sprint46.json](docs/evidence/public-boundary-final-hardening-sprint46.json)
+- [docs/evidence/client-side-public-error-copy-sprint47.json](docs/evidence/client-side-public-error-copy-sprint47.json)
 
 ## Hosted Ops Readiness
 
@@ -71,6 +72,7 @@ Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate 
 Sprint 44 tightens the local handoff consistency and evidence guardrails only. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, or release promotion.
 Sprint 45 tightens bounded verifier failure redaction, hosted request safety, credential-like public artifact detection, telemetry value redaction, legacy snapshot replay-boundary labeling, and recorded-wallet-evidence copy. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, or release promotion.
 Sprint 46 tightens the final local public boundary: legacy verifier failure values are redacted on read paths, readiness metadata uses category labels instead of raw config names, public evidence JSON enters artifact scanning, public models use standard RPC block evidence wording, and historical chain-operation docs are marked reference-only. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, wallet actions, or release promotion.
+Sprint 47 tightens client-side public error copy: checked-in browser assets no longer render raw exception-message fallback strings for static demo, demo control room, wallet, approve, deposit, verify, or live API fallback paths. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, wallet actions, or release promotion.
 Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
@@ -158,6 +160,8 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 45 bounded failure redaction evidence](docs/evidence/bounded-failure-redaction-sprint45.json)
 - [Sprint 46 public boundary hardening plan](docs/superpowers/plans/2026-06-21-sprint-46-public-boundary-final-hardening.md)
 - [Sprint 46 public boundary hardening evidence](docs/evidence/public-boundary-final-hardening-sprint46.json)
+- [Sprint 47 client-side public error copy plan](docs/superpowers/plans/2026-06-21-sprint-47-client-side-public-error-copy-hardening.md)
+- [Sprint 47 client-side public error copy evidence](docs/evidence/client-side-public-error-copy-sprint47.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)

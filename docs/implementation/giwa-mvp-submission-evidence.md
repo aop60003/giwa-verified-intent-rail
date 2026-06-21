@@ -55,6 +55,7 @@ This document maps the final MVP to the submission artifacts.
 | Sprint 44 commercial handoff consistency evidence | `docs/evidence/commercial-handoff-consistency-sprint44.json` |
 | Sprint 45 bounded failure redaction evidence | `docs/evidence/bounded-failure-redaction-sprint45.json` |
 | Sprint 46 public boundary hardening evidence | `docs/evidence/public-boundary-final-hardening-sprint46.json` |
+| Sprint 47 client-side public error copy evidence | `docs/evidence/client-side-public-error-copy-sprint47.json` |
 
 ## Evidence Summary
 
@@ -154,6 +155,18 @@ The recorded static fallback remains available for reviewers who do not run the 
 | Protected CI | `blocked-external-github-account` |
 | Scope | legacy verifier failure read redaction, redacted readiness category labels, public evidence JSON scanning, standard RPC block evidence wording, and historical chain-operation reference boundaries |
 
+## Sprint 47 Client-Side Public Error Copy Summary
+
+| Field | Value |
+| --- | --- |
+| Sprint 47 plan | `docs/superpowers/plans/2026-06-21-sprint-47-client-side-public-error-copy-hardening.md` |
+| Sprint 47 evidence | `docs/evidence/client-side-public-error-copy-sprint47.json` |
+| Authority | `local-advisory` |
+| Commercial readiness | `blocked` |
+| Staging dry-run execution | `blocked` |
+| Protected CI | `blocked-external-github-account` |
+| Scope | bounded client-side public fallback copy for static demo, demo control room, wallet, approve, deposit, verify, and live API failure paths |
+
 ## Operations Readiness Evidence
 
 Sprint 17 adds hosted operations and partner beta readiness artifacts:
@@ -173,7 +186,7 @@ The artifact promotion plan requires staging verification and matching checksums
 
 Sprint 18 keeps the same local-first boundary and adds the partner beta rehearsal package. Staging remains blocked until the closeout report marks the Sprint 19 blocker register resolved.
 
-Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Sprint 40 freezes the current local-advisory readiness state on current `main`, records that check-runs remain absent, and separates external-only blockers from mixed repo/workflow blockers. Sprint 42 hardens the hosted adapter commercial boundary without connecting managed infrastructure. Sprint 43 freezes the external blocker monitoring and staging handoff state. Sprint 45 hardens local bounded failures, request safety, public artifact scanning, telemetry redaction, retained snapshot replay-boundary labeling, and handoff copy. Sprint 46 hardens public read paths, readiness metadata, public evidence scanning, and standard RPC block evidence wording. Protected CI evidence, protected artifact metadata, branch-protection satisfaction, release approval, partner/customer signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
+Sprint 39 closes the local-advisory commercial hardening and partner handoff packet. Sprint 40 freezes the current local-advisory readiness state on current `main`, records that check-runs remain absent, and separates external-only blockers from mixed repo/workflow blockers. Sprint 42 hardens the hosted adapter commercial boundary without connecting managed infrastructure. Sprint 43 freezes the external blocker monitoring and staging handoff state. Sprint 45 hardens local bounded failures, request safety, public artifact scanning, telemetry redaction, retained snapshot replay-boundary labeling, and handoff copy. Sprint 46 hardens public read paths, readiness metadata, public evidence scanning, and standard RPC block evidence wording. Sprint 47 hardens client-side public fallback copy. Protected CI evidence, protected artifact metadata, branch-protection satisfaction, release approval, partner/customer signoff, external hosting approval, and managed infrastructure remain blockers for staging promotion.
 
 ## Criteria Map
 
@@ -222,3 +235,4 @@ Checked on `2026-06-17`.
 - Sprint 43 is the final local-advisory handoff freeze. The remaining blockers require external state changes before another execution sprint should begin.
 - Sprint 45 adds local-advisory quality hardening after that freeze, but it does not change the external blocker set or authorize staging execution.
 - Sprint 46 adds local-advisory public boundary hardening after Sprint 45, but it does not change the external blocker set or authorize staging execution.
+- Sprint 47 adds local-advisory client-side public error-copy hardening after Sprint 46, but it does not change the external blocker set or authorize staging execution.

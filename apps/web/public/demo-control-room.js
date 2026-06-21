@@ -39,13 +39,13 @@ function statePill(state) {
   return el("span", { className: `status-pill ${state}`, text: state });
 }
 
-function renderError(error) {
+function renderError() {
   app.textContent = "";
   app.append(
     el("section", { className: "loading-panel" }, [
       el("p", { className: "eyebrow", text: "Demo control room" }),
       el("h1", { text: "Live status unavailable" }),
-      el("p", { className: "muted", text: error instanceof Error ? error.message : "Unknown error" }),
+      el("p", { className: "muted", text: "Live status could not be loaded. Use the static fallback or retry the local server." }),
       el("a", { className: "primary-link", href: "/", text: "Open static fallback" })
     ])
   );
@@ -126,8 +126,8 @@ async function main() {
       optionalJson("/live-demo-snapshot.json")
     ]);
     render(status, health, readiness, snapshot);
-  } catch (error) {
-    renderError(error);
+  } catch {
+    renderError();
   }
 }
 

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions. Sprint 44 hardens handoff consistency and local guards. Sprint 45 hardens bounded verifier failure redaction, hosted request safety, public artifact credential scanning, telemetry value redaction, and legacy snapshot replay-boundary labeling. Sprint 46 hardens public read paths, readiness metadata, public evidence scanning, and standard RPC block evidence wording without changing the external blocker state:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions. Sprint 44 hardens handoff consistency and local guards. Sprint 45 hardens bounded verifier failure redaction, hosted request safety, public artifact credential scanning, telemetry value redaction, and legacy snapshot replay-boundary labeling. Sprint 46 hardens public read paths, readiness metadata, public evidence scanning, and standard RPC block evidence wording. Sprint 47 hardens client-side public error-copy fallback paths without changing the external blocker state:
 
 ```text
 .git=True
@@ -44,6 +44,7 @@ stagingHandoffEvidence=docs/evidence/staging-handoff-sprint43-external-blockers.
 commercialHandoffConsistencyEvidence=docs/evidence/commercial-handoff-consistency-sprint44.json
 boundedFailureRedactionEvidence=docs/evidence/bounded-failure-redaction-sprint45.json
 publicBoundaryFinalHardeningEvidence=docs/evidence/public-boundary-final-hardening-sprint46.json
+clientSidePublicErrorCopyEvidence=docs/evidence/client-side-public-error-copy-sprint47.json
 commercialReadiness=blocked
 stagingDryRunExecution=blocked
 external partner signoff=absent
@@ -1000,6 +1001,33 @@ managedInfrastructureApproval=absent
 ```
 
 Sprint 46 adds internal regression coverage for legacy verifier failure read-path redaction, redacted readiness category labels, public evidence JSON scanning, public model wording that avoids finality ambiguity, and historical chain-operation reference boundaries. It does not dispatch or rerun protected CI, change GitHub billing state, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
+
+## Sprint 47 Client-Side Public Error Copy Hardening
+
+Sprint 47 plan and evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-47-client-side-public-error-copy-hardening.md
+docs/evidence/client-side-public-error-copy-sprint47.json
+```
+
+Current Sprint 47 blocker state:
+
+```text
+authority=local-advisory
+releaseGrade=false
+canUnblockStaging=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+branchProtectionSatisfaction=blocked-required-checks-not-passing
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+```
+
+Sprint 47 adds regression coverage for checked-in public browser assets and replaces raw exception-message fallback notices with bounded public copy in the static demo, demo control room, wallet, approve, deposit, verify, and live API fallback paths. It does not dispatch or rerun protected CI, change GitHub billing state, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
 
 ## Sprint 21 Failure Triage
 

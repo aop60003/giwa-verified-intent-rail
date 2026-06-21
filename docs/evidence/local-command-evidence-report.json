@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "reportKind": "local-command-evidence-report",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-21T04:54:42.025Z",
+  "generatedAt": "2026-06-21T05:56:08.603Z",
   "claim": "commands-declared-not-executed-by-report-builder",
   "requiredCommands": [
     {

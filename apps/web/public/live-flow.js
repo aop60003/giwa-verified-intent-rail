@@ -62,6 +62,20 @@ function walletCopy() {
   return "Wallet connected on GIWA Sepolia. Manifest issuance is available.";
 }
 
+function publicErrorNotice(kind) {
+  const notices = {
+    wallet: "Wallet request was not completed. Check the wallet state and try again.",
+    approve: "Approve request was not completed. Check the wallet and try again.",
+    deposit: "Deposit request was not completed. Check the wallet and try again.",
+    verify: "Verification request was not completed. Refresh the run state and try again."
+  };
+  return notices[kind] ?? "Request was not completed. Try again from the current step.";
+}
+
+function apiErrorCode(body) {
+  return typeof body?.error === "string" ? body.error : "request_failed";
+}
+
 function primaryButtonLabel() {
   if (walletState.account === null) return "Connect wallet";
   if (walletState.status === "wrongChain") return "Switch network";
@@ -371,7 +385,7 @@ async function issueManifest() {
   });
   const body = await response.json();
   if (!response.ok) {
-    notice = `Manifest request could not be created: ${body.error ?? "unknown error"}`;
+    notice = `Manifest request could not be created: ${apiErrorCode(body)}`;
     return;
   }
   runState = body;
@@ -400,7 +414,7 @@ async function submitEvidence() {
   });
   const body = await response.json();
   if (!response.ok) {
-    notice = `Evidence submit could not be saved: ${body.error ?? "unknown error"}`;
+    notice = `Evidence submit could not be saved: ${apiErrorCode(body)}`;
     return;
   }
   runState = { ...runState, ...body, receiptLocked: true };
@@ -416,7 +430,7 @@ async function verifyReceipt() {
   });
   const body = await response.json();
   if (!response.ok) {
-    notice = `Verification could not run yet: ${body.error ?? "unknown error"}`;
+    notice = `Verification could not run yet: ${apiErrorCode(body)}`;
     return;
   }
   runState = { ...runState, ...body };
@@ -443,8 +457,8 @@ async function onApproveAction() {
     });
     runState = { ...runState, approveTxHash, status: "approveSubmitted" };
     notice = "Approve transaction submitted.";
-  } catch (error) {
-    notice = error instanceof Error ? error.message : "Approve request failed";
+  } catch {
+    notice = publicErrorNotice("approve");
   }
   render();
 }
@@ -461,8 +475,8 @@ async function onDepositAction() {
     });
     runState = { ...runState, depositTxHash, status: "depositSubmitted" };
     await submitEvidence();
-  } catch (error) {
-    notice = error instanceof Error ? error.message : "Deposit request failed";
+  } catch {
+    notice = publicErrorNotice("deposit");
   }
   render();
 }
@@ -470,8 +484,8 @@ async function onDepositAction() {
 async function onVerifyAction() {
   try {
     await verifyReceipt();
-  } catch (error) {
-    notice = error instanceof Error ? error.message : "Verification request failed";
+  } catch {
+    notice = publicErrorNotice("verify");
   }
   render();
 }
@@ -499,8 +513,8 @@ async function onPrimaryAction() {
     if (walletState.account === null) await connectWallet(provider);
     if (walletState.status === "wrongChain") await switchToGiwa(provider);
     if (walletState.status === "connected") await issueManifest();
-  } catch (error) {
-    notice = error instanceof Error ? error.message : "Wallet request failed";
+  } catch {
+    notice = publicErrorNotice("wallet");
   }
   render();
 }

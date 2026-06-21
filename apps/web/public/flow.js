@@ -442,13 +442,13 @@ async function main() {
     const response = await fetch("/flow-data.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`flow-data ${response.status}`);
     render(await response.json());
-  } catch (error) {
+  } catch {
     app.textContent = "";
     app.append(
       el("section", { className: "loading-panel" }, [
         el("p", { className: "eyebrow", text: "Load error" }),
         el("h1", { text: "Guided action data unavailable" }),
-        el("p", { className: "muted", text: error instanceof Error ? error.message : "Unknown error" })
+        el("p", { className: "muted", text: "Guided action data could not be loaded. Check the local server and retry." })
       ])
     );
   }

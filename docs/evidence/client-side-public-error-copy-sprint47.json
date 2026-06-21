@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1",
+  "evidenceKind": "client-side-public-error-copy-hardening",
+  "sprint": "47",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "commercialReadiness": "blocked",
+  "stagingDryRunExecution": "blocked",
+  "inputEvidence": [
+    {
+      "path": "docs/evidence/public-boundary-final-hardening-sprint46.json",
+      "sha256": "3878B7115DA374A4EC15FBFBC3C76B205DA7DED33476A394550AAD1ACA210584"
+    }
+  ],
+  "riskAddressed": "client-side-public-raw-error-copy",
+  "codeChanges": [
+    {
+      "path": "apps/web/src/lib/live/publicCopyGuard.test.ts",
+      "summary": "Public copy guard rejects raw exception-message fallback patterns in checked-in public browser assets."
+    },
+    {
+      "path": "apps/web/public/live-flow.js",
+      "summary": "Wallet, approve, deposit, verify, and live API fallback notices use bounded public copy."
+    },
+    {
+      "path": "apps/web/public/flow.js",
+      "summary": "Static demo load failure uses bounded retry guidance instead of raw exception text."
+    },
+    {
+      "path": "apps/web/public/demo-control-room.js",
+      "summary": "Demo control room load failure uses bounded fallback guidance instead of raw exception text."
+    }
+  ],
+  "docsUpdated": [
+    "README.md",
+    "docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md",
+    "docs/implementation/giwa-commercial-readiness-gate.md",
+    "docs/implementation/giwa-mvp-submission-evidence.md",
+    "docs/implementation/giwa-partner-customer-handoff-package.md",
+    "docs/implementation/giwa-staging-blocker-register.md"
+  ],
+  "testEvidence": {
+    "targetedRedFirst": {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match test -- publicCopyGuard",
+      "result": "failed-before-implementation",
+      "failureSignal": "public assets contained raw error.message fallback copy"
+    },
+    "targetedGreenAfterImplementation": {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match test -- publicCopyGuard",
+      "result": "passed-after-implementation"
+    },
+    "fullVerification": {
+      "result": "pass",
+      "commandsPassed": [
+        "powershell -NoProfile -File scripts/ci/check-safe-scans.ps1",
+        "powershell -NoProfile -File scripts/ci/check-package-script-boundary.ps1",
+        "pnpm test",
+        "pnpm build",
+        "pnpm typecheck",
+        "pnpm --filter @giwa/web --fail-if-no-match artifact:local",
+        "pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check",
+        "pnpm --filter @giwa/web --fail-if-no-match artifact:scan",
+        "node --check apps/web/public/flow.js",
+        "node --check apps/web/public/live-flow.js",
+        "node --check apps/web/public/demo-control-room.js",
+        "node --check apps/web/scripts/serve-live.mjs",
+        "node --check apps/web/scripts/serve-static.mjs"
+      ],
+      "publicArtifactScanDecision": "pass"
+    }
+  },
+  "blockedActions": {
+    "protectedCiDispatchOrRerun": false,
+    "publicHostingOrDeploy": false,
+    "managedInfrastructureConnection": false,
+    "walletAction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "inventedCiOrSignoffOrUrl": false
+  },
+  "remainingExternalBlockers": [
+    "protected-ci-provenance",
+    "protected-artifact-metadata",
+    "branch-protection-satisfaction",
+    "partner-customer-signoff",
+    "external-hosting-approval",
+    "managed-infrastructure-approval",
+    "release-or-staging-promotion-approval"
+  ],
+  "finalDecision": "local-advisory-client-side-public-error-copy-hardening-complete-external-blockers-remain"
+}

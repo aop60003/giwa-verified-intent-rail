@@ -55,4 +55,12 @@ describe("public commercial copy", () => {
 
     expect(copy).not.toMatch(forbiddenClaimPattern);
   });
+
+  it("keeps raw exception fallback copy out of public browser surfaces", () => {
+    const copy = publicCopyCorpus();
+
+    expect(copy).not.toMatch(/error\s+instanceof\s+Error\s*\?\s*error\.message/u);
+    expect(copy).not.toContain("Unknown error");
+    expect(copy).not.toContain("unknown error");
+  });
 });

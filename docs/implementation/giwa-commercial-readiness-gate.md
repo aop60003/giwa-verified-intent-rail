@@ -557,3 +557,28 @@ managedInfrastructureApproval=absent
 ```
 
 Sprint 46 improves legacy verifier failure read-path redaction, readiness metadata category labeling, public evidence JSON scanning, standard RPC block evidence wording, and historical chain-operation reference boundaries. It does not authorize partner traffic, public hosting, deployment, managed infrastructure connection, wallet actions, chain-operation package commands, protected CI provenance, protected artifact metadata, or release approval.
+
+## Sprint 47 Client-Side Public Error Copy Gate
+
+Sprint 47 local-advisory outputs are:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-47-client-side-public-error-copy-hardening.md
+docs/evidence/client-side-public-error-copy-sprint47.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+```
+
+Sprint 47 improves public browser fallback copy so static demo, demo control room, wallet, approve, deposit, verify, and live API failure paths do not render raw exception messages. It does not authorize partner traffic, public hosting, deployment, managed infrastructure connection, wallet actions, chain-operation package commands, protected CI provenance, protected artifact metadata, or release approval.
