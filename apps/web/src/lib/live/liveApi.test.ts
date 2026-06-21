@@ -544,6 +544,64 @@ describe("live API contracts", () => {
     expect(store.getDecisionByIntentHash(`0x${"a".repeat(64)}`)?.decisionTxHash).toBeNull();
   });
 
+  it("does not expose raw verifier failure details in API responses or stored decisions", async () => {
+    const store = createMemoryLiveStore();
+    const rawFailureCanary = "provider rejected request with client_secret=CANARY-DO-NOT-LEAK";
+    const api = createLiveApiHandler({
+      store,
+      now: () => "2026-06-17T00:00:00.000Z",
+      issueManifest: async () => ({
+        runId: "run-1",
+        nonce: "nonce-1",
+        intentHash: `0x${"a".repeat(64)}`,
+        manifestJson: "{}",
+        manifestSignature: "0xsig",
+        expiryUnix: 1790003600,
+        preview: null
+      }),
+      verifyRun: async () => ({
+        decision: "mismatched",
+        failureReason: rawFailureCanary,
+        verifierInputHash: `0x${"9".repeat(64)}`,
+        receiptHash: null,
+        decisionTxHash: null,
+        standardRpcReceiptStatus: 1,
+        depositBlockNumber: 10,
+        depositBlockHash: `0x${"e".repeat(64)}`,
+        confirmationDepth: 4
+      })
+    });
+
+    await api({
+      method: "POST",
+      pathname: "/api/runs",
+      body: {
+        wallet: "0x1111111111111111111111111111111111111111",
+        chainId: 91342,
+        campaignId: "gasok-demo",
+        missionId: "first-mock-vault-deposit",
+        referralCode: null
+      }
+    });
+    await api({
+      method: "POST",
+      pathname: "/api/runs/run-1/evidence",
+      body: { approveTxHash: null, depositTxHash: `0x${"d".repeat(64)}` }
+    });
+
+    const verifyResponse = await api({ method: "POST", pathname: "/api/runs/run-1/verify", body: {} });
+    const runResponse = await api({ method: "GET", pathname: "/api/runs/run-1" });
+    const storedDecision = store.getDecisionByIntentHash(`0x${"a".repeat(64)}`);
+
+    expect(verifyResponse.status).toBe(200);
+    expect(verifyResponse.body.failureCode).toBe("MISSING_REQUIRED_LOG");
+    expect(verifyResponse.body.failureReason).toBe("MISSING_REQUIRED_LOG");
+    expect(storedDecision?.failureReason).toBe("MISSING_REQUIRED_LOG");
+    expect(JSON.stringify(verifyResponse.body)).not.toContain(rawFailureCanary);
+    expect(JSON.stringify(runResponse.body)).not.toContain(rawFailureCanary);
+    expect(JSON.stringify(storedDecision)).not.toContain(rawFailureCanary);
+  });
+
   it("returns not found for unknown receipt hash", async () => {
     const api = createLiveApiHandler({
       store: createMemoryLiveStore(),

@@ -33,7 +33,14 @@
     "failureReason": null,
     "verifierInputHash": "0x83a4b7d20d0162affe04be016a68d9711f86eef356cf527620159957c7b2ed04",
     "decisionTxHash": null,
-    "issuedAt": 1781829031
+    "issuedAt": 1781829031,
+    "replayBoundary": {
+      "canonicalVerifierInputPayloadAvailable": false,
+      "canonicalVerifierInputPayloadBytesHexAvailable": false,
+      "reason": "legacy_sprint12_db_missing_verifier_input_row",
+      "exportCommandFailsClosedWhenVerifierInputMissing": true,
+      "replacementSource": "Use docs/evidence/giwa-sepolia-mvp-evidence.json for replayable static evidence or rerun live verifier on a DB that stores verifier_inputs."
+    }
   },
   "receipt": {
     "receiptHash": "0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8",

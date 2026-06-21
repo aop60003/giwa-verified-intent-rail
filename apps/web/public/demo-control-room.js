@@ -111,7 +111,7 @@ function render(status, health, readiness, snapshot) {
       el("section", { className: "panel" }, [
         field("Live snapshot", snapshot?.receipt?.receiptHash ?? "unavailable", "/live-demo-snapshot.json"),
         field("Static snapshot", "/partner-snapshot.json", "/partner-snapshot.json"),
-        field("Final confirmation", "standard RPC evidence only")
+        field("Block evidence", "standard RPC evidence only")
       ])
     ])
   );

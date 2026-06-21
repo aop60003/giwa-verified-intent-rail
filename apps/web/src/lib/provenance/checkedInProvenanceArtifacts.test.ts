@@ -72,6 +72,50 @@ describe("checked-in provenance and handoff artifacts", () => {
     }
   });
 
+  it("keeps live demo snapshot copies replayable with canonical verifier input payloads", () => {
+    type LiveSnapshot = {
+      verifier: {
+        verifierInputHash: string;
+        canonicalVerifierInputPayload?: string;
+        canonicalVerifierInputPayloadBytesHex?: string;
+        replayBoundary?: {
+          canonicalVerifierInputPayloadAvailable: false;
+          canonicalVerifierInputPayloadBytesHexAvailable: false;
+          reason: string;
+          exportCommandFailsClosedWhenVerifierInputMissing: true;
+          replacementSource: string;
+        };
+      };
+      receipt: {
+        receiptHash: string;
+        canonicalPayload: string;
+        canonicalPayloadBytesHex: string;
+      };
+    };
+    const docsSnapshot = readWorkspaceJson<LiveSnapshot>("docs/evidence/live-demo-sprint12-snapshot.json");
+    const publicSnapshot = readWorkspaceJson<LiveSnapshot>("apps/web/public/live-demo-snapshot.json");
+
+    expect(docsSnapshot).toEqual(publicSnapshot);
+    expect(docsSnapshot.verifier.verifierInputHash).toMatch(/^0x[a-f0-9]{64}$/u);
+    if (docsSnapshot.verifier.canonicalVerifierInputPayload !== undefined) {
+      expect(docsSnapshot.verifier.canonicalVerifierInputPayload).toContain('"schemaVersion":"1"');
+      expect(docsSnapshot.verifier.canonicalVerifierInputPayloadBytesHex).toMatch(/^0x[0-9a-f]+$/u);
+    } else {
+      expect(docsSnapshot.verifier.replayBoundary).toMatchObject({
+        canonicalVerifierInputPayloadAvailable: false,
+        canonicalVerifierInputPayloadBytesHexAvailable: false,
+        reason: "legacy_sprint12_db_missing_verifier_input_row",
+        exportCommandFailsClosedWhenVerifierInputMissing: true
+      });
+      expect(docsSnapshot.verifier.replayBoundary?.replacementSource).toContain(
+        "docs/evidence/giwa-sepolia-mvp-evidence.json"
+      );
+    }
+    expect(docsSnapshot.receipt.receiptHash).toMatch(/^0x[a-f0-9]{64}$/u);
+    expect(docsSnapshot.receipt.canonicalPayload).toContain('"schemaVersion":"1"');
+    expect(docsSnapshot.receipt.canonicalPayloadBytesHex).toMatch(/^0x[0-9a-f]+$/u);
+  });
+
   it("opens Sprint 43 handoff before demo routes in the submission evidence map", () => {
     const submissionEvidence = readWorkspaceText("docs/implementation/giwa-mvp-submission-evidence.md");
     const firstSection = submissionEvidence.slice(

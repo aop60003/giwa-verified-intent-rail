@@ -39,7 +39,12 @@ function headerValue(headers: Record<string, string | string[] | undefined>, key
 }
 
 function hashEquals(leftHex: string, rightHex: string): boolean {
-  return leftHex.length === rightHex.length && leftHex === rightHex;
+  if (leftHex.length !== rightHex.length) return false;
+  let diff = 0;
+  for (let index = 0; index < leftHex.length; index += 1) {
+    diff |= leftHex.charCodeAt(index) ^ rightHex.charCodeAt(index);
+  }
+  return diff === 0;
 }
 
 export function authenticateLiveRequest(input: LiveAuthRequest): LiveAuthResult {

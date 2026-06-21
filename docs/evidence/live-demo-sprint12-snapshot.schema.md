@@ -52,14 +52,27 @@ Both files contain the same public JSON payload.
 - `decision`: string literal `matched`
 - `failureReason`: `null`
 - `verifierInputHash`
-- `canonicalVerifierInputPayload`
-- `canonicalVerifierInputPayloadBytesHex`
+- `canonicalVerifierInputPayload`, when the selected live DB stores the canonical verifier input row
+- `canonicalVerifierInputPayloadBytesHex`, when the selected live DB stores the canonical verifier input row
+- `replayBoundary`, when a retained legacy Sprint 12 snapshot predates the canonical verifier input row
 - `decisionTxHash`: `null`
 - `issuedAt`: Unix timestamp
 
 Sprint 12 uses a local standard RPC verifier decision. It does not emit a verifier transaction.
 
 Sprint 14 adds replay fields so reviewers can recompute `verifierInputHash` from public evidence. Snapshot export fails when the stored verifier input row is missing or does not recompute.
+
+The checked-in Sprint 12 fresh wallet snapshot is retained as public run evidence from the browser-wallet rehearsal. Its live DB predates the stored `verifier_inputs` row, so the snapshot includes `verifier.replayBoundary` instead of synthetic canonical verifier input fields. Do not backfill those fields by hand. Use `docs/evidence/giwa-sepolia-mvp-evidence.json` for replayable static evidence, or rerun the live verifier on a DB that stores `verifier_inputs` before regenerating this snapshot.
+
+## Verifier Replay Boundary Object
+
+When present, `verifier.replayBoundary` must include:
+
+- `canonicalVerifierInputPayloadAvailable`: boolean literal `false`
+- `canonicalVerifierInputPayloadBytesHexAvailable`: boolean literal `false`
+- `reason`: bounded string explaining why canonical verifier input is not present
+- `exportCommandFailsClosedWhenVerifierInputMissing`: boolean literal `true`
+- `replacementSource`: public-safe pointer to the replayable evidence source or rerun requirement
 
 ## Receipt Object
 

@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "1",
+  "capturedAt": "2026-06-21T12:55:30+09:00",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "sprint": 45,
+  "handoffInputMain": "142ff5293a9b44d92d9bf272b28fe0055a052d56",
+  "theme": "bounded-failure-redaction-and-handoff-alignment",
+  "commercialReadiness": "blocked",
+  "stagingDryRunExecution": "blocked",
+  "protectedCiProvenance": "absent",
+  "protectedArtifactMetadata": "absent",
+  "improvements": [
+    {
+      "area": "bounded-verifier-failure-redaction",
+      "summary": "non-canonical verifier failure strings are converted to bounded public failure codes before API response and persistence"
+    },
+    {
+      "area": "hosted-request-safety",
+      "summary": "hosted requests reject missing Origin when an allowlist is configured and reject JSON-like invalid media types"
+    },
+    {
+      "area": "public-artifact-credential-scanning",
+      "summary": "public artifact guard and scanner reject additional credential-shaped keys and values without printing secret values"
+    },
+    {
+      "area": "telemetry-value-redaction",
+      "summary": "telemetry attributes drop sensitive-looking string values even when keys are generic"
+    },
+    {
+      "area": "legacy-live-snapshot-replay-boundary",
+      "summary": "retained Sprint 12 live snapshot copies record an explicit legacy replay boundary instead of synthesizing verifier input fields"
+    },
+    {
+      "area": "handoff-copy-alignment",
+      "summary": "public copy describes recorded wallet evidence and standard RPC block evidence without implying reviewer wallet execution"
+    }
+  ],
+  "testsAddedOrUpdated": [
+    "apps/web/src/lib/live/liveApi.test.ts",
+    "apps/web/src/lib/live/liveRequestSafety.test.ts",
+    "apps/web/src/lib/live/liveTelemetry.test.ts",
+    "apps/web/src/lib/provenance/checkedInProvenanceArtifacts.test.ts",
+    "apps/web/src/lib/provenance/publicArtifactScanner.test.ts",
+    "apps/web/src/lib/verifier/publicArtifactGuard.test.ts"
+  ],
+  "implementationFilesChanged": [
+    "apps/web/src/lib/live/liveApi.ts",
+    "apps/web/src/lib/live/liveAuth.ts",
+    "apps/web/src/lib/live/liveRequestSafety.ts",
+    "apps/web/src/lib/live/liveTelemetry.ts",
+    "apps/web/src/lib/provenance/publicArtifactScanner.ts",
+    "apps/web/src/lib/verifier/liveFailureCode.ts",
+    "apps/web/src/lib/verifier/publicArtifactGuard.ts",
+    "apps/web/src/lib/flow/guidedFlow.ts",
+    "apps/web/public/flow.js",
+    "apps/web/public/live-flow.js",
+    "apps/web/public/demo-control-room.js"
+  ],
+  "evidenceInputs": [
+    {
+      "path": "docs/evidence/staging-handoff-sprint43-external-blockers.json",
+      "sha256": "D28B96DFCDB339EFBA75765AE69FBC38880BF4A4D6529C3633222CBA9E878A35"
+    },
+    {
+      "path": "docs/evidence/commercial-handoff-consistency-sprint44.json",
+      "sha256": "11AF5EA9D8245F1F5FAD1DE1A1BED0F7BB3AF8C2DD4FDE4B2BCB45D2FD839489"
+    },
+    {
+      "path": "docs/evidence/live-demo-sprint12-snapshot.json",
+      "sha256": "A50088645A7954D039E488DD19F24FABD2054F39AE1A41DE1F64DE76D0BD5A75"
+    },
+    {
+      "path": "apps/web/public/live-demo-snapshot.json",
+      "sha256": "A50088645A7954D039E488DD19F24FABD2054F39AE1A41DE1F64DE76D0BD5A75"
+    }
+  ],
+  "focusedVerification": [
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match test -- liveApi liveRequestSafety publicArtifactGuard publicArtifactScanner liveTelemetry liveAuth checkedInProvenanceArtifacts",
+      "result": "passed",
+      "summary": "8 files / 57 tests passed"
+    }
+  ],
+  "fullLocalVerification": [
+    {
+      "command": "powershell -NoProfile -File scripts\\ci\\check-safe-scans.ps1",
+      "result": "passed",
+      "summary": "safe_scans=pass"
+    },
+    {
+      "command": "powershell -NoProfile -File scripts\\ci\\check-package-script-boundary.ps1",
+      "result": "passed",
+      "summary": "package_script_boundary=pass"
+    },
+    {
+      "command": "pnpm test",
+      "result": "passed",
+      "summary": "web 57 files / 244 tests, protocol 27 tests, contracts 21 tests"
+    },
+    {
+      "command": "pnpm build",
+      "result": "passed",
+      "summary": "web, protocol, and contracts build passed"
+    },
+    {
+      "command": "pnpm typecheck",
+      "result": "passed",
+      "summary": "web, protocol, and contracts typecheck passed"
+    },
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match artifact:local",
+      "result": "passed",
+      "summary": "local-advisory artifact manifest and provenance report regenerated"
+    },
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check",
+      "result": "passed",
+      "summary": "local-advisory provenance verification passed"
+    },
+    {
+      "command": "pnpm --filter @giwa/web --fail-if-no-match artifact:scan",
+      "result": "passed",
+      "summary": "public artifact scan passed"
+    },
+    {
+      "command": "node --check apps/web/public/flow.js && node --check apps/web/public/live-flow.js && node --check apps/web/public/demo-control-room.js && node --check apps/web/scripts/serve-live.mjs && node --check apps/web/scripts/serve-static.mjs",
+      "result": "passed",
+      "summary": "all checked public and server scripts parsed"
+    }
+  ],
+  "externalBlockersUnchanged": [
+    "github-account-runner-startup",
+    "protected-ci-required-checks",
+    "protected-artifact-metadata",
+    "branch-protection-satisfaction",
+    "partner-customer-signoff",
+    "external-hosting-approval",
+    "managed-infrastructure-approval",
+    "release-staging-promotion-approval"
+  ],
+  "forbiddenActionsObserved": {
+    "protectedCiDispatchOrRerun": false,
+    "githubBillingRetry": false,
+    "publicHosting": false,
+    "deployment": false,
+    "managedInfrastructureConnection": false,
+    "envFileContentRead": false,
+    "credentialValueOutput": false,
+    "walletTransaction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "fakeCiOrProvenance": false,
+    "fakePartnerSignoff": false,
+    "fakeDeployOrStagingUrl": false
+  },
+  "finalDecision": {
+    "status": "local-advisory-handoff-hardened",
+    "commercialReadiness": "blocked",
+    "stagingDryRunExecution": "blocked",
+    "nextAction": "do not rerun protected CI or external blocker work until real external blocker evidence is available"
+  }
+}

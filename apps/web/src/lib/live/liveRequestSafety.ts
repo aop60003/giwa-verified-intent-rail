@@ -16,19 +16,25 @@ export type LiveRequestSafetyResult =
 
 const ALLOWED_METHODS = new Set(["GET", "POST"]);
 
+function isJsonContentType(value: string | undefined): boolean {
+  if (value === undefined) return false;
+  const mediaType = value.split(";")[0]?.trim().toLowerCase();
+  return mediaType === "application/json";
+}
+
 export function evaluateLiveRequestSafety(input: LiveRequestSafetyInput): LiveRequestSafetyResult {
   if (input.pathname.startsWith("/api/") && !ALLOWED_METHODS.has(input.method)) {
     return { ok: false, status: 405, code: "method_not_allowed" };
   }
 
-  if (input.allowedOrigins.length > 0 && input.origin !== undefined && !input.allowedOrigins.includes(input.origin)) {
+  if (input.allowedOrigins.length > 0 && (input.origin === undefined || !input.allowedOrigins.includes(input.origin))) {
     return { ok: false, status: 403, code: "origin_not_allowed" };
   }
 
   if (
     input.pathname.startsWith("/api/") &&
     input.method === "POST" &&
-    (input.contentType === undefined || !input.contentType.toLowerCase().startsWith("application/json"))
+    !isJsonContentType(input.contentType)
   ) {
     return { ok: false, status: 415, code: "unsupported_media_type" };
   }

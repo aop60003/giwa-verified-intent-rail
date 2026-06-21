@@ -27,6 +27,18 @@ describe("evaluateLiveRequestSafety", () => {
     ).toEqual({ ok: false, status: 403, code: "origin_not_allowed" });
   });
 
+  it("rejects missing origins when a hosted allowlist is configured", () => {
+    expect(
+      evaluateLiveRequestSafety({
+        method: "POST",
+        pathname: "/api/runs",
+        origin: undefined,
+        allowedOrigins: ["https://partner.example"],
+        contentType: "application/json"
+      })
+    ).toEqual({ ok: false, status: 403, code: "origin_not_allowed" });
+  });
+
   it("requires JSON content type for POST API requests with a body", () => {
     expect(
       evaluateLiveRequestSafety({
@@ -47,6 +59,18 @@ describe("evaluateLiveRequestSafety", () => {
         origin: "https://partner.example",
         allowedOrigins: ["https://partner.example"],
         contentType: undefined
+      })
+    ).toEqual({ ok: false, status: 415, code: "unsupported_media_type" });
+  });
+
+  it("rejects JSON-like but invalid media types for POST API requests", () => {
+    expect(
+      evaluateLiveRequestSafety({
+        method: "POST",
+        pathname: "/api/runs",
+        origin: "https://partner.example",
+        allowedOrigins: ["https://partner.example"],
+        contentType: "application/json-malformed"
       })
     ).toEqual({ ok: false, status: 415, code: "unsupported_media_type" });
   });

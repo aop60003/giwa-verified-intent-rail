@@ -166,12 +166,12 @@ function statusRail(evidence: JsonRecord, receiptReady: boolean, executionBlocke
     },
     {
       id: "walletAction",
-      label: "Wallet actions",
+      label: "Recorded wallet evidence",
       state: executionBlocked ? "blocked" : state(hasWalletActions),
       finalConfirmation: false,
       detail: executionBlocked
         ? "Wallet execution is locked until the connected chain is GIWA Sepolia."
-        : "Approve and deposit transaction hashes are recorded from wallet execution."
+        : "Approve and deposit transaction hashes are recorded evidence from the wallet app."
     },
     {
       id: "fastFeedback",

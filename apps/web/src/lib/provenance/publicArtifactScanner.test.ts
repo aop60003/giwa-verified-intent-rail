@@ -22,6 +22,24 @@ describe("public artifact scanner", () => {
     expect(JSON.stringify(result)).not.toContain(canary);
   });
 
+  it("blocks additional credential-shaped keys without printing synthetic canary values", () => {
+    const canary = "CANARY-VALUE-DO-NOT-PRINT";
+    for (const key of ["clientSecret", "password", "cookie", "refreshToken", "idToken"]) {
+      const result = scanPublicArtifactText({
+        path: "apps/web/public/partner-snapshot.json",
+        content: JSON.stringify({ [key]: canary })
+      });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({
+        ruleId: "credential-like-key",
+        matchClass: "credential-key-name",
+        valuePrinted: false
+      });
+      expect(JSON.stringify(result)).not.toContain(canary);
+    }
+  });
+
   it("blocks credential-like JSON string values without printing synthetic canary values", () => {
     const canary = "CANARY-VALUE-DO-NOT-PRINT";
     const result = scanPublicArtifactText({
@@ -36,6 +54,24 @@ describe("public artifact scanner", () => {
       valuePrinted: false
     });
     expect(JSON.stringify(result)).not.toContain(canary);
+  });
+
+  it("blocks additional credential-shaped string markers without printing synthetic canary values", () => {
+    const canary = "CANARY-VALUE-DO-NOT-PRINT";
+    for (const marker of ["client_secret", "password", "refresh_token", "id_token"]) {
+      const result = scanPublicArtifactText({
+        path: "apps/web/public/live-demo-snapshot.json",
+        content: JSON.stringify({ note: `${marker}=${canary}` })
+      });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({
+        ruleId: "credential-like-key",
+        matchClass: "credential-marker",
+        valuePrinted: false
+      });
+      expect(JSON.stringify(result)).not.toContain(canary);
+    }
   });
 
   it("allows public addresses, transaction hashes, receipt hashes, and bounded status", () => {

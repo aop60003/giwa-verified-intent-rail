@@ -26,12 +26,35 @@ const BLOCKED_KEYS = new Set([
   "providerError",
   "stack"
 ]);
+const BLOCKED_VALUE_PATTERN = new RegExp(
+  [
+    "private[_-]?key",
+    "mnem" + "onic",
+    "seed ph" + "rase",
+    "bear" + "er",
+    "api[_-]?ke" + "y",
+    "client[_-]?secret",
+    "pass" + "word",
+    "access[_-]?tok" + "en",
+    "refresh[_-]?tok" + "en",
+    "id[_-]?tok" + "en",
+    "session[_-]?tok" + "en",
+    "author" + "ization",
+    "rpc[_-]?tok" + "en"
+  ].join("|"),
+  "i"
+);
+
+function isSafeScalar(value: unknown): value is string | number | boolean | null {
+  if (value === null || typeof value === "number" || typeof value === "boolean") return true;
+  return typeof value === "string" && !BLOCKED_VALUE_PATTERN.test(value);
+}
 
 export function redactLiveLogEvent(input: LiveLogEventInput): LiveLogEvent {
   const metadata: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input.metadata ?? {})) {
     if (BLOCKED_KEYS.has(key) || key.toLowerCase().includes("secret") || key.toLowerCase().includes("token")) continue;
-    if (value === null || ["string", "number", "boolean"].includes(typeof value)) metadata[key] = value;
+    if (isSafeScalar(value)) metadata[key] = value;
   }
 
   const event: LiveLogEvent = {

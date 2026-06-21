@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions. Sprint 44 hardens handoff consistency and local guards without changing the external blocker state:
+Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions. Sprint 44 hardens handoff consistency and local guards. Sprint 45 hardens bounded verifier failure redaction, hosted request safety, public artifact credential scanning, telemetry value redaction, and legacy snapshot replay-boundary labeling without changing the external blocker state:
 
 ```text
 .git=True
@@ -42,6 +42,7 @@ partnerCustomerHandoffState=local-advisory-finalized
 hostedAdapterCommercialBoundary=docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
 stagingHandoffEvidence=docs/evidence/staging-handoff-sprint43-external-blockers.json
 commercialHandoffConsistencyEvidence=docs/evidence/commercial-handoff-consistency-sprint44.json
+boundedFailureRedactionEvidence=docs/evidence/bounded-failure-redaction-sprint45.json
 commercialReadiness=blocked
 stagingDryRunExecution=blocked
 external partner signoff=absent
@@ -943,6 +944,34 @@ managedInfrastructureApproval=absent
 ```
 
 Sprint 44 adds internal regression coverage for checked-in provenance, Sprint 43 handoff evidence semantics, submission evidence opening order, POST request content-type safety, and public artifact credential-like value scanning. It does not dispatch or rerun protected CI, change GitHub billing state, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
+
+## Sprint 45 Bounded Failure Redaction And Handoff Alignment
+
+Sprint 45 plan and evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-45-bounded-failure-redaction-and-handoff-alignment.md
+docs/evidence/bounded-failure-redaction-sprint45.json
+```
+
+Current Sprint 45 blocker state:
+
+```text
+handoffInputMain=142ff5293a9b44d92d9bf272b28fe0055a052d56
+authority=local-advisory
+releaseGrade=false
+canUnblockStaging=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+branchProtectionSatisfaction=blocked-required-checks-not-passing
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+```
+
+Sprint 45 adds internal regression coverage for raw verifier failure redaction, missing hosted origins, invalid JSON-like media types, expanded credential markers in public artifacts, telemetry value redaction, and retained legacy live snapshot replay boundaries. It does not dispatch or rerun protected CI, change GitHub billing state, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
 
 ## Sprint 21 Failure Triage
 

@@ -42,10 +42,17 @@ const RAW_TO_CODE = new Map<string, LiveFailureCode>([
   ["DEPOSIT_LOG_MISMATCH", "MISSING_REQUIRED_LOG"],
   ["MISSING_REQUIRED_LOG", "MISSING_REQUIRED_LOG"]
 ]);
+const PUBLIC_RAW_FAILURE_REASONS = new Set(RAW_TO_CODE.keys());
 
 export function toBoundedFailureCode(raw: string | null): LiveFailureCode | null {
   if (raw === null) return null;
   return RAW_TO_CODE.get(raw) ?? "MISSING_REQUIRED_LOG";
+}
+
+export function toSafeFailureReason(raw: string | null): string | null {
+  if (raw === null) return null;
+  if (PUBLIC_RAW_FAILURE_REASONS.has(raw)) return raw;
+  return toBoundedFailureCode(raw);
 }
 
 export function failureCodeDisplayCopy(code: LiveFailureCode): string {

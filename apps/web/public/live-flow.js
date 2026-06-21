@@ -185,7 +185,7 @@ function renderStatusRail() {
         view("span", { className: "status-body" }, [
           view("strong", { text: step.label }),
           view("span", { text: step.detail }),
-          step.finalConfirmation ? view("em", { text: "Standard RPC confirmation source" }) : view("em", { text: "Not final confirmation" })
+          step.finalConfirmation ? view("em", { text: "Standard RPC block evidence" }) : view("em", { text: "Non-final step" })
         ])
       ])
     )
@@ -371,7 +371,7 @@ async function issueManifest() {
   });
   const body = await response.json();
   if (!response.ok) {
-    notice = `Manifest request blocked: ${body.error ?? "unknown error"}`;
+    notice = `Manifest request could not be created: ${body.error ?? "unknown error"}`;
     return;
   }
   runState = body;
@@ -400,7 +400,7 @@ async function submitEvidence() {
   });
   const body = await response.json();
   if (!response.ok) {
-    notice = `Evidence submit blocked: ${body.error ?? "unknown error"}`;
+    notice = `Evidence submit could not be saved: ${body.error ?? "unknown error"}`;
     return;
   }
   runState = { ...runState, ...body, receiptLocked: true };
@@ -416,7 +416,7 @@ async function verifyReceipt() {
   });
   const body = await response.json();
   if (!response.ok) {
-    notice = `Verification blocked: ${body.error ?? "unknown error"}`;
+    notice = `Verification could not run yet: ${body.error ?? "unknown error"}`;
     return;
   }
   runState = { ...runState, ...body };

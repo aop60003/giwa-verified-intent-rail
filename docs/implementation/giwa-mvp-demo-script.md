@@ -172,6 +172,7 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 docs/evidence/partner-customer-handoff-sprint41.json
 docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
 docs/evidence/staging-handoff-sprint43-external-blockers.json
+docs/evidence/bounded-failure-redaction-sprint45.json
 docs/implementation/giwa-partner-customer-handoff-package.md
 docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
 ```
@@ -262,3 +263,13 @@ docs/evidence/staging-handoff-sprint43-external-blockers.json
 ```
 
 Close by stating that the safe internal handoff is frozen at local-advisory authority. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, public hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until a real external blocker state change is recorded.
+
+## Sprint 45 Local Hardening Close
+
+Use Sprint 45 as the latest local-advisory quality note:
+
+```text
+docs/evidence/bounded-failure-redaction-sprint45.json
+```
+
+State that Sprint 45 tightened bounded verifier failure redaction, hosted request safety, public artifact credential-marker scans, telemetry redaction, retained snapshot replay-boundary labeling, and recorded wallet evidence copy. It does not alter the external blocker state or authorize protected CI, public hosting, staging execution, managed infrastructure, partner traffic, or release approval.

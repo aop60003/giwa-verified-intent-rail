@@ -11,6 +11,7 @@ docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
 docs/evidence/staging-handoff-sprint43-external-blockers.json
 docs/implementation/giwa-partner-customer-handoff-package.md
 docs/evidence/partner-customer-handoff-sprint41.json
+docs/evidence/bounded-failure-redaction-sprint45.json
 ```
 
 ```text
@@ -432,6 +433,17 @@ docs/evidence/staging-handoff-sprint43-external-blockers.json
 Use Sprint 43 to decide whether an external blocker state has changed. If no external blocker has changed, stay at the local-advisory handoff and do not start protected CI, hosting, managed infrastructure, wallet, or chain-operation work. The package records that the demo package, partner/customer handoff, hosted adapter boundary, evidence packet, and scans are complete at local-advisory authority. Commercial readiness and staging dry-run execution remain blocked until protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, and release approval change state.
 
 Do not dispatch protected CI, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent signoff, invent staging URLs, or claim protected provenance from this handoff.
+
+## Sprint 45 Local Hardening
+
+Sprint 45 adds the latest local-advisory hardening evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-45-bounded-failure-redaction-and-handoff-alignment.md
+docs/evidence/bounded-failure-redaction-sprint45.json
+```
+
+Use this evidence when reviewing bounded verifier failure redaction, hosted request safety, public artifact credential-marker coverage, telemetry value redaction, retained live snapshot replay-boundary labeling, and recorded wallet evidence copy. It does not change the Sprint 43 external blocker stop condition or authorize protected CI, public hosting, deployment, managed infrastructure, wallet actions, chain-operation package commands, protected provenance, partner traffic, staging execution, or release approval.
 
 ## Safety Boundaries
 

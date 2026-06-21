@@ -17,4 +17,18 @@ describe("live telemetry redaction", () => {
 
     expect(event.metadata).toEqual({ runId: "run_alpha" });
   });
+
+  it("drops sensitive-shaped string values even when metadata keys are generic", () => {
+    const event = redactLiveLogEvent({
+      event: "live.api.error",
+      requestId: "req_2",
+      metadata: {
+        detail: "provider returned client_secret=CANARY-DO-NOT-LOG",
+        note: "operator-safe context"
+      }
+    });
+
+    expect(event.metadata).toEqual({ note: "operator-safe context" });
+    expect(JSON.stringify(event)).not.toContain("CANARY-DO-NOT-LOG");
+  });
 });

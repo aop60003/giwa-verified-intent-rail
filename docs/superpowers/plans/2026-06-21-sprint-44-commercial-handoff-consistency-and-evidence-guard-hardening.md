@@ -36,8 +36,8 @@ Harden the commercial-ready local handoff package without touching external bloc
 - [x] Update README, sprint index, blocker register, runbook, hosted ops runbook, and Sprint 43 handoff language to reflect the current local-advisory stop condition.
 - [x] Create Sprint 44 local-advisory evidence.
 - [x] Regenerate local artifact/provenance outputs and update stale provenance verification.
-- [ ] Run full verification.
-- [ ] Commit and push.
+- [x] Run full verification.
+- [x] Commit and push.
 
 ## Exit Gate
 

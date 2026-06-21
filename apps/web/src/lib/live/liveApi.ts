@@ -15,7 +15,7 @@ import type { LiveManifestPreview } from "./liveManifestIssuer.ts";
 import type { VerificationJobQueue } from "./verificationJobQueue.ts";
 import { evaluateCommercialReceiptGate } from "./commercialReceiptGate.ts";
 import { toLiveApiErrorBody } from "./liveApiErrors.ts";
-import { failureCodeDisplayCopy, toBoundedFailureCode } from "../verifier/liveFailureCode.ts";
+import { failureCodeDisplayCopy, toBoundedFailureCode, toSafeFailureReason } from "../verifier/liveFailureCode.ts";
 import { buildLiveDemoControlRoom, selectLatestRun } from "./liveDemoControlRoom.ts";
 
 const GIWA_SEPOLIA_CHAIN_ID = 91342;
@@ -425,6 +425,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
         deps.store.updateRunStatus(verifyRunId, "verifierChecking", deps.now());
         const result = await deps.verifyRun({ run, submittedTx });
         const failureCode = toBoundedFailureCode(result.failureReason);
+        const safeFailureReason = toSafeFailureReason(result.failureReason);
         const failureCopy = failureCode === null ? null : failureCodeDisplayCopy(failureCode);
         if (result.decision === "timeout") {
           const updated = deps.store.updateRunStatus(verifyRunId, "timeout", deps.now());
@@ -433,7 +434,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             body: {
               ...runResponse(updated),
               decision: result.decision,
-              failureReason: result.failureReason,
+              failureReason: safeFailureReason,
               failureCode,
               failureCopy,
               verifierInputHash: result.verifierInputHash,
@@ -457,7 +458,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           intentHash: run.intentHash,
           depositTxHash: submittedTx.depositTxHash,
           decision: result.decision,
-          failureReason: result.failureReason,
+          failureReason: safeFailureReason,
           verifierInputHash: result.verifierInputHash,
           receiptHash: result.receiptHash,
           decisionTxHash: result.decisionTxHash,

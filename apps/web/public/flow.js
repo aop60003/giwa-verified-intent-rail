@@ -56,7 +56,7 @@ function renderStatusRail(model) {
         el("span", { className: "status-body" }, [
           el("strong", { text: step.label }),
           el("span", { text: step.detail }),
-          step.finalConfirmation ? el("em", { text: "Standard RPC confirmation" }) : el("em", { text: "Not final completion" })
+          step.finalConfirmation ? el("em", { text: "Standard RPC block evidence" }) : el("em", { text: "Non-final step" })
         ])
       ])
     )
@@ -362,7 +362,7 @@ function render(model) {
         el("h1", { text: "First mock vault deposit" }),
         el("p", {
           className: "lead",
-          text: "Review the signed manifest, inspect the completed wallet actions, then view the verifier-matched receipt."
+          text: "Review the signed manifest, inspect recorded approve/deposit evidence, then view the verifier-matched receipt."
         }),
         el("div", { className: "hero-actions" }, [
           el("a", { className: "primary-link", href: model.receipt.decisionExplorerUrl ?? "#", text: "Decision tx" }),
@@ -432,7 +432,7 @@ function render(model) {
           ])
         )
       ),
-      el("p", { className: "notice", text: `${model.receipt.safetyNotice} Flashblocks is fast feedback only, not final completion.` })
+      el("p", { className: "notice", text: `${model.receipt.safetyNotice} Flashblocks is fast feedback only, not final confirmation.` })
     ])
   );
 }
