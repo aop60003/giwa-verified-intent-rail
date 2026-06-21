@@ -28,7 +28,8 @@ const BLOCKED_CLAIM_PATTERN = new RegExp(
     "real R" + "WA",
     "real y" + "ield",
     "real f" + "unds",
-    "payment set" + "tled"
+    "payment set" + "tled",
+    "set" + "tlement"
   ].join("|"),
   "i"
 );

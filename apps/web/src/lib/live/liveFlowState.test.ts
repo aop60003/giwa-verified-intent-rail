@@ -108,6 +108,10 @@ describe("Sprint 16 live participant flow state", () => {
     expect(model.statusRail.filter((step) => step.current)).toHaveLength(1);
     expect(model.receiptHandoff?.receiptHash).toBe(`0x${"d".repeat(64)}`);
     expect(model.actions.verify).toMatchObject({ enabled: false, reason: "already_submitted" });
+    expect(model.statusRail.find((step) => step.id === "standardRpcChecking")).toMatchObject({
+      standardRpcBlockEvidence: true
+    });
+    expect(JSON.stringify(model)).not.toContain("finalConfirmation");
   });
 
   it("represents queued verification without implying a receipt is ready", () => {

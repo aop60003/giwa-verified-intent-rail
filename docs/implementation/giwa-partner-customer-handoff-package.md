@@ -1,6 +1,6 @@
 # GIWA Partner Customer Handoff Package
 
-Sprint 41 is the partner/customer package for a reviewer or operator who needs to understand the `GIWA Verified Intent Rail` local handoff. Sprint 43 is the current staging handoff freeze and should be opened first when checking remaining external blockers. Sprint 45 is the latest internal quality hardening pass for bounded failures, public artifact scanning, and handoff copy; it does not change the external blocker state.
+Sprint 41 is the partner/customer package for a reviewer or operator who needs to understand the `GIWA Verified Intent Rail` local handoff. Sprint 43 is the current staging handoff freeze and should be opened first when checking remaining external blockers. Sprint 46 is the latest internal quality hardening pass for public API read-path redaction, readiness metadata redaction, public evidence scanning, standard RPC block evidence wording, and handoff copy; it does not change the external blocker state.
 
 ## Authority
 
@@ -63,7 +63,7 @@ The local-advisory handoff demonstrates one GIWA Sepolia testnet mock vault flow
 
 - a wallet-bound signed manifest preview
 - browser-wallet-submitted approve and deposit transaction hashes from the fresh rehearsal
-- standard RPC receipt evidence as the final confirmation source
+- standard RPC receipt status and block data as the block-evidence source
 - verifier match before dynamic receipt unlock
 - recorded static fallback evidence for review when live state is unavailable
 - partner-facing mock testnet activation summary
@@ -79,20 +79,21 @@ Flashblocks and preconfirmation language are limited to non-final fast feedback.
 | Sprint 43 external blocker handoff | `docs/evidence/staging-handoff-sprint43-external-blockers.json` | `D28B96DFCDB339EFBA75765AE69FBC38880BF4A4D6529C3633222CBA9E878A35` |
 | Sprint 44 commercial handoff consistency | `docs/evidence/commercial-handoff-consistency-sprint44.json` | `11AF5EA9D8245F1F5FAD1DE1A1BED0F7BB3AF8C2DD4FDE4B2BCB45D2FD839489` |
 | Sprint 45 bounded failure redaction | `docs/evidence/bounded-failure-redaction-sprint45.json` | `AAF6D2000CCB304A892686A727C3760A37288CE5943D7BC836B58358E747E062` |
+| Sprint 46 public boundary hardening | `docs/evidence/public-boundary-final-hardening-sprint46.json` | `3878B7115DA374A4EC15FBFBC3C76B205DA7DED33476A394550AAD1ACA210584` |
 | Sprint 42 hosted adapter commercial boundary | `docs/evidence/hosted-adapter-commercial-boundary-sprint42.json` | `CEF54B9AE1F41BA6037C6822A7383BDA4D734B71EF95B26FE8FD92BEC617D594` |
 | Sprint 41 handoff evidence | `docs/evidence/partner-customer-handoff-sprint41.json` | `80A2EA69F9E4DB25B1CAD9C08B507E44211DA4B1102016ECF2E60F4297AD9E94` |
 | Sprint 40 freeze evidence | `docs/evidence/commercial-readiness-sprint40-freeze.json` | `768DC90A549D4838D22E9BA00C9FBDB2F3A06E7539B7033211D15F3E1F64304A` |
 | Sprint 38 staging readiness evidence | `docs/evidence/staging-readiness-sprint38-handoff.json` | `DFDDBCF91B5374B5B980BE1DFCCFE70364A66469B41933006605E8B6ED97D3C3` |
 | Fresh live snapshot | `docs/evidence/live-demo-sprint12-snapshot.json` | `E6EDD7A6032FB4B7ABDF68AFFB2DC16CA5A306215D73594A273514FAF32059D6` |
 | Public live snapshot | `apps/web/public/live-demo-snapshot.json` | `E6EDD7A6032FB4B7ABDF68AFFB2DC16CA5A306215D73594A273514FAF32059D6` |
-| Static partner snapshot | `apps/web/public/partner-snapshot.json` | `C1F2CF08AF6EF7DE9279C986CA5BC098A3C2C0FC9D4D2DECCACB7826B7B33B3D` |
+| Static partner snapshot | `apps/web/public/partner-snapshot.json` | `33C7EDD496B2D76A68A624C98B86FC0ADC404D35C302942E62382CDE3720485A` |
 | Local artifact manifest | `docs/evidence/local-artifact-manifest.json` | Local-advisory; regenerated after Sprint 41 edits |
 | Local provenance report | `docs/evidence/local-provenance-report.json` | Local-advisory; regenerated after Sprint 41 edits |
 | Local provenance verification | `docs/evidence/local-provenance-verification.json` | Local-advisory; regenerated after Sprint 41 edits |
 
 The Sprint 41 evidence JSON is public-safe. It records paths, hashes, blockers, and action boundaries, not credential values or local environment file contents.
 
-Open the Sprint 43 evidence JSON for the current stop conditions and restart signals. It records monitorable external blockers, mixed repo/workflow blockers, and the final local safe-track audit. Open the Sprint 45 evidence JSON only to inspect the latest local redaction, request-safety, public-artifact, telemetry, and retained-snapshot boundary hardening.
+Open the Sprint 43 evidence JSON for the current stop conditions and restart signals. It records monitorable external blockers, mixed repo/workflow blockers, and the final local safe-track audit. Open the Sprint 46 evidence JSON only to inspect the latest local public API read-path, readiness metadata, public-evidence scan, standard RPC wording, and historical chain-operation boundary hardening.
 
 ## Reviewer Checklist
 

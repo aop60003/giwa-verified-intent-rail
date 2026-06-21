@@ -160,6 +160,7 @@ function runResponse(
 ): Record<string, unknown> {
   const manifestPreview = issued?.preview ?? null;
   const transactionReady = run.status === "manifestIssued" && manifestPreview !== null;
+  const safeFailureReason = toSafeFailureReason(state?.decision?.failureReason ?? null);
   const verification =
     state?.verificationJob === undefined
       ? undefined
@@ -197,7 +198,7 @@ function runResponse(
     approveTxHash: state?.submittedTx?.approveTxHash ?? null,
     depositTxHash: state?.submittedTx?.depositTxHash ?? null,
     decision: state?.decision?.decision ?? null,
-    failureReason: state?.decision?.failureReason ?? null,
+    failureReason: safeFailureReason,
     verifierInputHash: state?.decision?.verifierInputHash ?? null,
     receiptReady: state?.decision?.decision === "matched" && state.decision.receiptHash !== null,
     receiptHash: state?.decision?.receiptHash ?? null,
@@ -382,12 +383,17 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
         const existingDecision = deps.store.getDecisionByIntentHash(run.intentHash);
         if (existingDecision !== undefined) {
+          const failureCode = toBoundedFailureCode(existingDecision.failureReason);
+          const safeFailureReason = toSafeFailureReason(existingDecision.failureReason);
+          const failureCopy = failureCode === null ? null : failureCodeDisplayCopy(failureCode);
           return {
             status: 200,
             body: {
               ...runResponse(run),
               decision: existingDecision.decision,
-              failureReason: existingDecision.failureReason,
+              failureReason: safeFailureReason,
+              failureCode,
+              failureCopy,
               verifierInputHash: existingDecision.verifierInputHash,
               receiptReady: existingDecision.decision === "matched" && existingDecision.receiptHash !== null,
               receiptHash: existingDecision.receiptHash,

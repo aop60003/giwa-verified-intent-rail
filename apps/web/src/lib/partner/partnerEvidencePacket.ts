@@ -48,14 +48,14 @@ export type PartnerEvidencePacket = {
   };
   evidence: {
     standardRpc: {
-      finalConfirmation: true;
+      standardRpcBlockEvidence: true;
       status: 1 | 0 | null;
       blockNumber: number | string | null;
       blockHash: string | null;
       confirmationDepth: number | null;
     };
     fastFeedback: {
-      finalConfirmation: false;
+      standardRpcBlockEvidence: false;
       namespace: "non-final";
     };
     replayStatus: "passed" | "blocked" | "unavailable";
@@ -128,14 +128,14 @@ export function buildPartnerEvidencePacket(input: {
     },
     evidence: {
       standardRpc: {
-        finalConfirmation: true,
+        standardRpcBlockEvidence: true,
         status: firstEvidence?.standardRpc?.status ?? null,
         blockNumber: firstEvidence?.standardRpc?.blockNumber ?? null,
         blockHash: firstEvidence?.standardRpc?.blockHash ?? null,
         confirmationDepth: firstEvidence?.standardRpc?.confirmationDepth ?? null
       },
       fastFeedback: {
-        finalConfirmation: false,
+        standardRpcBlockEvidence: false,
         namespace: "non-final"
       },
       replayStatus: matched.length > 0 ? "passed" : scoped.some((row) => row.replayStatus === "blocked") ? "blocked" : "unavailable"

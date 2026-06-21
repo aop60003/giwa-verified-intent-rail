@@ -74,7 +74,7 @@ one partner evidence packet
 Acceptance rule:
 
 ```text
-Accept only when run status and verifier decision are matched, standard RPC evidence is the final source, and receipt hashes recompute.
+Accept only when run status and verifier decision are matched, standard RPC receipt status and block data are the block-evidence source, and receipt hashes recompute.
 ```
 
 ## Snapshot Consistency
@@ -185,6 +185,7 @@ docs/implementation/giwa-commercial-hardening-and-partner-handoff-final-readines
 docs/evidence/commercial-readiness-sprint39-final-handoff.json
 docs/implementation/giwa-external-only-blocker-handoff-and-staging-readiness-freeze.md
 docs/evidence/commercial-readiness-sprint40-freeze.json
+docs/evidence/public-boundary-final-hardening-sprint46.json
 ```
 
 Partner or reviewer signoff confirms review of the local-advisory packet only. It is not release approval, staging approval, public-hosting approval, protected-CI approval, managed infrastructure approval, or authorization for partner traffic. Sprint 41 provides the first-read packet for that review, but it does not prefill any observed result or signoff field in this closeout report.

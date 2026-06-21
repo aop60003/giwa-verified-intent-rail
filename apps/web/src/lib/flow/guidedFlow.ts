@@ -69,7 +69,7 @@ export type GuidedFlowModel = {
     id: FlowStepId;
     label: string;
     state: FlowStepState;
-    finalConfirmation: boolean;
+    standardRpcBlockEvidence: boolean;
     detail: string;
   }>;
   receipt: {
@@ -161,14 +161,14 @@ function statusRail(evidence: JsonRecord, receiptReady: boolean, executionBlocke
       id: "reviewManifest",
       label: "Review manifest",
       state: "complete",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Target, selector, asset, amount, spender, and allowance are visible before action."
     },
     {
       id: "walletAction",
       label: "Recorded wallet evidence",
       state: executionBlocked ? "blocked" : state(hasWalletActions),
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: executionBlocked
         ? "Wallet execution is locked until the connected chain is GIWA Sepolia."
         : "Approve and deposit transaction hashes are recorded evidence from the wallet app."
@@ -177,35 +177,35 @@ function statusRail(evidence: JsonRecord, receiptReady: boolean, executionBlocke
       id: "fastFeedback",
       label: "Fast feedback",
       state: state(fastFeedbackObserved),
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Flashblocks observation is non-final and separate from verifier match."
     },
     {
       id: "blockConfirmed",
       label: "Block confirmed",
       state: state(blockConfirmed),
-      finalConfirmation: true,
+      standardRpcBlockEvidence: true,
       detail: "Standard RPC receipt status is 1 with block number and block hash."
     },
     {
       id: "verifierChecking",
       label: "Verifier checking",
       state: verifierFinished ? "complete" : blockConfirmed ? "active" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "The verifier compares confirmed evidence with the signed manifest."
     },
     {
       id: "matched",
       label: "Matched",
       state: state(verifierMatched),
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Receipt readiness starts only after verifier decision is matched."
     },
     {
       id: "viewReceipt",
       label: "View receipt",
       state: receiptReady ? "complete" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Receipt route opens only when matched receipt evidence is available."
     }
   ];

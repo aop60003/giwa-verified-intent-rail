@@ -66,7 +66,9 @@ function lineOf(content: string, pattern: RegExp): number | null {
 }
 
 function isAllowedNegativeEvidenceFlag(path: string, key: string): boolean {
-  return path.startsWith("docs/evidence/") && (/^no[A-Z]/.test(key) || key.endsWith("NeverRequested"));
+  const isPublicEvidencePath =
+    path.startsWith("docs/evidence/") || path === "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json";
+  return isPublicEvidencePath && (/^no[A-Z]/.test(key) || key.endsWith("NeverRequested"));
 }
 
 function scanJsonKeys(path: string, value: unknown): boolean {
@@ -189,14 +191,23 @@ export function summarizePublicArtifactScans(results: PublicArtifactScanResult[]
 }
 
 export function selectPublicArtifactScanEntries(manifest: LocalArtifactManifest): ArtifactEntry[] {
-  return manifest.artifactGroups.publicArtifacts;
+  return [
+    ...manifest.artifactGroups.publicArtifacts,
+    ...manifest.artifactGroups.publicEvidence.filter((entry) => entry.path.endsWith(".json"))
+  ];
 }
 
 export function readScanTargetContent(workspaceRoot: string, entry: ArtifactEntry): string {
   try {
     if (isExcludedArtifactPath(entry.path)) throw new Error("excluded");
     const path = normalizeArtifactPath(entry.path);
-    if (!path.startsWith("apps/web/public/")) throw new Error("outside-public");
+    const isPublicArtifact = path.startsWith("apps/web/public/");
+    const isPublicEvidenceJson =
+      path.startsWith("docs/evidence/") && path.endsWith(".json") && entry.role === "public-evidence";
+    const isPublicChainFixture =
+      path === "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json" &&
+      entry.role === "public-evidence";
+    if (!isPublicArtifact && !isPublicEvidenceJson && !isPublicChainFixture) throw new Error("outside-public");
     return readFileSync(resolve(workspaceRoot, path), { encoding: "utf8" });
   } catch {
     throw new Error("artifact_scan_path_policy_violation");

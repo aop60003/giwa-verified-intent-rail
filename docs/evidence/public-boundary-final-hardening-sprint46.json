@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "1",
+  "evidenceKind": "public-boundary-final-hardening",
+  "sprint": "46",
+  "authority": "local-advisory",
+  "releaseGrade": false,
+  "canUnblockStaging": false,
+  "commercialReadiness": "blocked",
+  "stagingDryRunExecution": "blocked",
+  "inputEvidence": [
+    {
+      "path": "docs/evidence/bounded-failure-redaction-sprint45.json",
+      "sha256": "AAF6D2000CCB304A892686A727C3760A37288CE5943D7BC836B58358E747E062"
+    },
+    {
+      "path": "docs/evidence/staging-handoff-sprint43-external-blockers.json",
+      "sha256": "D28B96DFCDB339EFBA75765AE69FBC38880BF4A4D6529C3633222CBA9E878A35"
+    }
+  ],
+  "risksAddressed": [
+    "legacy-verifier-failure-readback-redaction",
+    "readiness-metadata-category-labels",
+    "public-evidence-json-scan-coverage",
+    "standard-rpc-block-evidence-wording",
+    "historical-chain-operation-reference-boundary"
+  ],
+  "codeChanges": [
+    {
+      "path": "apps/web/src/lib/live/liveApi.ts",
+      "summary": "Run read and existing decision responses return bounded verifier failure fields."
+    },
+    {
+      "path": "apps/web/src/lib/live/liveHealth.ts",
+      "summary": "Readiness metadata returns category labels and counts instead of raw config identifiers."
+    },
+    {
+      "path": "apps/web/src/lib/provenance/publicArtifactScanner.ts",
+      "summary": "Public evidence JSON is included in local artifact scanning while schema markdown stays outside blocking scans."
+    },
+    {
+      "path": "apps/web/src/lib/verifier/publicArtifactGuard.ts",
+      "summary": "Public export guard aligns unsupported claim detection with the scan boundary."
+    },
+    {
+      "path": "apps/web/src/lib/flow/guidedFlow.ts",
+      "summary": "Public guided-flow model uses standard RPC block evidence wording."
+    },
+    {
+      "path": "apps/web/src/lib/live/liveFlowState.ts",
+      "summary": "Live flow state model uses standard RPC block evidence wording."
+    },
+    {
+      "path": "apps/web/src/lib/partner/partnerSummary.ts",
+      "summary": "Partner summary model uses standard RPC block evidence wording."
+    },
+    {
+      "path": "apps/web/src/lib/partner/partnerEvidencePacket.ts",
+      "summary": "Partner evidence packet model uses standard RPC block evidence wording."
+    }
+  ],
+  "docsUpdated": [
+    "README.md",
+    "docs/implementation/giwa-mvp-runbook.md",
+    "docs/implementation/giwa-mvp-faucet-and-preflight.md",
+    "docs/implementation/giwa-hosted-ops-runbook.md",
+    "docs/implementation/giwa-partner-beta-runbook.md",
+    "docs/implementation/giwa-partner-beta-rehearsal-runbook.md",
+    "docs/implementation/giwa-partner-beta-closeout-report.md",
+    "docs/implementation/giwa-mvp-demo-script.md",
+    "docs/implementation/giwa-mvp-acceptance-checklist.md",
+    "docs/implementation/giwa-mvp-submission-evidence.md",
+    "docs/implementation/giwa-partner-customer-handoff-package.md",
+    "docs/implementation/giwa-commercial-readiness-gate.md",
+    "docs/implementation/giwa-staging-blocker-register.md",
+    "docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md"
+  ],
+  "testEvidence": {
+    "targetedRedFirst": "observed-failing-before-implementation",
+    "targetedGreenAfterImplementation": "observed-passing-before-full-verification",
+    "fullVerification": "pass",
+    "commandsPassed": [
+      "powershell -NoProfile -File scripts/ci/check-safe-scans.ps1",
+      "powershell -NoProfile -File scripts/ci/check-package-script-boundary.ps1",
+      "pnpm test",
+      "pnpm build",
+      "pnpm typecheck",
+      "pnpm --filter @giwa/web --fail-if-no-match artifact:local",
+      "pnpm --filter @giwa/web --fail-if-no-match artifact:provenance:verify -- --check",
+      "pnpm --filter @giwa/web --fail-if-no-match artifact:scan",
+      "node --check apps/web/public/flow.js",
+      "node --check apps/web/public/live-flow.js",
+      "node --check apps/web/public/demo-control-room.js",
+      "node --check apps/web/scripts/serve-live.mjs",
+      "node --check apps/web/scripts/serve-static.mjs"
+    ]
+  },
+  "generatedArtifacts": [
+    "apps/web/public/flow-data.json",
+    "apps/web/public/partner-snapshot.json",
+    "docs/evidence/local-artifact-manifest.json",
+    "docs/evidence/local-provenance-report.json",
+    "docs/evidence/local-provenance-verification.json"
+  ],
+  "blockedActions": {
+    "protectedCiDispatchOrRerun": false,
+    "publicHostingOrDeploy": false,
+    "managedInfrastructureConnection": false,
+    "walletAction": false,
+    "chainOperationPackageCommand": false,
+    "dependencyInstall": false,
+    "inventedCiOrSignoffOrUrl": false
+  },
+  "remainingExternalBlockers": [
+    "github-account-runner-gate",
+    "protected-ci-required-checks",
+    "protected-artifact-metadata",
+    "branch-protection-satisfaction",
+    "partner-customer-signoff",
+    "external-hosting-approval",
+    "managed-infrastructure-approval",
+    "release-or-staging-promotion-approval"
+  ],
+  "finalDecision": "local-advisory-public-boundary-hardening-complete-external-blockers-remain"
+}

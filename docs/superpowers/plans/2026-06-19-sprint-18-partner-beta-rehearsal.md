@@ -438,7 +438,7 @@ Dynamic receipt acceptance:
 - intent hash links run, decision, and receipt
 - receipt payload parses as JSON
 - chain id is `91342`
-- standard RPC receipt evidence is the final source
+- standard RPC receipt status and block data are the block-evidence source
 - `verifierInputHash` recomputes
 - `receiptHash` recomputes
 - Flashblocks appears only as non-final feedback

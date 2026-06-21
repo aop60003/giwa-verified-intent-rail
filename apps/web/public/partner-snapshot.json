@@ -34,12 +34,12 @@
       "blockNumber": "28328168",
       "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
       "confirmationDepth": 1332,
-      "finalConfirmation": true
+      "standardRpcBlockEvidence": true
     },
     "fastFeedback": {
       "observed": true,
       "namespace": "non-final",
-      "finalConfirmation": false
+      "standardRpcBlockEvidence": false
     },
     "manifestSigner": {
       "expectedSigner": "0xaccea461499427f05dff4c998ef26e18f790e4a7",
@@ -124,14 +124,14 @@
     },
     "evidence": {
       "standardRpc": {
-        "finalConfirmation": true,
+        "standardRpcBlockEvidence": true,
         "status": 1,
         "blockNumber": "28328168",
         "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
         "confirmationDepth": 1332
       },
       "fastFeedback": {
-        "finalConfirmation": false,
+        "standardRpcBlockEvidence": false,
         "namespace": "non-final"
       },
       "replayStatus": "passed"

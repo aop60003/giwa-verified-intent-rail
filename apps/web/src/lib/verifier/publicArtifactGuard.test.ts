@@ -56,4 +56,12 @@ describe("public artifact guard", () => {
       })
     ).toThrow("public artifact contains blocked claim");
   });
+
+  it("rejects standalone settlement claims like the public artifact scanner", () => {
+    expect(() =>
+      assertPublicArtifactSafe({
+        copy: "settlement evidence"
+      })
+    ).toThrow("public artifact contains blocked claim");
+  });
 });

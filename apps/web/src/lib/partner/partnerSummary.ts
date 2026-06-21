@@ -40,12 +40,12 @@ export type PartnerProofConsoleModel = {
       blockNumber: string | number | null;
       blockHash: string | null;
       confirmationDepth: number | null;
-      finalConfirmation: true;
+      standardRpcBlockEvidence: true;
     };
     fastFeedback: {
       observed: boolean;
       namespace: "non-final";
-      finalConfirmation: false;
+      standardRpcBlockEvidence: false;
     };
     manifestSigner: {
       expectedSigner: string | null;
@@ -243,12 +243,12 @@ export function buildPartnerProofConsoleModel(
         blockNumber: evidence.confirmation?.depositBlockNumber ?? flow.receipt.blockNumber,
         blockHash: evidence.confirmation?.depositBlockHash ?? flow.receipt.blockHash,
         confirmationDepth: evidence.confirmation?.confirmationDepth ?? null,
-        finalConfirmation: true
+        standardRpcBlockEvidence: true
       },
       fastFeedback: {
         observed: evidence.confirmation?.flashblocksObserved === true,
         namespace: "non-final",
-        finalConfirmation: false
+        standardRpcBlockEvidence: false
       },
       manifestSigner: {
         expectedSigner: evidence.roles?.campaignSignerAddress ?? null,

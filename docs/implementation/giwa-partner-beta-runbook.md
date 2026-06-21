@@ -331,3 +331,15 @@ managedInfrastructureConnected=false
 ```
 
 The packet can support local partner review only. It is not a staging launch, public beta, protected-CI approval, release approval, public-hosting approval, or authorization for partner traffic.
+
+## Current Local Handoff Boundary
+
+After Sprint 43 through Sprint 46, use the partner/customer handoff package and latest public-boundary evidence as the current local review entrypoint:
+
+```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+docs/evidence/public-boundary-final-hardening-sprint46.json
+```
+
+The packet can support local review of the pre-seeded live receipt and recorded static fallback only. It is not a partner beta launch, staging launch, public hosting approval, protected-CI approval, release approval, managed infrastructure approval, or authorization for new wallet or chain actions.

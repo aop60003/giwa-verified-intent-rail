@@ -173,6 +173,7 @@ docs/evidence/partner-customer-handoff-sprint41.json
 docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
 docs/evidence/staging-handoff-sprint43-external-blockers.json
 docs/evidence/bounded-failure-redaction-sprint45.json
+docs/evidence/public-boundary-final-hardening-sprint46.json
 docs/implementation/giwa-partner-customer-handoff-package.md
 docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md
 ```
@@ -273,3 +274,13 @@ docs/evidence/bounded-failure-redaction-sprint45.json
 ```
 
 State that Sprint 45 tightened bounded verifier failure redaction, hosted request safety, public artifact credential-marker scans, telemetry redaction, retained snapshot replay-boundary labeling, and recorded wallet evidence copy. It does not alter the external blocker state or authorize protected CI, public hosting, staging execution, managed infrastructure, partner traffic, or release approval.
+
+## Sprint 46 Public Boundary Close
+
+Use Sprint 46 as the latest local-advisory public boundary note:
+
+```text
+docs/evidence/public-boundary-final-hardening-sprint46.json
+```
+
+State that Sprint 46 tightened legacy verifier failure read-path redaction, readiness category labels, public evidence JSON scanning, standard RPC block evidence wording, and historical chain-operation reference boundaries. It does not alter the external blocker state or authorize protected CI, public hosting, staging execution, managed infrastructure, partner traffic, wallet actions, chain-operation package commands, or release approval.

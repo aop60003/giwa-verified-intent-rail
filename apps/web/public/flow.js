@@ -56,7 +56,7 @@ function renderStatusRail(model) {
         el("span", { className: "status-body" }, [
           el("strong", { text: step.label }),
           el("span", { text: step.detail }),
-          step.finalConfirmation ? el("em", { text: "Standard RPC block evidence" }) : el("em", { text: "Non-final step" })
+          step.standardRpcBlockEvidence ? el("em", { text: "Standard RPC block evidence" }) : el("em", { text: "Non-final step" })
         ])
       ])
     )

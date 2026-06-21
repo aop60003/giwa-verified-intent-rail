@@ -40,8 +40,9 @@ describe("buildPartnerEvidencePacket", () => {
     expect(packet.rows[0]?.status).toBe("matched");
     expect(packet.kpis.matchedTxRate).toBe("1/3");
     expect(packet.kpis.mockTestnetDepositAmountBaseUnits).toBe("1000000000000000000");
-    expect(packet.evidence.standardRpc.finalConfirmation).toBe(true);
-    expect(packet.evidence.fastFeedback.finalConfirmation).toBe(false);
+    expect(packet.evidence.standardRpc.standardRpcBlockEvidence).toBe(true);
+    expect(packet.evidence.fastFeedback.standardRpcBlockEvidence).toBe(false);
+    expect(JSON.stringify(packet)).not.toContain("finalConfirmation");
   });
 
   it("keeps fixture and live sources distinct", () => {

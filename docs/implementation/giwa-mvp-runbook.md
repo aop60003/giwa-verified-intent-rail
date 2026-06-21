@@ -12,6 +12,7 @@ docs/evidence/staging-handoff-sprint43-external-blockers.json
 docs/implementation/giwa-partner-customer-handoff-package.md
 docs/evidence/partner-customer-handoff-sprint41.json
 docs/evidence/bounded-failure-redaction-sprint45.json
+docs/evidence/public-boundary-final-hardening-sprint46.json
 ```
 
 ```text
@@ -231,6 +232,8 @@ http://127.0.0.1:4190/live
 
 Rehearsal path:
 
+This path is historical and approval-only. Do not start a new wallet rehearsal from the current local handoff unless a separate live rehearsal approval exists. For normal review, use the pre-seeded live receipt, dynamic receipt API, and recorded static fallback.
+
 1. Connect a browser wallet.
 2. Switch to GIWA Sepolia chain `91342`.
 3. Issue a wallet-bound signed manifest.
@@ -445,10 +448,21 @@ docs/evidence/bounded-failure-redaction-sprint45.json
 
 Use this evidence when reviewing bounded verifier failure redaction, hosted request safety, public artifact credential-marker coverage, telemetry value redaction, retained live snapshot replay-boundary labeling, and recorded wallet evidence copy. It does not change the Sprint 43 external blocker stop condition or authorize protected CI, public hosting, deployment, managed infrastructure, wallet actions, chain-operation package commands, protected provenance, partner traffic, staging execution, or release approval.
 
+## Sprint 46 Public Boundary Hardening
+
+Sprint 46 adds the latest local-advisory public boundary evidence:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-46-public-boundary-final-hardening.md
+docs/evidence/public-boundary-final-hardening-sprint46.json
+```
+
+Use this evidence when reviewing legacy verifier failure redaction on read paths, redacted readiness category labels, public evidence JSON scanning, standard RPC block evidence wording, and historical chain-operation reference boundaries. It does not change the Sprint 43 external blocker stop condition or authorize protected CI, public hosting, deployment, managed infrastructure, wallet actions, chain-operation package commands, protected provenance, partner traffic, staging execution, or release approval.
+
 ## Safety Boundaries
 
 - The MVP displays one GIWA Sepolia mock vault action.
 - Metrics are mock testnet metrics, not production asset, yield, settlement, or identity-service metrics.
 - Flashblocks appears only as non-final fast feedback.
-- Standard RPC receipts and verifier events are the confirmation source.
+- Standard RPC receipt status and block data are the block-evidence source for verifier matching.
 - Browser-visible files must not include secret names or values beyond public transaction/address evidence.

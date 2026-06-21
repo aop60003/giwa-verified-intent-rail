@@ -136,11 +136,11 @@ describe("Sprint 6 partner proof console model", () => {
       status: 1,
       blockNumber: "28328168",
       blockHash: evidence.confirmation.depositBlockHash,
-      finalConfirmation: true
+      standardRpcBlockEvidence: true
     });
     expect(model.evidenceCards.fastFeedback).toMatchObject({
       namespace: "non-final",
-      finalConfirmation: false
+      standardRpcBlockEvidence: false
     });
   });
 
@@ -158,5 +158,6 @@ describe("Sprint 6 partner proof console model", () => {
     expect(model.partnerExplanation).toContain("manifest-covered GIWA Sepolia testnet action");
     expect(serialized).not.toMatch(/private[_-]?key|mnemonic|bearer|authorization|rpc[_-]?token|api[_-]?key|process\.env|\.env/i);
     expect(serialized).not.toMatch(forbiddenClaimPattern);
+    expect(serialized).not.toContain("finalConfirmation");
   });
 });

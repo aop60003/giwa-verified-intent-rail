@@ -21,7 +21,7 @@ one partner evidence packet
 
 Historical hosted-ops planning allowed the workspace to be non-git prototype mode. When either `.git` or `.github` is absent, authoritative CI, branch protection, release provenance, and artifact promotion are blocked.
 
-Current Sprint 43 posture: `.git`, `.github`, and `.github/workflows/ci.yml` exist, but current `main` has zero check-runs, the latest observed Actions run is stale and failed before runner steps with the GitHub billing/account annotation, and protected artifact metadata is absent. Hosted beta, public release, and staging dry-run execution remain blocked until protected CI passes on current `main`, protected artifact metadata exists, external partner/customer signoff is recorded, hosting is approved, managed infrastructure is approved, and release or rollback owners sign off.
+Current post-Sprint 46 posture: `.git`, `.github`, and `.github/workflows/ci.yml` exist, but current `main` has zero protected check-runs, the latest observed Actions run is stale and failed before runner steps with the GitHub billing/account annotation, and protected artifact metadata is absent. Hosted beta, public release, and staging dry-run execution remain blocked until protected CI passes on current `main`, protected artifact metadata exists, external partner/customer signoff is recorded, hosting is approved, managed infrastructure is approved, and release or rollback owners sign off.
 
 Check:
 
@@ -84,6 +84,7 @@ Runtime must never include deployer, funder, mint, anchor, verifier-chain, or us
 - queue backlog status
 - verifier/RPC health status
 - hosted policy status
+- redacted config category labels and counts, not raw environment variable names
 
 `/readyz` must not return raw config values, credential values, tokenized URLs, auth headers, request bodies, stack traces, provider error strings, signed manifest internals, or real env file content.
 
@@ -321,9 +322,9 @@ docs/implementation/giwa-staging-partner-promotion-gate.md
 docs/implementation/giwa-staging-blocker-register.md
 ```
 
-Current Sprint 19 blocker state:
+Current blocker state:
 
-- Historical Sprint 19 planning began from a prototype posture; current Sprint 39 is git-backed, but protected CI and release provenance remain blocked
+- Historical Sprint 19 planning began from a prototype posture; current post-Sprint 46 source is git-backed, but protected CI and release provenance remain blocked
 - current `main` has zero check-runs
 - latest real Actions evidence is stale for current `main` and failed before runner steps with the GitHub account gate
 - protected artifact metadata is absent

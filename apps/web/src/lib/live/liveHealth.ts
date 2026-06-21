@@ -21,12 +21,31 @@ function status(value: boolean): "ok" | "missing" {
   return value ? "ok" : "missing";
 }
 
+function redactedConfigKey(key: string): string {
+  if (key === "GIWA_SEPOLIA_RPC_URL") return "giwa-rpc-endpoint";
+  if (key === "GIWA_EXPLORER_TX_URL_TEMPLATE" || key === "GIWA_EXPLORER_ADDRESS_URL_TEMPLATE") {
+    return "giwa-explorer-template";
+  }
+  if (key.endsWith("_PRIVATE_KEY")) return "server-role-signer";
+  if (key === "GIWA_LIVE_DB_PATH") return "live-storage-path";
+  if (key === "GIWA_LIVE_MODE") return "live-mode";
+  if (key === "GIWA_LIVE_ALLOWED_ORIGINS") return "hosted-origin-policy";
+  if (key === "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES") return "hosted-auth-hash";
+  return "live-config";
+}
+
+function redactedConfigKeys(keys: string[]): string[] {
+  return [...new Set(keys.map(redactedConfigKey))];
+}
+
 export function buildLiveReadinessBody(input: LiveReadinessInput): {
   ready: boolean;
   mode: HostedRuntimeMode;
   checks: Record<string, "ok" | "missing">;
   missingKeys: string[];
   invalidKeys: string[];
+  missingKeyCount: number;
+  invalidKeyCount: number;
 } {
   const ready =
     input.envReady &&
@@ -48,7 +67,9 @@ export function buildLiveReadinessBody(input: LiveReadinessInput): {
       requestSafety: status(input.requestSafetyReady),
       telemetry: status(input.telemetryReady)
     },
-    missingKeys: [...input.missingKeys],
-    invalidKeys: [...input.invalidKeys]
+    missingKeys: redactedConfigKeys(input.missingKeys),
+    invalidKeys: redactedConfigKeys(input.invalidKeys),
+    missingKeyCount: input.missingKeys.length,
+    invalidKeyCount: input.invalidKeys.length
   };
 }

@@ -12,7 +12,7 @@ Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpower
 
 The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
 
-Current state is a commercial-ready local handoff freeze with Sprint 45 local redaction, request-safety, evidence-boundary, and handoff-copy hardening applied. Open the Sprint 43 blocker handoff before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current state is a local-review handoff freeze with Sprint 46 public boundary hardening applied after the Sprint 43 blocker handoff. Open the Sprint 43 blocker handoff and Sprint 46 evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
 
 ## Final Demo Pack
 
@@ -61,6 +61,7 @@ Evidence paths:
 - [docs/evidence/staging-handoff-sprint43-external-blockers.json](docs/evidence/staging-handoff-sprint43-external-blockers.json)
 - [docs/evidence/commercial-handoff-consistency-sprint44.json](docs/evidence/commercial-handoff-consistency-sprint44.json)
 - [docs/evidence/bounded-failure-redaction-sprint45.json](docs/evidence/bounded-failure-redaction-sprint45.json)
+- [docs/evidence/public-boundary-final-hardening-sprint46.json](docs/evidence/public-boundary-final-hardening-sprint46.json)
 
 ## Hosted Ops Readiness
 
@@ -69,6 +70,7 @@ Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18
 Sprint 19 Staging Deployment Preparation is the baseline staging-readiness gate package. Sprint 40 is the local-advisory staging-readiness freeze. Sprint 41 is the partner/customer handoff package. Sprint 42 hardens the hosted adapter commercial boundary with local-advisory code, tests, docs, and evidence while keeping managed infrastructure unconnected. Sprint 43 is the current external blocker monitoring and staging handoff freeze: it is ready for local review only and keeps protected CI, protected artifacts, partner/customer signoff, public hosting, managed infrastructure, release approval, and staging execution blocked until those external conditions change.
 Sprint 44 tightens the local handoff consistency and evidence guardrails only. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, or release promotion.
 Sprint 45 tightens bounded verifier failure redaction, hosted request safety, credential-like public artifact detection, telemetry value redaction, legacy snapshot replay-boundary labeling, and recorded-wallet-evidence copy. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, or release promotion.
+Sprint 46 tightens the final local public boundary: legacy verifier failure values are redacted on read paths, readiness metadata uses category labels instead of raw config names, public evidence JSON enters artifact scanning, public models use standard RPC block evidence wording, and historical chain-operation docs are marked reference-only. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, wallet actions, or release promotion.
 Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
@@ -154,6 +156,8 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 43 staging handoff evidence](docs/evidence/staging-handoff-sprint43-external-blockers.json)
 - [Sprint 44 commercial handoff consistency evidence](docs/evidence/commercial-handoff-consistency-sprint44.json)
 - [Sprint 45 bounded failure redaction evidence](docs/evidence/bounded-failure-redaction-sprint45.json)
+- [Sprint 46 public boundary hardening plan](docs/superpowers/plans/2026-06-21-sprint-46-public-boundary-final-hardening.md)
+- [Sprint 46 public boundary hardening evidence](docs/evidence/public-boundary-final-hardening-sprint46.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)
@@ -204,6 +208,8 @@ Live snapshot paths:
 - [docs/evidence/live-demo-sprint12-snapshot.schema.md](docs/evidence/live-demo-sprint12-snapshot.schema.md)
 - [docs/evidence/live-demo-sprint12-snapshot.json](docs/evidence/live-demo-sprint12-snapshot.json)
 - [apps/web/public/live-demo-snapshot.json](apps/web/public/live-demo-snapshot.json)
+
+The live snapshot is retained from the approved Sprint 12 rehearsal. Treat it as local live evidence for that recorded run, not as a replacement for protected CI provenance or a fresh wallet rehearsal authorization.
 
 ## Alternative GASOK Idea Candidates
 

@@ -33,11 +33,11 @@ describe("Sprint 5 guided flow model", () => {
 
     expect(model.statusRail.find((step) => step.id === "fastFeedback")).toMatchObject({
       state: "complete",
-      finalConfirmation: false
+      standardRpcBlockEvidence: false
     });
     expect(model.statusRail.find((step) => step.id === "blockConfirmed")).toMatchObject({
       state: "complete",
-      finalConfirmation: true
+      standardRpcBlockEvidence: true
     });
     expect(model.statusRail.find((step) => step.id === "matched")).toMatchObject({
       state: "complete"
@@ -137,5 +137,6 @@ describe("Sprint 5 guided flow model", () => {
     ]);
     expect(serialized).not.toMatch(/private[_-]?key|mnemonic|bearer|authorization|rpc[_-]?token|api[_-]?key/i);
     expect(serialized).not.toContain("GIWA_SEPOLIA_RPC_URL");
+    expect(serialized).not.toContain("finalConfirmation");
   });
 });

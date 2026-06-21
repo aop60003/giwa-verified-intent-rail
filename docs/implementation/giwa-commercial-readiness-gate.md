@@ -532,3 +532,28 @@ managedInfrastructureApproval=absent
 ```
 
 Sprint 45 improves bounded verifier failure handling, hosted request safety, public artifact credential-marker coverage, telemetry redaction, retained live snapshot replay-boundary labeling, and handoff copy clarity. It does not authorize partner traffic, public hosting, deployment, managed infrastructure connection, wallet actions, chain-operation package commands, protected CI provenance, protected artifact metadata, or release approval.
+
+## Sprint 46 Public Boundary Hardening Gate
+
+Sprint 46 local-advisory outputs are:
+
+```text
+docs/superpowers/plans/2026-06-21-sprint-46-public-boundary-final-hardening.md
+docs/evidence/public-boundary-final-hardening-sprint46.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+```
+
+Sprint 46 improves legacy verifier failure read-path redaction, readiness metadata category labeling, public evidence JSON scanning, standard RPC block evidence wording, and historical chain-operation reference boundaries. It does not authorize partner traffic, public hosting, deployment, managed infrastructure connection, wallet actions, chain-operation package commands, protected CI provenance, protected artifact metadata, or release approval.

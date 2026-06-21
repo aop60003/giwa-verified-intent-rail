@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
 
 import { buildLocalArtifactManifestFromEntries } from "./artifactManifest.ts";
 import { readScanTargetContent, scanPublicArtifactText, selectPublicArtifactScanEntries } from "./publicArtifactScanner.ts";
 
 const generatedAt = "2026-06-19T00:00:00.000Z";
+const workspaceRoot = resolve(process.cwd(), "../..");
 
 describe("public artifact scanner", () => {
   it("blocks credential-like keys without printing synthetic canary values", () => {
@@ -135,7 +137,27 @@ describe("public artifact scanner", () => {
     expect(result.findings).toEqual([]);
   });
 
-  it("selects served public artifacts for blocking scan and leaves evidence inputs to manifest hashing", () => {
+  it("allows negative safety metadata in the public chain evidence fixture", () => {
+    const result = scanPublicArtifactText({
+      path: "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json",
+      content: JSON.stringify({
+        roles: { demoUserPrivateKeyNeverRequested: true },
+        submissionFinalization: {
+          redactionChecklist: {
+            noPrivateKeys: true,
+            noMnemonics: true,
+            noRpcTokens: true,
+            noBearerTokens: true
+          }
+        }
+      })
+    });
+
+    expect(result.decision).toBe("pass");
+    expect(result.findings).toEqual([]);
+  });
+
+  it("selects served public artifacts and public evidence JSON for blocking scan", () => {
     const manifest = buildLocalArtifactManifestFromEntries(
       [
         { path: "apps/web/public/index.html", content: "<html></html>" },
@@ -148,7 +170,8 @@ describe("public artifact scanner", () => {
 
     expect(selectPublicArtifactScanEntries(manifest).map((entry) => entry.path)).toEqual([
       "apps/web/public/demo-control-room.js",
-      "apps/web/public/index.html"
+      "apps/web/public/index.html",
+      "docs/evidence/giwa-sepolia-mvp-evidence.json"
     ]);
   });
 
@@ -157,6 +180,33 @@ describe("public artifact scanner", () => {
       readScanTargetContent("C:/workspace", {
         path: ".env.local",
         role: "public-served-artifact",
+        required: true,
+        sha256: "0".repeat(64),
+        bytes: 1,
+        scanDecision: "pass-or-blocked",
+        generatedBy: "fixture",
+        schemaPath: null
+      })
+    ).toThrow("artifact_scan_path_policy_violation");
+  });
+
+  it("allows reading public evidence JSON scan targets but rejects evidence schemas", () => {
+    expect(() =>
+      readScanTargetContent(workspaceRoot, {
+        path: "docs/evidence/giwa-sepolia-mvp-evidence.json",
+        role: "public-evidence",
+        required: true,
+        sha256: "0".repeat(64),
+        bytes: 1,
+        scanDecision: "pass-or-blocked",
+        generatedBy: "fixture",
+        schemaPath: null
+      })
+    ).not.toThrow();
+    expect(() =>
+      readScanTargetContent(workspaceRoot, {
+        path: "docs/evidence/giwa-sepolia-mvp-evidence.schema.md",
+        role: "public-evidence",
         required: true,
         sha256: "0".repeat(64),
         bytes: 1,

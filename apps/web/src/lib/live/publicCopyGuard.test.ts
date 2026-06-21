@@ -33,6 +33,7 @@ describe("public commercial copy", () => {
     expect(copy).not.toMatch(/Sprint 10|Sprint 11|Sprint 12/u);
     expect(copy).not.toMatch(/Commercial receipt|Sprint 4 verifier/u);
     expect(copy).not.toContain("Receipt route is enabled only when receiptHash and decisionTxHash exist.");
+    expect(copy).not.toContain("finalConfirmation");
   });
 
   it("keeps forbidden commercial claims out of public assets", () => {
@@ -46,7 +47,8 @@ describe("public commercial copy", () => {
         "real R" + "WA",
         "real y" + "ield",
         "real f" + "unds",
-        "payment set" + "tled"
+        "payment set" + "tled",
+        "set" + "tlement"
       ].join("|"),
       "i"
     );

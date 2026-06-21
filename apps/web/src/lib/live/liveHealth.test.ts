@@ -7,7 +7,7 @@ describe("live hosted health and readiness", () => {
     expect(buildLiveHealthBody()).toEqual({ ok: true });
   });
 
-  it("reports readiness without raw config values", () => {
+  it("reports readiness without raw config values or raw env key names", () => {
     const body = buildLiveReadinessBody({
       mode: "staging-testnet",
       envReady: false,
@@ -17,12 +17,17 @@ describe("live hosted health and readiness", () => {
       rateLimitReady: true,
       requestSafetyReady: true,
       telemetryReady: true,
-      missingKeys: ["GIWA_SEPOLIA_RPC_URL"],
+      missingKeys: ["GIWA_SEPOLIA_RPC_URL", "CAMPAIGN_SIGNER_PRIVATE_KEY"],
       invalidKeys: []
     });
+    const serialized = JSON.stringify(body);
 
     expect(body.ready).toBe(false);
-    expect(JSON.stringify(body)).toContain("GIWA_SEPOLIA_RPC_URL");
-    expect(JSON.stringify(body)).not.toContain("https://");
+    expect(body.missingKeyCount).toBe(2);
+    expect(body.missingKeys).toEqual(["giwa-rpc-endpoint", "server-role-signer"]);
+    expect(serialized).not.toContain("GIWA_SEPOLIA_RPC_URL");
+    expect(serialized).not.toContain("CAMPAIGN_SIGNER_PRIVATE_KEY");
+    expect(serialized).not.toContain("PRIVATE_KEY");
+    expect(serialized).not.toContain("https://");
   });
 });

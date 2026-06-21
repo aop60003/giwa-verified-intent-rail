@@ -217,7 +217,7 @@ Dynamic receipt review passes only when:
 - intent hash links run, decision, and receipt
 - receipt payload parses as JSON
 - chain id is `91342`
-- standard RPC receipt evidence is the final source
+- standard RPC receipt status and block data are the block-evidence source
 - `verifierInputHash` recomputes
 - `receiptHash` recomputes
 - Flashblocks appears only as non-final feedback
@@ -406,3 +406,15 @@ docs/evidence/commercial-readiness-sprint40-freeze.json
 ```
 
 The freeze confirms that the local evidence packet is reviewable, but current `main` still has zero check-runs and protected CI provenance is absent. External partner signoff, external hosting approval, managed infrastructure approval, protected artifact metadata, branch-protection satisfaction, and release approval remain open blockers.
+
+## Current Local Handoff Boundary
+
+After Sprint 43 through Sprint 46, use the partner/customer handoff package and latest public-boundary evidence for local review:
+
+```text
+docs/implementation/giwa-partner-customer-handoff-package.md
+docs/evidence/staging-handoff-sprint43-external-blockers.json
+docs/evidence/public-boundary-final-hardening-sprint46.json
+```
+
+This boundary supports review of the pre-seeded live receipt, recorded static fallback, and public evidence packet. It does not authorize a new wallet rehearsal, partner beta launch, staging launch, public hosting, managed infrastructure connection, protected-CI claim, or release approval.

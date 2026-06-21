@@ -81,49 +81,49 @@
       "id": "reviewManifest",
       "label": "Review manifest",
       "state": "complete",
-      "finalConfirmation": false,
+      "standardRpcBlockEvidence": false,
       "detail": "Target, selector, asset, amount, spender, and allowance are visible before action."
     },
     {
       "id": "walletAction",
       "label": "Recorded wallet evidence",
       "state": "complete",
-      "finalConfirmation": false,
+      "standardRpcBlockEvidence": false,
       "detail": "Approve and deposit transaction hashes are recorded evidence from the wallet app."
     },
     {
       "id": "fastFeedback",
       "label": "Fast feedback",
       "state": "complete",
-      "finalConfirmation": false,
+      "standardRpcBlockEvidence": false,
       "detail": "Flashblocks observation is non-final and separate from verifier match."
     },
     {
       "id": "blockConfirmed",
       "label": "Block confirmed",
       "state": "complete",
-      "finalConfirmation": true,
+      "standardRpcBlockEvidence": true,
       "detail": "Standard RPC receipt status is 1 with block number and block hash."
     },
     {
       "id": "verifierChecking",
       "label": "Verifier checking",
       "state": "complete",
-      "finalConfirmation": false,
+      "standardRpcBlockEvidence": false,
       "detail": "The verifier compares confirmed evidence with the signed manifest."
     },
     {
       "id": "matched",
       "label": "Matched",
       "state": "complete",
-      "finalConfirmation": false,
+      "standardRpcBlockEvidence": false,
       "detail": "Receipt readiness starts only after verifier decision is matched."
     },
     {
       "id": "viewReceipt",
       "label": "View receipt",
       "state": "complete",
-      "finalConfirmation": false,
+      "standardRpcBlockEvidence": false,
       "detail": "Receipt route opens only when matched receipt evidence is available."
     }
   ],
@@ -232,12 +232,12 @@
         "blockNumber": "28328168",
         "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
         "confirmationDepth": 1332,
-        "finalConfirmation": true
+        "standardRpcBlockEvidence": true
       },
       "fastFeedback": {
         "observed": true,
         "namespace": "non-final",
-        "finalConfirmation": false
+        "standardRpcBlockEvidence": false
       },
       "manifestSigner": {
         "expectedSigner": "0xaccea461499427f05dff4c998ef26e18f790e4a7",
@@ -322,14 +322,14 @@
       },
       "evidence": {
         "standardRpc": {
-          "finalConfirmation": true,
+          "standardRpcBlockEvidence": true,
           "status": 1,
           "blockNumber": "28328168",
           "blockHash": "0xcdc4e4da170976e537455e9c4eaedb08039ef914d83d4db00fa1970c9c1b6a95",
           "confirmationDepth": 1332
         },
         "fastFeedback": {
-          "finalConfirmation": false,
+          "standardRpcBlockEvidence": false,
           "namespace": "non-final"
         },
         "replayStatus": "passed"

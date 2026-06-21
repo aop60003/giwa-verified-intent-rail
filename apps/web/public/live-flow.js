@@ -125,49 +125,49 @@ function statusRailSteps() {
       id: "walletReady",
       label: "Wallet ready",
       state: walletReady ? "complete" : "active",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: walletReady ? "Connected on GIWA Sepolia." : walletCopy()
     },
     {
       id: "manifestIssued",
       label: "Manifest issued",
       state: manifestReady ? "complete" : walletReady ? "active" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Wallet-bound manifest preview comes before wallet action."
     },
     {
       id: "approveSubmitted",
       label: "Approve submitted",
       state: approveSubmitted ? "complete" : manifestReady ? "active" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Browser wallet returns the approve transaction hash."
     },
     {
       id: "depositSubmitted",
       label: "Deposit submitted",
       state: depositSubmitted ? "complete" : approveSubmitted || manifestReady ? "active" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Browser wallet returns the deposit transaction hash."
     },
     {
       id: "standardRpcChecking",
       label: "Standard RPC check",
       state: matched || failed || timeout ? "complete" : checking || depositSubmitted ? "active" : "pending",
-      finalConfirmation: true,
+      standardRpcBlockEvidence: true,
       detail: "Verifier uses standard RPC receipt evidence."
     },
     {
       id: "verifierMatched",
       label: "Verifier matched",
       state: matched ? "complete" : failed ? "blocked" : depositSubmitted ? "active" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: matched ? "Evidence matched the manifest." : "Receipt stays locked until match."
     },
     {
       id: "receiptReady",
       label: "Receipt ready",
       state: matched ? "complete" : "pending",
-      finalConfirmation: false,
+      standardRpcBlockEvidence: false,
       detail: "Dynamic receipt opens only after matched verification."
     }
   ];
@@ -185,7 +185,7 @@ function renderStatusRail() {
         view("span", { className: "status-body" }, [
           view("strong", { text: step.label }),
           view("span", { text: step.detail }),
-          step.finalConfirmation ? view("em", { text: "Standard RPC block evidence" }) : view("em", { text: "Non-final step" })
+          step.standardRpcBlockEvidence ? view("em", { text: "Standard RPC block evidence" }) : view("em", { text: "Non-final step" })
         ])
       ])
     )

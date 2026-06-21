@@ -71,7 +71,7 @@ export type LiveStatusRailStep = {
   label: string;
   state: "complete" | "active" | "pending" | "blocked";
   current: boolean;
-  finalConfirmation: boolean;
+  standardRpcBlockEvidence: boolean;
   detail: string;
 };
 
@@ -223,7 +223,7 @@ function statusRail(input: LiveFlowInput): LiveStatusRailStep[] {
     label: STEP_LABELS[id],
     state: stepState(input, id),
     current: false,
-    finalConfirmation: id === "standardRpcChecking",
+    standardRpcBlockEvidence: id === "standardRpcChecking",
     detail: STEP_DETAILS[id]
   }));
   const current = currentStep(initial);

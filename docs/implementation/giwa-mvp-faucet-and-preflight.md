@@ -1,5 +1,7 @@
 # GIWA MVP Faucet And Preflight
 
+This document is historical Sprint 3 reference material. Do not run the funding, deployment, anchor, verifier-chain, mint, or wallet-action paths from the current local handoff unless a separate chain-operation approval exists. Current partner/customer review should use the pre-seeded live receipt and recorded static fallback.
+
 ## Purpose
 
 This checklist must pass before Sprint 3 deploys or submits GIWA Sepolia transactions. Sprint 0 records the plan only; it does not deploy, transact, or claim faucet funds.
@@ -63,6 +65,8 @@ The demo user wallet must be controlled through the user's wallet app. The app m
 
 ## Role Funding Helper
 
+Historical reference only for Sprint 3. Do not run from the current handoff package without separate approval.
+
 If faucet funding is confirmed on one GIWA Sepolia L2 account, use the role funding helper to distribute native test ETH to the Sprint 3 role addresses:
 
 ```powershell
@@ -85,6 +89,8 @@ The helper:
 The helper must not be used with Ethereum Sepolia L1 ETH directly. If the funder balance is `0` on GIWA Sepolia standard RPC, claim GIWA Sepolia faucet ETH or bridge to GIWA Sepolia first.
 
 ## Sprint 3 Chain Anchor Commands
+
+Historical reference only for Sprint 3. Do not run from the current handoff package without separate approval.
 
 After preflight passes, deploy the mock token, mock vault, and intent rail, mint mock test tokens to the demo wallet, sign the deployment-bound manifest, and submit `IntentSubmitted`:
 
