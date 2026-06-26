@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "reportKind": "local-provenance-report",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-26T06:04:40.457Z",
+  "generatedAt": "2026-06-26T06:12:24.288Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "blockedProtectedFields": [
@@ -18,7 +18,7 @@
     "manifestPath": "docs/evidence/local-artifact-manifest.json",
     "manifestKind": "local-artifact-manifest",
     "manifestAuthority": "local-advisory",
-    "artifactManifestSha256": "5b1f6a287fae45c127618532f9b5881e5af82efd9f3996a7881909afe12747a5",
+    "artifactManifestSha256": "481d2cd12f7a3f01a7d28d4b96dd0793461ae716836d7964afc069dde0e724b5",
     "artifactManifestBytes": 39751,
     "buildTreeSha256": "f29140637200356cc315afd2a050c377d022c40185a8be8d2879c7c53283c355",
     "artifactGroupCounts": {
@@ -47,7 +47,7 @@
   },
   "commandEvidenceBinding": {
     "path": "docs/evidence/local-command-evidence-report.json",
-    "sha256": "5ad8d9b5abee1026961a9026290f51ecaf243cdc9efb7e5930664fafd9e3ec51",
+    "sha256": "576e510cfeaa2c7ac785e36bc75fa46fd7c7487066bd282d6b577538e7553b81",
     "bytes": 1972,
     "decision": "pass"
   },
