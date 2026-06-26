@@ -1,0 +1,167 @@
+{
+  "sprint": 52,
+  "title": "Lightsail Staging Deploy Preflight After Approval",
+  "authority": "local-advisory",
+  "generatedAt": "2026-06-26",
+  "sourceSprint": 51,
+  "scope": {
+    "documentationOnly": true,
+    "awsResourceCreated": false,
+    "lightsailInstanceCreated": false,
+    "publicDeployExecuted": false,
+    "dnsConfigured": false,
+    "httpsConfigured": false,
+    "managedInfrastructureConnected": false,
+    "protectedCiDispatchOrRerunExecuted": false,
+    "walletTransactionSent": false,
+    "chainOperationPackageCommandExecuted": false,
+    "dependencyInstalled": false,
+    "runtimeValuesRequested": false,
+    "envFileContentRead": false
+  },
+  "documents": {
+    "plan": "docs/superpowers/plans/2026-06-26-sprint-52-lightsail-staging-deploy-preflight-after-approval.md",
+    "preflightChecklist": "docs/implementation/giwa-lightsail-staging-preflight-checklist.md",
+    "systemdAndNginxDraft": "docs/implementation/giwa-lightsail-systemd-and-nginx-draft.md",
+    "envAndCredentialPreflight": "docs/implementation/giwa-lightsail-env-and-secret-injection-preflight.md",
+    "backupRestorePreflight": "docs/implementation/giwa-lightsail-backup-restore-preflight.md"
+  },
+  "eightPerspectiveSummary": [
+    {
+      "perspective": "AWS account / billing / region readiness",
+      "result": "external account, billing, budget owner, and region are required before instance work"
+    },
+    {
+      "perspective": "Lightsail instance sizing / OS / Node runtime readiness",
+      "result": "Ubuntu bundle, Node runtime source, disk budget, and resize owner remain approval inputs"
+    },
+    {
+      "perspective": "Nginx / HTTPS / domain preflight",
+      "result": "route table and HTTPS options are drafted; no DNS or certificate work is executed"
+    },
+    {
+      "perspective": "Env / credential injection preflight",
+      "result": "variable names and server-only boundaries are documented without values"
+    },
+    {
+      "perspective": "systemd service / process lifecycle preflight",
+      "result": "giwa-static.service and giwa-live.service draft shapes use localhost binding and restart policy"
+    },
+    {
+      "perspective": "Storage / SQLite / backup / restore preflight",
+      "result": "SQLite is limited to single-instance staging; backup destination and restore drill remain blockers"
+    },
+    {
+      "perspective": "Observability / health / logs / alerts preflight",
+      "result": "health, readiness, bounded upstream errors, redacted logs, and alert owner are required"
+    },
+    {
+      "perspective": "Rollback / go-no-go / release approval preflight",
+      "result": "protected CI or explicit local-advisory exception, smoke list, rollback owner, and release owner are required"
+    }
+  ],
+  "externalInputsRequired": [
+    "AWS account and billing readiness",
+    "Lightsail region",
+    "instance plan",
+    "domain or subdomain",
+    "HTTPS approach",
+    "credential injection method",
+    "backup destination",
+    "rollback owner",
+    "release approval owner",
+    "protected CI pass or explicit local-advisory exception",
+    "partner/customer signoff or explicit internal-only exception"
+  ],
+  "systemdDraft": {
+    "services": [
+      "giwa-static.service",
+      "giwa-live.service"
+    ],
+    "localhostBindingRequired": true,
+    "restartPolicy": "on-failure",
+    "runtimeValuesIncluded": false
+  },
+  "nginxDraft": {
+    "routes": [
+      "/user",
+      "/user/receipts",
+      "/user/help",
+      "/user/receipt/*",
+      "/live",
+      "/demo",
+      "/partner",
+      "/api/*",
+      "/healthz",
+      "/readyz"
+    ],
+    "wildcardCorsAllowed": false,
+    "boundedUpstreamErrorsRequired": true
+  },
+  "envContract": {
+    "variableNamesOnly": true,
+    "valuesIncluded": false,
+    "serverOnlyNames": [
+      "HOST",
+      "PORT",
+      "GIWA_LIVE_MODE",
+      "GIWA_LIVE_DB_PATH",
+      "GIWA_LIVE_ALLOWED_ORIGINS",
+      "GIWA_LIVE_PARTNER_TENANT_ID",
+      "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES",
+      "GIWA_SEPOLIA_RPC_URL",
+      "GIWA_EXPLORER_TX_URL_TEMPLATE",
+      "GIWA_EXPLORER_ADDRESS_URL_TEMPLATE",
+      "CAMPAIGN_SIGNER_PRIVATE_KEY",
+      "INTENT_SUBMITTER_PRIVATE_KEY",
+      "VERIFIER_PRIVATE_KEY"
+    ],
+    "publicSafeCategories": [
+      "product name",
+      "chain id 91342",
+      "public transaction hash",
+      "public block number",
+      "public block hash",
+      "public receipt hash",
+      "public route path",
+      "static snapshot hash",
+      "local-advisory evidence path",
+      "bounded status code"
+    ]
+  },
+  "backupRestore": {
+    "sqliteStagingLimitation": "single-instance staging exception only",
+    "backupCadenceDraft": [
+      "before deploy",
+      "after deploy smoke",
+      "before partner rehearsal",
+      "after partner rehearsal",
+      "daily during short staging window"
+    ],
+    "restoreDrillRequired": true,
+    "durableStorageBlockerForBetaOrProduction": true
+  },
+  "goNoGo": {
+    "currentResult": "no-go",
+    "protectedCiOrExceptionRequired": true,
+    "smokeTestListDrafted": true,
+    "rollbackTriggerRequired": true,
+    "releaseApprovalOwnerRequired": true
+  },
+  "remainingBlockers": [
+    "AWS account and billing readiness",
+    "selected region",
+    "selected instance plan",
+    "domain or subdomain approval",
+    "HTTPS method approval",
+    "credential injection method approval",
+    "backup destination approval",
+    "restore drill",
+    "protected CI or explicit local-advisory exception",
+    "partner/customer signoff or explicit internal-only exception",
+    "release approval owner",
+    "rollback owner",
+    "public deployment approval"
+  ],
+  "nextSprintCandidate": "docs/superpowers/plans/2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md"
+}

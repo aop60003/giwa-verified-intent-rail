@@ -1029,6 +1029,102 @@ managedInfrastructureApproval=absent
 
 Sprint 47 adds regression coverage for checked-in public browser assets and replaces raw exception-message fallback notices with bounded public copy in the static demo, demo control room, wallet, approve, deposit, verify, and live API fallback paths. It does not dispatch or rerun protected CI, change GitHub billing state, public-host, deploy, connect managed infrastructure, request wallet signing material, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
 
+## Sprint 51 Lightsail Staging Architecture And Cost Plan
+
+Sprint 51 plan, architecture, cost, runbook draft, and evidence:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-51-lightsail-staging-architecture-and-cost-plan.md
+docs/implementation/giwa-lightsail-staging-architecture.md
+docs/implementation/giwa-lightsail-cost-and-sizing.md
+docs/implementation/giwa-lightsail-deploy-runbook-draft.md
+docs/evidence/lightsail-staging-plan-sprint51.json
+```
+
+Current Sprint 51 blocker state:
+
+```text
+authority=local-advisory
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+managedInfrastructureConnected=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+partnerCustomerSignoff=absent
+releaseApproval=absent
+stagingDryRunExecution=blocked
+commercialReadiness=blocked
+```
+
+Lightsail-specific blockers:
+
+| Blocker | Current status | Required evidence | Staging impact |
+| --- | --- | --- | --- |
+| AWS account and billing approval | absent | operator confirms target AWS account, billing status, budget owner, and region | blocks instance creation |
+| Instance sizing | planned-only | selected Lightsail bundle and cost owner after AWS console check | blocks capacity approval |
+| Domain and HTTPS approval | absent | approved hostname, certificate approach, renewal owner, and rollback behavior | blocks public binding |
+| Reverse proxy policy | planned-only | Nginx or load balancer decision, route table, request limits, same-origin or CORS policy | blocks external browser access |
+| Credential injection path | absent | approved server-only injection path or managed credential store decision without values | blocks live service activation |
+| Storage mode | planned-only | SQLite rehearsal exception or durable storage approval, backup owner, and restore drill | blocks partner-facing state |
+| Protected CI or exception | blocked | protected CI pass on current source or explicit local-advisory exception | blocks release provenance |
+| Partner/customer signoff | absent | real reviewer signoff for the local-advisory packet and staging limitation acknowledgement | blocks beta promotion |
+| Release and rollback owners | absent | named owners, rollback artifact, static fallback smoke, incident route | blocks deployment approval |
+
+Sprint 51 cannot unblock staging execution. It only makes the Lightsail deployment path reviewable before a later Sprint 52 preflight approval.
+
+## Sprint 52 Lightsail Staging Deploy Preflight After Approval
+
+Sprint 52 plan, preflight package, and evidence:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-52-lightsail-staging-deploy-preflight-after-approval.md
+docs/implementation/giwa-lightsail-staging-preflight-checklist.md
+docs/implementation/giwa-lightsail-systemd-and-nginx-draft.md
+docs/implementation/giwa-lightsail-env-and-secret-injection-preflight.md
+docs/implementation/giwa-lightsail-backup-restore-preflight.md
+docs/evidence/lightsail-staging-preflight-sprint52.json
+```
+
+Current Sprint 52 blocker state:
+
+```text
+authority=local-advisory
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+managedInfrastructureConnected=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+partnerCustomerSignoff=absent
+releaseApproval=absent
+stagingDryRunExecution=blocked
+commercialReadiness=blocked
+goNoGo=no-go
+```
+
+Sprint 52 preflight blockers:
+
+| Blocker | Current status | Required evidence | Staging impact |
+| --- | --- | --- | --- |
+| AWS account and billing readiness | absent | operator records account owner, billing state, budget owner, region, and spend stop condition | blocks host creation |
+| Region and instance plan | absent | selected Lightsail region, Ubuntu bundle, disk size, runtime source, and resize trigger | blocks capacity approval |
+| Domain and HTTPS method | absent | approved hostname, DNS owner, HTTPS option, renewal owner, and rollback behavior | blocks public route |
+| systemd service approval | draft-only | reviewed `giwa-static.service` and `giwa-live.service` with localhost binding and restart policy | blocks process setup |
+| Nginx route approval | draft-only | reviewed route table for user, live, demo, partner, API, health, and readiness paths | blocks reverse proxy setup |
+| Credential injection method | absent | approved server-only injection channel with values excluded from docs and public artifacts | blocks live activation |
+| Backup destination and restore drill | absent | backup owner, destination category, restore owner, drill result, and retention window | blocks partner-facing state |
+| Protected CI or exception | blocked | protected CI pass on current source or explicit local-advisory exception | blocks release provenance |
+| Release and rollback owner | absent | named release owner, rollback owner, artifact reference, smoke list, and incident route | blocks deploy approval |
+
+Sprint 52 cannot unblock staging execution. It only makes the preflight review package complete before a later Sprint 53 execution approval.
+
 ## Sprint 21 Failure Triage
 
 | Priority | Failure | Signal | Route | Required response |

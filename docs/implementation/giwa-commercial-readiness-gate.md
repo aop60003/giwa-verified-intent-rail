@@ -582,3 +582,75 @@ managedInfrastructureApproval=absent
 ```
 
 Sprint 47 improves public browser fallback copy so static demo, demo control room, wallet, approve, deposit, verify, and live API failure paths do not render raw exception messages. It does not authorize partner traffic, public hosting, deployment, managed infrastructure connection, wallet actions, chain-operation package commands, protected CI provenance, protected artifact metadata, or release approval.
+
+## Sprint 51 Lightsail Staging Architecture Gate
+
+Sprint 51 local-advisory outputs are:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-51-lightsail-staging-architecture-and-cost-plan.md
+docs/implementation/giwa-lightsail-staging-architecture.md
+docs/implementation/giwa-lightsail-cost-and-sizing.md
+docs/implementation/giwa-lightsail-deploy-runbook-draft.md
+docs/evidence/lightsail-staging-plan-sprint51.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+partnerCustomerSignoff=absent
+releaseApproval=absent
+```
+
+Sprint 51 defines the Lightsail architecture, cost model, and deploy runbook draft only. It does not create AWS resources, public-host, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
+
+Before a later Lightsail staging preflight can begin, the operator must record AWS account and billing approval, selected region, selected instance bundle, HTTPS approach, credential injection method, storage and backup owner, protected CI or approved local-advisory exception, partner/customer signoff or explicit internal-only exception, release owner, and rollback owner.
+
+## Sprint 52 Lightsail Staging Preflight Gate
+
+Sprint 52 local-advisory outputs are:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-52-lightsail-staging-deploy-preflight-after-approval.md
+docs/implementation/giwa-lightsail-staging-preflight-checklist.md
+docs/implementation/giwa-lightsail-systemd-and-nginx-draft.md
+docs/implementation/giwa-lightsail-env-and-secret-injection-preflight.md
+docs/implementation/giwa-lightsail-backup-restore-preflight.md
+docs/evidence/lightsail-staging-preflight-sprint52.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+partnerCustomerSignoff=absent
+releaseApproval=absent
+goNoGo=no-go
+```
+
+Sprint 52 defines the deploy preflight checklist only. It does not create AWS resources, public-host, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
+
+Before Sprint 53 can execute a deploy path, the operator must record account/billing readiness, region, instance plan, domain/subdomain, HTTPS method, credential injection method, backup destination, restore drill gate, protected CI or explicit local-advisory exception, release approval owner, and rollback owner.

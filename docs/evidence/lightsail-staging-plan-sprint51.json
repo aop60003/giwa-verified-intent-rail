@@ -1,0 +1,63 @@
+{
+  "sprint": 51,
+  "title": "Lightsail Staging Architecture / Cost / Deploy Plan",
+  "authority": "local-advisory",
+  "sourceSprint": 50,
+  "execution": {
+    "lightsailInstanceCreated": false,
+    "publicDeployExecuted": false,
+    "dnsConfigured": false,
+    "httpsConfigured": false,
+    "managedInfrastructureConnected": false,
+    "walletTransactionsSent": false,
+    "chainCommandsRun": false,
+    "protectedCiDispatchRun": false,
+    "dependencyInstallRun": false
+  },
+  "recommendedArchitecture": {
+    "host": "Ubuntu Lightsail instance",
+    "runtime": "Node static service plus Node live service behind reverse proxy",
+    "reverseProxy": "Nginx same-origin routing recommended for first staging dry run",
+    "httpsOptions": [
+      "Lightsail load balancer certificate",
+      "Nginx with certbot"
+    ],
+    "storage": "SQLite only for approved single-instance rehearsal; durable adapter required for beta"
+  },
+  "costModel": {
+    "finalPriceSource": "AWS console for selected account and region",
+    "freeClaimMade": false,
+    "tiers": [
+      "minimum-staging",
+      "beta-staging",
+      "production-candidate"
+    ],
+    "costDrivers": [
+      "instance bundle",
+      "public IPv4 or IPv6-only network choice",
+      "load balancer",
+      "snapshots",
+      "additional storage",
+      "managed database if later approved",
+      "data transfer overage",
+      "domain and certificate operation",
+      "logs and monitoring"
+    ]
+  },
+  "remainingBlockers": [
+    "AWS account and billing approval",
+    "protected CI or approved exception",
+    "domain and HTTPS approval",
+    "credential injection approval",
+    "backup and restore drill",
+    "partner or customer signoff",
+    "managed infrastructure approval for beta",
+    "release and rollback owner approval"
+  ],
+  "documents": [
+    "docs/superpowers/plans/2026-06-26-sprint-51-lightsail-staging-architecture-and-cost-plan.md",
+    "docs/implementation/giwa-lightsail-staging-architecture.md",
+    "docs/implementation/giwa-lightsail-cost-and-sizing.md",
+    "docs/implementation/giwa-lightsail-deploy-runbook-draft.md"
+  ]
+}
