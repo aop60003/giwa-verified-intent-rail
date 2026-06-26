@@ -1,0 +1,51 @@
+{
+  "sprint": 49,
+  "title": "Commercial User-Facing UX Implementation",
+  "authority": "local-advisory",
+  "implementedSurfaces": [
+    "/user",
+    "/user/receipt/<receiptHash>",
+    "/user/receipts",
+    "/user/help"
+  ],
+  "preservedSurfaces": [
+    "/",
+    "/live",
+    "/demo",
+    "/partner",
+    "/receipt/<receiptHash>"
+  ],
+  "userFacingBoundary": {
+    "generalUserSurfaces": [
+      "/user",
+      "/user/receipt/<receiptHash>",
+      "/user/receipts",
+      "/user/help"
+    ],
+    "separatedSurfaces": [
+      "/live",
+      "/demo",
+      "/partner"
+    ],
+    "technicalDetailsDefault": "collapsed",
+    "receiptUnlock": "matched-verification-only"
+  },
+  "blockedExternalActions": [
+    "protected-ci-dispatch",
+    "public-hosting",
+    "managed-infrastructure",
+    "chain-operation-package-commands",
+    "dependency-install"
+  ],
+  "verification": {
+    "webUserTests": "pass",
+    "webTests": "pass",
+    "protocolTests": "pass",
+    "contractsTests": "pass",
+    "typecheck": "pass",
+    "build": "pass",
+    "nodeChecks": "pass",
+    "safeScans": "pass",
+    "artifactVerification": "pass"
+  }
+}

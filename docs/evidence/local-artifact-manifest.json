@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-21T05:55:58.451Z",
+  "generatedAt": "2026-06-26T05:46:15.567Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -186,8 +186,28 @@
         "path": "apps/web/public/styles.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "d08c22a585f3ea02c9334c0faf0a9e7329ae5a1158225aeec2db554bcdcd510b",
-        "bytes": 6644,
+        "sha256": "e347f8621b3743dd059b93702dcc227df667bea83757727be954d9a3289eba34",
+        "bytes": 7722,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/user-flow.js",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "8e3df83850cd6c4f4986644ed7cde872bc0b3c08c7b2102e95dbeb83df6c0db8",
+        "bytes": 27894,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/user.html",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "fa0c9a5ce22f718eedcdc250757b8870d39eaebebbe1d9cb461fc89c1b1bd4cc",
+        "bytes": 555,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -240,6 +260,16 @@
         "required": true,
         "sha256": "768dc90a549d4838d22e9ba00c9fbdb2f3a06e7539b7033211d15f3e1f64304a",
         "bytes": 3652,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/commercial-user-flow-sprint49.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "b1fb1f98022e7119fb71191b01b0968147a8a77b17242c0048f446707dd6f353",
+        "bytes": 1121,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1003,6 +1033,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "0c3c7720345f8a68c716c3791f712cb539a160ce5cc58155faf5b6700b81cff5",
+  "buildTreeSha256": "3293cdc539c94d6d163bb5becf976a3d5a48e4a692b4650814658a962b021e7c",
   "unmanifestedFilePolicy": "fail"
 }

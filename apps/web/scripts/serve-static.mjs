@@ -21,6 +21,11 @@ function publicPath(pathname) {
   const requested =
     decoded === "/demo"
       ? "/demo.html"
+      : decoded === "/user" ||
+          decoded === "/user/receipts" ||
+          decoded === "/user/help" ||
+          decoded.startsWith("/user/receipt/")
+        ? "/user.html"
       : decoded === "/" || decoded === "/partner" || decoded.startsWith("/receipt/")
         ? "/index.html"
         : decoded;

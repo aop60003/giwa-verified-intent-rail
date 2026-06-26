@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "reportKind": "local-provenance-report",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-21T05:56:08.603Z",
+  "generatedAt": "2026-06-26T05:46:24.476Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "blockedProtectedFields": [
@@ -18,13 +18,13 @@
     "manifestPath": "docs/evidence/local-artifact-manifest.json",
     "manifestKind": "local-artifact-manifest",
     "manifestAuthority": "local-advisory",
-    "artifactManifestSha256": "018a3cbfb03f92bd62805040cd22cbcd11149ed830231c59debb4a747a96d2d5",
-    "artifactManifestBytes": 38250,
-    "buildTreeSha256": "0c3c7720345f8a68c716c3791f712cb539a160ce5cc58155faf5b6700b81cff5",
+    "artifactManifestSha256": "2870b676f793e58974aef086a31422fc8e3bee38ec4537ae5913ab6d4ce10b46",
+    "artifactManifestBytes": 39361,
+    "buildTreeSha256": "3293cdc539c94d6d163bb5becf976a3d5a48e4a692b4650814658a962b021e7c",
     "artifactGroupCounts": {
       "packageMetadata": 7,
-      "publicArtifacts": 10,
-      "publicEvidence": 19,
+      "publicArtifacts": 12,
+      "publicEvidence": 20,
       "implementationDocs": 55
     },
     "equivalenceGroups": {
@@ -38,7 +38,7 @@
     "scanner": "public-artifact-scanner",
     "scope": "served-public-artifacts",
     "decision": "pass",
-    "filesScanned": 27,
+    "filesScanned": 30,
     "blockedCount": 0,
     "skippedCount": 0,
     "findingCount": 0,
@@ -47,7 +47,7 @@
   },
   "commandEvidenceBinding": {
     "path": "docs/evidence/local-command-evidence-report.json",
-    "sha256": "98fd1a28ceb9c51efeb91717064174a9dc7ec0a0c709c4189e25681344ec5407",
+    "sha256": "44dc6f9c54f206f7a862e02a0ee3474cfe7d1c7c769dd8303db4abda35474088",
     "bytes": 1972,
     "decision": "pass"
   },

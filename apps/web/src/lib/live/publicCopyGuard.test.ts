@@ -1,10 +1,12 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const publicFiles = [
   "public/flow.js",
   "public/live-flow.js",
+  "public/user.html",
+  "public/user-flow.js",
   "public/index.html",
   "public/live.html",
   "public/demo.html",
@@ -16,7 +18,9 @@ function publicCopyCorpus(): string {
   return publicFiles
     .map((file) => {
       try {
-        return readFileSync(join(process.cwd(), file), "utf8");
+        const directPath = join(process.cwd(), file);
+        const workspacePath = join(process.cwd(), "apps/web", file);
+        return readFileSync(existsSync(directPath) ? directPath : workspacePath, "utf8");
       } catch {
         return "";
       }

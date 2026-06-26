@@ -12,7 +12,7 @@ Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpower
 
 The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
 
-Current state is a local-review handoff freeze with Sprint 47 client-side public error-copy hardening applied after the Sprint 43 blocker handoff. Open the Sprint 43 blocker handoff and Sprint 47 evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current state is a local-review handoff freeze with Sprint 49 commercial user-facing UX implemented locally after the Sprint 48 design spec. Sprint 49 adds the `/user` route family for general users while preserving the existing demo, partner, reviewer, and operator surfaces. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, and Sprint 49 evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
 
 ## Final Demo Pack
 
@@ -28,6 +28,7 @@ Open these first:
 Recommended demo order:
 
 ```text
+Commercial user flow: http://127.0.0.1:4176/user
 Demo control room:    http://127.0.0.1:4190/demo
 Fresh live flow:      http://127.0.0.1:4190/live
 Dynamic receipt API:  http://127.0.0.1:4190/api/receipts/0x057b0c02076123b1f30ab374fe96e31d3b99ac03bbeda82d8fc97fbeffd74be8
@@ -46,6 +47,9 @@ pnpm --filter @giwa/web --fail-if-no-match serve
 Local URLs:
 
 ```text
+User action:     http://127.0.0.1:4176/user
+User receipts:   http://127.0.0.1:4176/user/receipts
+User recovery:   http://127.0.0.1:4176/user/help
 Guided flow:     http://127.0.0.1:4176/
 Receipt route:   http://127.0.0.1:4176/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503
 Partner console: http://127.0.0.1:4176/partner
@@ -63,6 +67,8 @@ Evidence paths:
 - [docs/evidence/bounded-failure-redaction-sprint45.json](docs/evidence/bounded-failure-redaction-sprint45.json)
 - [docs/evidence/public-boundary-final-hardening-sprint46.json](docs/evidence/public-boundary-final-hardening-sprint46.json)
 - [docs/evidence/client-side-public-error-copy-sprint47.json](docs/evidence/client-side-public-error-copy-sprint47.json)
+- [docs/superpowers/specs/2026-06-26-commercial-user-facing-ux-design.md](docs/superpowers/specs/2026-06-26-commercial-user-facing-ux-design.md)
+- [docs/evidence/commercial-user-flow-sprint49.json](docs/evidence/commercial-user-flow-sprint49.json)
 
 ## Hosted Ops Readiness
 
@@ -73,6 +79,8 @@ Sprint 44 tightens the local handoff consistency and evidence guardrails only. I
 Sprint 45 tightens bounded verifier failure redaction, hosted request safety, credential-like public artifact detection, telemetry value redaction, legacy snapshot replay-boundary labeling, and recorded-wallet-evidence copy. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, or release promotion.
 Sprint 46 tightens the final local public boundary: legacy verifier failure values are redacted on read paths, readiness metadata uses category labels instead of raw config names, public evidence JSON enters artifact scanning, public models use standard RPC block evidence wording, and historical chain-operation docs are marked reference-only. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, wallet actions, or release promotion.
 Sprint 47 tightens client-side public error copy: checked-in browser assets no longer render raw exception-message fallback strings for static demo, demo control room, wallet, approve, deposit, verify, or live API fallback paths. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, wallet actions, or release promotion.
+Sprint 48 defines the future commercial user-facing UX as a design-only spec: Action Page, Wallet/Network Gate, Intent Preview, Transaction Progress, Verified Receipt, My Receipts, Help/Recovery, and public share receipt boundaries. It does not implement UI, deploy, dispatch protected CI, change wallet behavior, or alter the existing reviewer/operator/partner routes.
+Sprint 49 implements that commercial user-facing UX locally. It adds `/user`, `/user/receipt/<receiptHash>`, `/user/receipts`, and `/user/help`, plus user-flow state, copy, receipt projection, recovery models, public route mapping, and bounded-copy guards. It does not deploy, dispatch protected CI, connect managed infrastructure, install dependencies, run chain-operation package commands, or authorize server/script wallet transactions.
 Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
@@ -162,6 +170,10 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 46 public boundary hardening evidence](docs/evidence/public-boundary-final-hardening-sprint46.json)
 - [Sprint 47 client-side public error copy plan](docs/superpowers/plans/2026-06-21-sprint-47-client-side-public-error-copy-hardening.md)
 - [Sprint 47 client-side public error copy evidence](docs/evidence/client-side-public-error-copy-sprint47.json)
+- [Sprint 48 commercial user-facing UX design spec](docs/superpowers/specs/2026-06-26-commercial-user-facing-ux-design.md)
+- [Sprint 48 commercial user-facing UX design plan](docs/superpowers/plans/2026-06-26-sprint-48-commercial-user-facing-ux-design-spec.md)
+- [Sprint 49 commercial user-facing UX implementation plan](docs/superpowers/plans/2026-06-26-sprint-49-commercial-user-facing-ux-implementation-plan.md)
+- [Sprint 49 commercial user-facing UX implementation evidence](docs/evidence/commercial-user-flow-sprint49.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)
