@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-26T05:46:15.567Z",
+  "generatedAt": "2026-06-26T06:04:40.151Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -186,8 +186,8 @@
         "path": "apps/web/public/styles.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "e347f8621b3743dd059b93702dcc227df667bea83757727be954d9a3289eba34",
-        "bytes": 7722,
+        "sha256": "97f8cc7a41977c5afb09ee8f610075dda1b8704131a8abe22ed977478375a467",
+        "bytes": 9474,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -196,8 +196,8 @@
         "path": "apps/web/public/user-flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "8e3df83850cd6c4f4986644ed7cde872bc0b3c08c7b2102e95dbeb83df6c0db8",
-        "bytes": 27894,
+        "sha256": "baeaa76b82da156bf5c7a1ddef2bf8bd06183388d272c2d1346ecf60ff23bc5c",
+        "bytes": 29569,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -270,6 +270,16 @@
         "required": true,
         "sha256": "b1fb1f98022e7119fb71191b01b0968147a8a77b17242c0048f446707dd6f353",
         "bytes": 1121,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/commercial-user-flow-sprint50-visual-qa.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "5c97aada4765d23964c3ba3fd038faf04859c931dc1f857b6a6f9f2ec6133dc3",
+        "bytes": 4102,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1033,6 +1043,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "3293cdc539c94d6d163bb5becf976a3d5a48e4a692b4650814658a962b021e7c",
+  "buildTreeSha256": "f29140637200356cc315afd2a050c377d022c40185a8be8d2879c7c53283c355",
   "unmanifestedFilePolicy": "fail"
 }

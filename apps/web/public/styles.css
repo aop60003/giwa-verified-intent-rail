@@ -410,9 +410,81 @@ details.panel summary {
   min-height: 88vh;
 }
 
+.user-action-hero,
+.user-receipt-page,
+.user-help-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 460px);
+  align-items: start;
+  padding-top: clamp(32px, 6vw, 72px);
+}
+
+.user-shell .hero-copy {
+  max-width: 760px;
+}
+
+.user-shell .hero-flow h1 {
+  max-width: 760px;
+  font-size: clamp(40px, 6vw, 78px);
+  line-height: 1;
+}
+
+.user-cta-cluster,
+.user-receipt-actions {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.user-cta-cluster > *,
+.user-receipt-actions > * {
+  min-width: max-content;
+}
+
 .user-action-summary,
 .user-intent-panel {
   margin-bottom: 16px;
+}
+
+.user-gate-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.user-gate-card {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #d7dedc;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fbfa;
+}
+
+.user-gate-card strong {
+  overflow-wrap: anywhere;
+}
+
+.user-progress-panel {
+  margin-top: 24px;
+}
+
+.user-progress-heading {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.user-progress-heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.user-status-rail {
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+}
+
+.user-status-rail .status-step {
+  min-height: 142px;
 }
 
 .user-step-list {
@@ -438,6 +510,11 @@ details.panel summary {
 .user-receipt-card,
 .user-help-panel {
   padding: 20px;
+}
+
+.user-receipt-card {
+  min-width: 0;
+  align-self: start;
 }
 
 .user-filter-row {
@@ -469,6 +546,7 @@ details.panel summary {
   padding: 12px;
   background: #f8f9fb;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 980px) {
@@ -484,6 +562,12 @@ details.panel summary {
 
   .hero-flow {
     min-height: auto;
+  }
+
+  .user-action-hero,
+  .user-receipt-page,
+  .user-help-hero {
+    grid-template-columns: 1fr;
   }
 
   .status-step {
@@ -522,5 +606,34 @@ details.panel summary {
 
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .hero-flow,
+  .band {
+    padding: 22px 14px;
+  }
+
+  .user-shell .hero-flow h1 {
+    font-size: 36px;
+  }
+
+  .user-cta-cluster > *,
+  .user-receipt-actions > *,
+  .user-filter-row > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-status-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .field-value,
+  .hash-wrap,
+  .user-support-summary {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }

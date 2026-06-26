@@ -1,6 +1,7 @@
 const app = document.querySelector("#app");
 const GIWA_CHAIN_ID = 91342;
 const GIWA_CHAIN_HEX = "0x164ce";
+const GIWA_EXPLORER_TX_BASE = "https://sepolia-explorer.giwa.io/tx/";
 const USER_RUN_KEY = "giwa:userRunState";
 const USER_RECEIPTS_KEY = "giwa:userReceipts";
 const addChainRequest = {
@@ -54,6 +55,10 @@ function field(label, value) {
 function shortHash(value) {
   if (typeof value !== "string" || value.length <= 18) return String(value ?? "pending");
   return `${value.slice(0, 10)}...${value.slice(-5)}`;
+}
+
+function explorerTxUrl(value) {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test(value) ? `${GIWA_EXPLORER_TX_BASE}${value}` : null;
 }
 
 function routeName() {
@@ -164,20 +169,26 @@ function progressSteps() {
 }
 
 function renderStatusRail() {
-  return view(
-    "ol",
-    { className: "status-rail user-status-rail", "aria-label": "Transaction progress" },
-    progressSteps().map(([id, label, detail, state]) =>
-      view("li", { className: `status-step ${state}`, "data-step": id }, [
-        view("span", { className: "status-icon", text: stepIcon(state), title: state }),
-        view("span", { className: "status-body" }, [
-          view("strong", { text: label }),
-          view("span", { text: detail }),
-          view("em", { text: id === "standard_rpc_receipt_found" ? "Standard RPC evidence" : "User step" })
+  return view("section", { className: "user-progress-panel", "aria-label": "Transaction progress" }, [
+    view("div", { className: "user-progress-heading" }, [
+      view("p", { className: "eyebrow", text: "Progress" }),
+      view("h2", { text: "What happens next" })
+    ]),
+    view(
+      "ol",
+      { className: "status-rail user-status-rail" },
+      progressSteps().map(([id, label, detail, state]) =>
+        view("li", { className: `status-step ${state}`, "data-step": id }, [
+          view("span", { className: "status-icon", text: stepIcon(state), title: state }),
+          view("span", { className: "status-body" }, [
+            view("strong", { text: label }),
+            view("span", { text: detail }),
+            view("em", { text: id === "standard_rpc_receipt_found" ? "Standard RPC evidence" : "User step" })
+          ])
         ])
-      ])
+      )
     )
-  );
+  ]);
 }
 
 function renderExpectedSteps() {
@@ -200,9 +211,23 @@ function renderActionSummary() {
   return view("section", { className: "panel user-action-summary" }, [
     view("p", { className: "eyebrow", text: "Action summary" }),
     view("h2", { text: "Mock vault testnet action" }),
-    field("Network", "GIWA Sepolia 91342"),
-    field("Wallet", walletState.account === null ? "Connect wallet" : shortHash(walletState.account)),
-    field("Receipt", runState?.receiptHash ? shortHash(runState.receiptHash) : "created after matched verification"),
+    view("div", { className: "user-gate-grid" }, [
+      view("div", { className: "user-gate-card" }, [
+        view("span", { className: "field-label", text: "Network" }),
+        view("strong", { text: "GIWA Sepolia" }),
+        view("span", { className: "muted", text: "Chain 91342" })
+      ]),
+      view("div", { className: "user-gate-card" }, [
+        view("span", { className: "field-label", text: "Wallet" }),
+        view("strong", { text: walletState.account === null ? "Connect required" : shortHash(walletState.account) }),
+        view("span", { className: "muted", text: walletCopy() })
+      ]),
+      view("div", { className: "user-gate-card" }, [
+        view("span", { className: "field-label", text: "Receipt" }),
+        view("strong", { text: runState?.receiptHash ? shortHash(runState.receiptHash) : "After verification" }),
+        view("span", { className: "muted", text: "Matched action only" })
+      ])
+    ]),
     renderExpectedSteps()
   ]);
 }
@@ -251,7 +276,7 @@ function renderActionPage() {
         }),
         view("p", { className: "notice", role: "status", "aria-live": "polite", text: notice }),
         view("p", { className: "muted", text: walletCopy() }),
-        view("div", { className: "hero-actions" }, [
+        view("div", { className: "hero-actions user-cta-cluster" }, [
           view("button", { type: "button", id: "user-primary-action", text: primaryLabel() }),
           view("button", { type: "button", id: "user-approve-action", disabled: !txReady("approve"), text: runState?.approveTxHash ? "Approve submitted" : "Approve" }),
           view("button", { type: "button", id: "user-deposit-action", disabled: !txReady("deposit"), text: runState?.depositTxHash ? "Deposit submitted" : "Deposit" }),
@@ -514,15 +539,19 @@ async function renderReceiptRoute() {
   app.textContent = "";
   app.append(view("section", { className: "loading-panel" }, [view("p", { className: "eyebrow", text: "Receipt" }), view("h1", { text: "Loading receipt" })]));
   let body = null;
-  try {
-    const response = await fetch(`/api/receipts/${hash}`);
-    body = response.ok ? await response.json() : null;
-  } catch {
-    body = null;
+  const shouldReadReceiptApi = runState?.receiptHash === hash || Boolean(runState?.depositTxHash);
+  if (shouldReadReceiptApi) {
+    try {
+      const response = await fetch(`/api/receipts/${hash}`);
+      body = response.ok ? await response.json() : null;
+    } catch {
+      body = null;
+    }
   }
   const matched = body?.status === "matched" || body?.receipt?.receiptHash === hash;
   const receiptHash = body?.receiptHash ?? body?.receipt?.receiptHash ?? (matched ? hash : null);
   const depositTxHash = body?.depositTxHash ?? body?.receipt?.depositTxHash ?? runState?.depositTxHash ?? null;
+  const txExplorerUrl = explorerTxUrl(depositTxHash);
   const blockNumber = body?.blockNumber ?? body?.receipt?.blockNumber ?? null;
   const state = matched ? "verified" : body?.status === "failed" ? "not matched" : "pending";
   app.textContent = "";
@@ -532,8 +561,11 @@ async function renderReceiptRoute() {
         view("p", { className: "eyebrow", text: "Verified Receipt" }),
         view("h1", { text: matched ? "Verified receipt ready" : "Receipt status" }),
         view("p", { className: "lead", text: matched ? "This testnet action matched the reviewed intent." : "Receipt details appear after verification." }),
-        view("div", { className: "hero-actions" }, [
+        view("div", { className: "hero-actions user-receipt-actions" }, [
           view("button", { type: "button", id: "copy-receipt-link", disabled: !receiptHash, text: "Copy receipt link" }),
+          txExplorerUrl === null
+            ? view("span", { className: "disabled-link", text: "Open transaction" })
+            : view("a", { className: "secondary-link", href: txExplorerUrl, target: "_blank", rel: "noreferrer", text: "Open transaction" }),
           view("a", { className: "secondary-link", href: "/user/help", text: "Need help?" })
         ])
       ]),
@@ -583,7 +615,7 @@ function renderHelp() {
           view("a", { className: "secondary-link", href: "/user/receipts", text: "My receipts" })
         ])
       ]),
-      view("section", { className: "user-help-panel" }, [
+      view("section", { className: "user-help-panel user-help-card" }, [
         view("label", { className: "field-label", for: "recovery-tx", text: "Transaction hash" }),
         view("input", { id: "recovery-tx", className: "user-input", placeholder: "0x..." }),
         view("div", { className: "hero-actions" }, [

@@ -1,0 +1,166 @@
+{
+  "sprint": 50,
+  "title": "Commercial User-Facing UX Visual Polish and Responsive Browser QA",
+  "authority": "local-advisory",
+  "sourceSprint": 49,
+  "implementedSurfaces": [
+    "/user",
+    "/user/receipt/<receiptHash>",
+    "/user/receipts",
+    "/user/help"
+  ],
+  "preservedSurfaces": [
+    "/",
+    "/live",
+    "/demo",
+    "/partner",
+    "/receipt/<receiptHash>"
+  ],
+  "visualPolish": {
+    "actionPage": [
+      "commercial checkout hero spacing tightened",
+      "wallet/network/receipt readiness cards added",
+      "primary action cluster constrained for desktop and mobile"
+    ],
+    "transactionProgress": [
+      "progress rail framed with a user-facing heading",
+      "long status text and hashes retain overflow guards"
+    ],
+    "receiptAndRecovery": [
+      "receipt actions grouped for copy/share/explorer behavior",
+      "help route card spacing tightened for recovery actions"
+    ]
+  },
+  "browserSmoke": {
+    "tool": "local Playwright against serve-static.mjs",
+    "viewports": [
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 1000
+      },
+      {
+        "name": "mobile",
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "routes": [
+      {
+        "path": "/user",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      },
+      {
+        "path": "/user/receipt/0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      },
+      {
+        "path": "/user/receipts",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      },
+      {
+        "path": "/user/help",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      },
+      {
+        "path": "/",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      },
+      {
+        "path": "/demo",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      },
+      {
+        "path": "/partner",
+        "status": 200,
+        "horizontalOverflow": false,
+        "consoleErrors": 0,
+        "pageErrors": 0
+      }
+    ],
+    "screenshots": [
+      "docs/evidence/browser-smoke/sprint50-desktop-user-action.png",
+      "docs/evidence/browser-smoke/sprint50-mobile-user-action.png",
+      "docs/evidence/browser-smoke/sprint50-desktop-user-help.png",
+      "docs/evidence/browser-smoke/sprint50-mobile-user-help.png"
+    ]
+  },
+  "liveMockSmoke": {
+    "tool": "serve-live.mjs with GIWA_LIVE_MOCK_MODE=1 and throwaway local DB",
+    "routes": [
+      {
+        "path": "/user",
+        "status": 200
+      },
+      {
+        "path": "/user/receipts",
+        "status": 200
+      },
+      {
+        "path": "/user/help",
+        "status": 200
+      },
+      {
+        "path": "/live",
+        "status": 200
+      },
+      {
+        "path": "/demo",
+        "status": 200
+      },
+      {
+        "path": "/api/partner/runs",
+        "status": 200
+      }
+    ],
+    "chainActions": "not-executed",
+    "database": "throwaway-local-db-removed-after-smoke"
+  },
+  "staticDemoRegression": {
+    "boundedLocalProjections": [
+      "/healthz",
+      "/readyz",
+      "/api/demo/status"
+    ],
+    "purpose": "keep /demo static smoke quiet without exposing live-only internals or env values"
+  },
+  "blockedExternalActions": [
+    "protected-ci-dispatch",
+    "public-hosting",
+    "managed-infrastructure",
+    "wallet-transaction",
+    "chain-operation-package-commands",
+    "dependency-install"
+  ],
+  "verification": {
+    "focusedUserTests": "pass",
+    "staticBrowserSmoke": "pass",
+    "liveMockSmoke": "pass",
+    "fullWebTests": "pass",
+    "protocolTests": "pass",
+    "contractsTests": "pass",
+    "typecheck": "pass",
+    "build": "pass",
+    "nodeChecks": "pass",
+    "safeScans": "pass",
+    "artifactVerification": "pass"
+  }
+}

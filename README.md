@@ -12,7 +12,7 @@ Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpower
 
 The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
 
-Current state is a local-review handoff freeze with Sprint 49 commercial user-facing UX implemented locally after the Sprint 48 design spec. Sprint 49 adds the `/user` route family for general users while preserving the existing demo, partner, reviewer, and operator surfaces. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, and Sprint 49 evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current state is a local-review handoff freeze with Sprint 50 commercial user-facing UX visual QA completed locally after the Sprint 48 design spec and Sprint 49 implementation. Sprint 50 polishes the `/user` route family, confirms desktop/mobile browser smoke for the user routes and existing static/demo/partner routes, and preserves the existing demo, partner, reviewer, and operator surfaces. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, Sprint 49 evidence, and Sprint 50 visual QA evidence before any demo route. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
 
 ## Final Demo Pack
 
@@ -69,6 +69,7 @@ Evidence paths:
 - [docs/evidence/client-side-public-error-copy-sprint47.json](docs/evidence/client-side-public-error-copy-sprint47.json)
 - [docs/superpowers/specs/2026-06-26-commercial-user-facing-ux-design.md](docs/superpowers/specs/2026-06-26-commercial-user-facing-ux-design.md)
 - [docs/evidence/commercial-user-flow-sprint49.json](docs/evidence/commercial-user-flow-sprint49.json)
+- [docs/evidence/commercial-user-flow-sprint50-visual-qa.json](docs/evidence/commercial-user-flow-sprint50-visual-qa.json)
 
 ## Hosted Ops Readiness
 
@@ -81,6 +82,7 @@ Sprint 46 tightens the final local public boundary: legacy verifier failure valu
 Sprint 47 tightens client-side public error copy: checked-in browser assets no longer render raw exception-message fallback strings for static demo, demo control room, wallet, approve, deposit, verify, or live API fallback paths. It does not change the external blocker state or authorize protected CI, hosting, managed infrastructure, partner traffic, staging execution, wallet actions, or release promotion.
 Sprint 48 defines the future commercial user-facing UX as a design-only spec: Action Page, Wallet/Network Gate, Intent Preview, Transaction Progress, Verified Receipt, My Receipts, Help/Recovery, and public share receipt boundaries. It does not implement UI, deploy, dispatch protected CI, change wallet behavior, or alter the existing reviewer/operator/partner routes.
 Sprint 49 implements that commercial user-facing UX locally. It adds `/user`, `/user/receipt/<receiptHash>`, `/user/receipts`, and `/user/help`, plus user-flow state, copy, receipt projection, recovery models, public route mapping, and bounded-copy guards. It does not deploy, dispatch protected CI, connect managed infrastructure, install dependencies, run chain-operation package commands, or authorize server/script wallet transactions.
+Sprint 50 polishes and verifies the commercial user-facing UX locally. It tightens `/user` layout, action readiness cards, progress rail framing, receipt actions, help/recovery spacing, static `/demo` bounded fallback projections, and desktop/mobile browser smoke evidence. It does not deploy, dispatch protected CI, connect managed infrastructure, install dependencies, run chain-operation package commands, or send wallet transactions.
 Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
