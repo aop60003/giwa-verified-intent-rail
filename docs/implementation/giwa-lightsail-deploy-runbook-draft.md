@@ -39,6 +39,19 @@ docs/evidence/lightsail-staging-preflight-sprint52.json
 
 Sprint 52 keeps the current result `no-go`. It records required external inputs, service and proxy drafts, runtime variable names only, backup/restore gates, smoke list, rollback owner requirements, and local-advisory authority. It does not authorize AWS resource creation, public deployment, DNS/HTTPS configuration, managed infrastructure connection, protected CI dispatch, credential value capture, wallet actions, chain-operation package commands, dependency installation, or release promotion.
 
+## Sprint 53 Execution Plan Package
+
+Use these documents before any later execution sprint:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md
+docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md
+docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md
+docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json
+```
+
+Sprint 53 remains planning-only. It records the later sequence for selected commit verification, Lightsail instance creation, runtime installation, source or artifact fetch, build or unpack, runtime injection, systemd, Nginx, HTTPS, smoke, evidence, rollback, and go/no-go. It does not authorize AWS resource creation, public deployment, DNS/HTTPS configuration, managed infrastructure connection, protected CI dispatch, credential value capture, wallet actions, chain-operation package commands, dependency installation, or release promotion.
+
 ## Artifact Source
 
 Approved artifact source must be one of:

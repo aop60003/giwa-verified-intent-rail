@@ -1125,6 +1125,52 @@ Sprint 52 preflight blockers:
 
 Sprint 52 cannot unblock staging execution. It only makes the preflight review package complete before a later Sprint 53 execution approval.
 
+## Sprint 53 Lightsail Staging Deploy Execution After Explicit Approval
+
+Sprint 53 plan, execution plan, smoke/rollback plan, and evidence:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md
+docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md
+docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md
+docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json
+```
+
+Current Sprint 53 blocker state:
+
+```text
+authority=local-advisory
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+managedInfrastructureConnected=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+partnerCustomerSignoff=absent
+releaseApproval=absent
+stagingDryRunExecution=blocked
+commercialReadiness=blocked
+goNoGo=no-go
+```
+
+Sprint 53 execution blockers:
+
+| Blocker | Current status | Required evidence | Staging impact |
+| --- | --- | --- | --- |
+| Explicit deploy approval | absent | named release owner approves Sprint 54 execution scope | blocks all host work |
+| Selected source or artifact | absent | selected commit, protected artifact metadata, or explicit local-advisory exception | blocks code transfer |
+| Lightsail provisioning approval | absent | account, billing, region, plan, firewall, owner, and spend stop condition | blocks instance creation |
+| Runtime and build approval | absent | Node runtime source, build strategy, dependency policy, artifact or source path | blocks app setup |
+| Runtime injection approval | absent | approved server-only injection method with values excluded from docs and public artifacts | blocks live service |
+| Nginx and HTTPS approval | absent | route table, hostname, HTTPS method, renewal owner, and rollback behavior | blocks public route |
+| Smoke and rollback owners | absent | smoke route list, release owner, rollback owner, backup owner, and incident route | blocks go/no-go |
+| Public user traffic approval | absent | partner/customer signoff or explicit internal-only staging exception | blocks public user access |
+
+Sprint 53 cannot unblock staging execution. It only defines the execution sequence for a later Sprint 54 after explicit approval.
+
 ## Sprint 21 Failure Triage
 
 | Priority | Failure | Signal | Route | Required response |

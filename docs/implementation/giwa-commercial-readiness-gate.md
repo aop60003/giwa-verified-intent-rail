@@ -654,3 +654,38 @@ goNoGo=no-go
 Sprint 52 defines the deploy preflight checklist only. It does not create AWS resources, public-host, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
 
 Before Sprint 53 can execute a deploy path, the operator must record account/billing readiness, region, instance plan, domain/subdomain, HTTPS method, credential injection method, backup destination, restore drill gate, protected CI or explicit local-advisory exception, release approval owner, and rollback owner.
+
+## Sprint 53 Lightsail Staging Deploy Execution Planning Gate
+
+Sprint 53 local-advisory outputs are:
+
+```text
+docs/superpowers/plans/2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md
+docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md
+docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md
+docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json
+```
+
+Commercial readiness remains blocked:
+
+```text
+authority=local-advisory
+releaseGrade=false
+commercialReadiness=blocked
+stagingDryRunExecution=blocked
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+partnerCustomerSignoff=absent
+releaseApproval=absent
+goNoGo=no-go
+```
+
+Sprint 53 defines the deploy execution plan only. It does not create AWS resources, public-host, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, send wallet actions, run GIWA chain-operation package commands, install dependencies, invent protected provenance, invent partner signoff, or invent staging URLs.
+
+Before Sprint 54 can execute deployment, the operator must record explicit deployment approval, selected source or artifact, runtime and build policy, runtime injection method, Nginx/HTTPS approval, smoke route approval, backup/restore approval, release owner, rollback owner, and public user traffic approval.

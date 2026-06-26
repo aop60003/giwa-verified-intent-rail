@@ -1,0 +1,78 @@
+{
+  "sprint": 53,
+  "title": "Lightsail Staging Deploy Execution After Explicit Approval",
+  "authority": "local-advisory",
+  "generatedAt": "2026-06-26",
+  "sourceSprint": 52,
+  "scope": {
+    "planningOnly": true,
+    "awsResourceCreated": false,
+    "lightsailInstanceCreated": false,
+    "publicDeployExecuted": false,
+    "dnsConfigured": false,
+    "httpsConfigured": false,
+    "managedInfrastructureConnected": false,
+    "protectedCiDispatchOrRerunExecuted": false,
+    "walletTransactionSent": false,
+    "chainOperationPackageCommandExecuted": false,
+    "dependencyInstalled": false,
+    "runtimeValuesRequested": false,
+    "envFileContentRead": false
+  },
+  "documents": {
+    "plan": "docs/superpowers/plans/2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md",
+    "executionPlan": "docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md",
+    "smokeAndRollbackPlan": "docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md"
+  },
+  "requiredApprovalsBeforeExecution": [
+    "AWS/Lightsail account and billing approval",
+    "instance region and plan approval",
+    "domain and HTTPS approval",
+    "runtime value injection approval",
+    "backup destination approval",
+    "protected CI pass or explicit local-advisory exception approval",
+    "release owner approval",
+    "rollback owner approval",
+    "partner/customer signoff or explicit internal-only staging exception"
+  ],
+  "plannedExecutionSequence": [
+    "verify current git commit",
+    "create Lightsail instance",
+    "install runtime",
+    "fetch source or artifact",
+    "build app",
+    "create runtime injection",
+    "configure systemd",
+    "configure Nginx",
+    "enable HTTPS",
+    "smoke test",
+    "record evidence",
+    "rollback or go/no-go"
+  ],
+  "smokeRoutes": [
+    "/user",
+    "/user/receipts",
+    "/user/help",
+    "/user/receipt/<hash>",
+    "/live",
+    "/demo",
+    "/partner",
+    "/healthz",
+    "/readyz",
+    "/api/partner/runs"
+  ],
+  "rollbackPlan": {
+    "stopServices": true,
+    "revertReleaseDirectoryOrCommit": true,
+    "restoreNginxConfig": true,
+    "restoreDbBackupIfApproved": true,
+    "preserveLogsAndEvidence": true
+  },
+  "blockers": [
+    "no protected CI provenance unless CI actually passes",
+    "no release-grade claim until protected artifact metadata or approved exception exists",
+    "no public user traffic until signoff",
+    "no deployment until explicit approval records exist"
+  ],
+  "nextSprintCandidate": "docs/superpowers/plans/2026-06-26-sprint-54-lightsail-staging-deploy-after-explicit-approval.md"
+}

@@ -12,7 +12,7 @@ Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpower
 
 The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
 
-Current state is a local-review handoff freeze with Sprint 52 Lightsail staging deploy preflight packaging completed locally after the Sprint 51 Lightsail architecture and cost plan. Sprint 52 defines the deploy preflight checklist, systemd/Nginx draft, runtime injection boundary, backup/restore gate, and no-go blockers, but it does not create infrastructure, deploy, configure DNS/HTTPS, connect managed infrastructure, or change protected CI status. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, Sprint 49 evidence, Sprint 50 visual QA evidence, Sprint 51 Lightsail plan, and Sprint 52 preflight package before any demo route or staging discussion. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current state is a local-review handoff freeze with Sprint 53 Lightsail staging deploy execution planning completed locally after the Sprint 51 architecture and Sprint 52 preflight package. Sprint 53 defines the explicit-approval deployment sequence, smoke plan, rollback path, evidence capture, and go/no-go handoff, but it does not create infrastructure, deploy, configure DNS/HTTPS, connect managed infrastructure, or change protected CI status. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, Sprint 49 evidence, Sprint 50 visual QA evidence, Sprint 51 Lightsail plan, Sprint 52 preflight package, and Sprint 53 execution plan before any demo route or staging discussion. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
 
 ## Final Demo Pack
 
@@ -72,6 +72,7 @@ Evidence paths:
 - [docs/evidence/commercial-user-flow-sprint50-visual-qa.json](docs/evidence/commercial-user-flow-sprint50-visual-qa.json)
 - [docs/evidence/lightsail-staging-plan-sprint51.json](docs/evidence/lightsail-staging-plan-sprint51.json)
 - [docs/evidence/lightsail-staging-preflight-sprint52.json](docs/evidence/lightsail-staging-preflight-sprint52.json)
+- [docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json](docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json)
 
 ## Hosted Ops Readiness
 
@@ -87,6 +88,7 @@ Sprint 49 implements that commercial user-facing UX locally. It adds `/user`, `/
 Sprint 50 polishes and verifies the commercial user-facing UX locally. It tightens `/user` layout, action readiness cards, progress rail framing, receipt actions, help/recovery spacing, static `/demo` bounded fallback projections, and desktop/mobile browser smoke evidence. It does not deploy, dispatch protected CI, connect managed infrastructure, install dependencies, run chain-operation package commands, or send wallet transactions.
 Sprint 51 plans a future Lightsail staging path. It documents a Ubuntu instance topology, Node static/live services, Nginx reverse proxy, HTTPS options, systemd service shape, cost and sizing model, deploy runbook draft, and staging go/no-go blockers. It does not create AWS resources, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, dispatch protected CI, install dependencies, run chain-operation package commands, or send wallet transactions.
 Sprint 52 turns that path into a deploy preflight package. It documents external approval inputs, `giwa-static.service` and `giwa-live.service` drafts, Nginx route ownership, server-only runtime variable names, SQLite backup/restore gates, smoke checks, rollback triggers, and no-go conditions. It does not create AWS resources, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, dispatch protected CI, install dependencies, run chain-operation package commands, or send wallet transactions.
+Sprint 53 turns the preflight into an explicit-approval execution plan. It documents verifying the selected commit, creating a Lightsail instance, installing runtime, fetching source or artifact, building or unpacking the app, configuring runtime injection, systemd, Nginx, HTTPS, smoke, evidence capture, rollback, and go/no-go. It does not create AWS resources, deploy, configure DNS or HTTPS, connect managed infrastructure, request credential values, dispatch protected CI, install dependencies, run chain-operation package commands, or send wallet transactions.
 Sprint 20 CI and Source Provenance is the historical source-control and protected-check planning package.
 Sprint 21 CI Workflow Implementation is the gated execution plan for source-control transition, reviewed workflow creation, and protected provenance checks.
 Sprint 22 Artifact Manifest Local Implementation adds local-advisory artifact inventory, hashing, scan, and provenance report outputs without enabling protected CI or deployment.
@@ -192,6 +194,10 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Sprint 52 Lightsail env and credential injection preflight](docs/implementation/giwa-lightsail-env-and-secret-injection-preflight.md)
 - [Sprint 52 Lightsail backup restore preflight](docs/implementation/giwa-lightsail-backup-restore-preflight.md)
 - [Sprint 52 Lightsail staging preflight evidence](docs/evidence/lightsail-staging-preflight-sprint52.json)
+- [Sprint 53 Lightsail staging deploy execution plan](docs/superpowers/plans/2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md)
+- [Sprint 53 Lightsail staging deploy execution record](docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md)
+- [Sprint 53 Lightsail staging smoke and rollback plan](docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md)
+- [Sprint 53 Lightsail staging execution plan evidence](docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json)
 - [Sprint 30 GitHub Actions startup failure triage](docs/implementation/giwa-github-actions-startup-failure-triage.md)
 - [Sprint 22 local artifact manifest](docs/evidence/local-artifact-manifest.json)
 - [Sprint 23 local provenance report](docs/evidence/local-provenance-report.json)
