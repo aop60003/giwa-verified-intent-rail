@@ -3,7 +3,7 @@
 <!-- agent-template v0.2.0 · https://github.com/aop60003/agent -->
 
 This file defines how AI coding agents (Claude Code, Codex, Cursor, Copilot, etc.) should operate in this repository.
-It is a **project-wide guide** for the Looprail documentation workspace.
+It is a **project-wide guide** for the GIWA Verified Intent Rail MVP workspace.
 
 > If repository code, tests, configs, or maintainer instructions conflict with this file, follow the **more specific source of truth**.
 
@@ -11,13 +11,22 @@ It is a **project-wide guide** for the Looprail documentation workspace.
 
 ## 1. Project Overview
 
-Documentation workspace for the GASOK MVP concept currently positioned as `GIWA Verified Intent Rail`.
+MVP workspace for the GASOK concept currently positioned as `GIWA Verified Intent Rail`.
+
+The repository now contains the local-review submission packet plus a pnpm TypeScript workspace for:
+
+- static and local-live web demo surfaces
+- protocol hashing/signing/receipt libraries
+- local mock contracts and GIWA Sepolia operation scripts
+- local-advisory evidence, provenance, and deployment planning documents
 
 ---
 
 ## 2. Tech Stack
 
-Documentation-only at the moment. PowerShell helper scripts are used for local Engram memory.
+pnpm monorepo using TypeScript, Vitest, viem, Hardhat 3, Solidity, dependency-free public browser assets, Node.js helper scripts, and PowerShell CI/Engram helper scripts.
+
+The current local checkout may not have `node_modules` installed. Installing dependencies remains an ASK FIRST action.
 
 ---
 
@@ -28,6 +37,12 @@ Documentation-only at the moment. PowerShell helper scripts are used for local E
 - `04_giwa_agent_permission_sandbox.md` - alternative GASOK idea candidate
 - `05_giwa_flashtrace_replay_studio.md` - alternative GASOK idea candidate
 - `06_giwa_builder_proofbook.md` - alternative GASOK idea candidate
+- `apps/web/` - static demo, commercial `/user` flow, local live API, verifier, provenance, wallet, transaction, and partner modules
+- `packages/protocol/` - canonical manifest, receipt, hash, signer, and evidence primitives
+- `packages/contracts/` - Solidity mock token, mock vault, IntentRail event contract, Hardhat tests, and gated chain-operation scripts
+- `docs/implementation/` - runbooks, blocker registers, staging and handoff records
+- `docs/evidence/` - public-safe evidence JSON, provenance reports, visual QA artifacts, and local-advisory handoff records
+- `.github/workflows/` - protected CI workflow definitions; do not dispatch or alter without explicit approval
 - `scripts/engram-local.ps1` - project-local Engram wrapper
 
 ---
@@ -45,14 +60,62 @@ Documentation-only at the moment. PowerShell helper scripts are used for local E
 ## 5. Commands
 
 ### 5.1 Setup / Build
-No setup/build command exists yet. This repository is currently documentation-only.
+
+Dependency installation is approval-gated:
+
+```powershell
+pnpm install --frozen-lockfile
+```
+
+Common local commands after dependencies are installed:
+
+```powershell
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm --filter @giwa/web --fail-if-no-match serve
+```
+
+Treat full builds, dependency installation, live servers, and any chain-operation package command as approval-sensitive when they are not clearly required by the current task.
 
 ### 5.2 Testing
-No automated test suite exists yet. For documentation verification, run targeted scans such as:
+
+Automated tests exist, but require dependencies to be installed. Use focused checks first:
+
+```powershell
+pnpm --filter @giwa/web --fail-if-no-match test
+pnpm --filter @giwa/protocol --fail-if-no-match test
+pnpm --filter @giwa/contracts --fail-if-no-match test
+pnpm --filter @giwa/web --fail-if-no-match typecheck
+pnpm --filter @giwa/protocol --fail-if-no-match typecheck
+pnpm --filter @giwa/contracts --fail-if-no-match typecheck
+```
+
+Dependency-free checks that are safe when `node_modules` is absent:
+
+```powershell
+node --check apps/web/public/flow.js
+node --check apps/web/public/live-flow.js
+node --check apps/web/public/user-flow.js
+node --check apps/web/public/demo-control-room.js
+node --check apps/web/scripts/export-artifact-manifest.mjs
+node --check apps/web/scripts/verify-provenance-report.mjs
+node --check apps/web/scripts/serve-static.mjs
+node --check apps/web/scripts/serve-live.mjs
+```
+
+For documentation and public-boundary verification, run targeted scans such as:
 
 ```powershell
 rg -n "TODO|FIXME|TBD" . -g "*.md"
 rg -n "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|real yield" . -g "*.md"
+```
+
+When PowerShell is available, the CI helper scans are:
+
+```powershell
+pwsh -NoProfile -File scripts\ci\check-package-script-boundary.ps1
+pwsh -NoProfile -File scripts\ci\check-safe-scans.ps1
 ```
 
 ---
@@ -62,6 +125,9 @@ rg -n "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|re
 - Follow surrounding code style — do not introduce new patterns
 - Pattern reference file: `03_giwa_verified_intent_rail_positioning.md`
 - Alternative idea reference files: `04_giwa_agent_permission_sandbox.md`, `05_giwa_flashtrace_replay_studio.md`, `06_giwa_builder_proofbook.md`
+- Public browser assets in `apps/web/public/` intentionally avoid framework dependencies.
+- TypeScript packages use strict settings from `tsconfig.base.json`.
+- Gated chain-operation scripts live in `packages/contracts/scripts/`; do not run them without explicit approval.
 
 ---
 
@@ -78,6 +144,10 @@ rg -n "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|re
 - Delete files/directories
 - Git push, branch merge
 - Run full builds (time-consuming)
+- Dispatch or rerun protected CI
+- Start live servers that read local env files
+- Run `serve:live`, `export:live-demo`, `deploy:*`, `fund:giwa`, `preflight:giwa`, `sign:manifest`, `anchor:giwa`, or `verify:giwa`
+- Create cloud resources, configure DNS/HTTPS, connect managed infrastructure, or execute staging smoke tests
 
 ### NEVER (forbidden)
 - Commit .env, credentials, secrets
@@ -85,6 +155,8 @@ rg -n "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|re
 - Run `rm -rf`, `git reset --hard`, or other destructive commands
 - Modify production DB directly
 - Delete or skip tests without approval (legitimate removal when a feature is genuinely gone — flag the intent, don't silently remove)
+- Read, print, log, or paste local `.env` values or wallet signing material
+- Treat local-advisory provenance as protected CI or release-grade evidence
 
 ---
 
@@ -132,6 +204,7 @@ A task is not complete just because code was written. Show evidence.
 - `03_giwa_verified_intent_rail_positioning.md` is the canonical external pitch source.
 - The MVP should be framed as one GIWA Sepolia flagship flow, not a dashboard-first or multi-template product.
 - ProofKPI is evidence/reporting for manifest-covered testnet actions, not a security, KYC, or RWA settlement layer.
+- Current Sprint 53 state is local-advisory planning only: no Lightsail instance, DNS/HTTPS, managed infrastructure, public deployment, protected artifact metadata, release approval, or partner/customer signoff exists unless later evidence proves otherwise.
 
 ---
 
@@ -204,7 +277,7 @@ For large features, use checkpoints. If context exceeds 70%, save state to `.cla
 
 ### 13.1 Secrets
 - NEVER log, commit, or echo secret values. Reference via env vars or a secret manager only.
-- No secrets are required for the current documentation workspace. If app development starts, keep local secrets in a git-ignored `.env` and document required variable names without values.
+- Local live and chain-operation paths may use server-only env vars. Keep local secrets in git-ignored `.env` files and document required variable names without values.
 - If a secret is accidentally committed: rotate immediately, then scrub history (`git filter-repo`).
 
 ### 13.2 Dependencies (gate detail for §7 ASK FIRST)
@@ -218,6 +291,8 @@ Before proposing a new dependency, verify: (a) license is compatible, (b) last r
 1. Read `AGENTS.md` (this file), then `README.md`.
 2. Scan `03_giwa_verified_intent_rail_positioning.md`.
 3. Run the documentation verification scans in section 5.2.
+4. Check whether dependencies are installed before claiming test/typecheck/build results.
+5. Open the Sprint 43 blocker handoff and Sprint 51-53 Lightsail planning records before any staging or demo-route discussion.
 
 ---
 

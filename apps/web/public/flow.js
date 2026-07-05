@@ -1,4 +1,5 @@
 const app = document.querySelector("#app");
+const REQUEST_TIMEOUT_MS = 8000;
 
 function el(tag, options = {}, children = []) {
   const node = document.createElement(tag);
@@ -17,9 +18,25 @@ function el(tag, options = {}, children = []) {
   return node;
 }
 
+async function fetchWithTimeout(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(path, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function shortHash(value) {
   if (!value) return "pending";
   return `${value.slice(0, 10)}...${value.slice(-6)}`;
+}
+
+function compactInteger(value) {
+  const text = String(value ?? "0");
+  if (!/^\d+$/.test(text) || text.length <= 8) return text;
+  return `${text[0]}.${text.slice(1, 3)}e${text.length - 1}`;
 }
 
 function field(label, value, href) {
@@ -36,6 +53,23 @@ function metric(label, value, detail) {
     el("span", { className: "field-label", text: label }),
     el("strong", { text: String(value) }),
     el("span", { className: "muted", text: detail })
+  ]);
+}
+
+function partnerKpi(label, value, detail) {
+  return el("section", { className: "partner-kpi" }, [
+    el("span", { className: "field-label", text: label }),
+    el("strong", { text: String(value) }),
+    el("span", { className: "muted", text: detail })
+  ]);
+}
+
+function ledgerField(label, value, href) {
+  return el("div", { className: "partner-ledger-row" }, [
+    el("span", { className: "field-label", text: label }),
+    href
+      ? el("a", { className: "mono hash-wrap", href, text: shortHash(value) })
+      : el("span", { className: "mono hash-wrap", text: String(value ?? "pending") })
   ]);
 }
 
@@ -68,27 +102,23 @@ function renderEvidencePacket(partner) {
   if (!packet) return el("span");
   const firstRow = packet.rows[0];
 
-  return el("section", { className: "band packet-band" }, [
+  return el("section", { className: "band packet-band partner-packet-band" }, [
     el("div", { className: "section-heading" }, [
       el("p", { className: "eyebrow", text: "Evidence packet" }),
-      el("h2", { text: `${packet.campaignId} / ${packet.missionId}` })
+      el("h2", { text: `${packet.campaignId} / ${packet.missionId}` }),
+      el("a", { className: "secondary-link", href: packet.exportLinks.snapshotPath, text: "Snapshot JSON" })
     ]),
-    el("div", { className: "metric-grid" }, [
-      metric("Matched receipts", packet.kpis.matchedReceiptCount, "gate-passed receipt rows"),
-      metric("Matched tx rate", packet.kpis.matchedTxRate, "matched receipts / submitted deposits"),
-      metric("Mock testnet amount", packet.kpis.mockTestnetDepositAmountBaseUnits, "base units in matched packet"),
-      metric("Fixture rows", packet.sourceMix.fixture, "recorded evidence rows"),
-      metric("Live rows", packet.sourceMix.live, "fresh live evidence rows"),
-      metric("Replay status", packet.evidence.replayStatus, "public evidence replay")
-    ]),
-    el("section", { className: "panel proof-row" }, [
-      field("Source label", firstRow?.source ?? "none"),
-      field("Receipt hash", firstRow?.receiptHash ?? "locked", firstRow?.receiptPermalink ?? null),
-      field("Deposit tx", firstRow?.depositTxHash ?? "pending"),
-      field("Verifier input hash", firstRow?.verifierInputHash ?? "pending"),
-      field("Standard RPC status", packet.evidence.standardRpc.status),
-      field("Confirmation depth", packet.evidence.standardRpc.confirmationDepth),
-      field("Snapshot", packet.exportLinks.snapshotPath)
+    el("section", { className: "panel partner-source-ledger" }, [
+      ledgerField("Source label", firstRow?.source ?? "none"),
+      ledgerField("Run id", firstRow?.runId ?? "pending"),
+      ledgerField("Dedupe key", firstRow?.dedupeKey ?? "pending"),
+      ledgerField("Wallet", firstRow?.wallet ?? "pending"),
+      ledgerField("Receipt hash", firstRow?.receiptHash ?? "locked", firstRow?.receiptPermalink ?? null),
+      ledgerField("Deposit tx", firstRow?.depositTxHash ?? "pending", firstRow?.depositExplorerUrl ?? null),
+      ledgerField("Decision tx", firstRow?.decisionTxHash ?? "pending", firstRow?.decisionExplorerUrl ?? null),
+      ledgerField("Block hash", firstRow?.blockHash ?? "pending"),
+      ledgerField("Standard RPC status", packet.evidence.standardRpc.status),
+      ledgerField("Confirmation depth", packet.evidence.standardRpc.confirmationDepth)
     ])
   ]);
 }
@@ -100,10 +130,10 @@ function renderPartnerConsole(model) {
   const row = partner.rows[0];
   app.textContent = "";
   app.append(
-    el("section", { className: "hero-flow partner-hero" }, [
-      el("div", { className: "hero-copy" }, [
-        el("p", { className: "eyebrow", text: "Partner ProofKPI console" }),
-        el("h1", { text: "Mock testnet action evidence" }),
+    el("section", { className: "partner-console-hero" }, [
+      el("div", { className: "partner-console-copy" }, [
+        el("p", { className: "eyebrow", text: "Protocol Evidence Console" }),
+        el("h1", { text: "Manifest-matched testnet evidence" }),
         el("p", { className: "lead", text: partner.partnerExplanation }),
         el("div", { className: "hero-actions" }, [
           el("a", { className: "primary-link", href: partner.exportSnapshot.snapshotPath, download: "partner-snapshot.json", text: "Download JSON snapshot" }),
@@ -112,59 +142,57 @@ function renderPartnerConsole(model) {
             : el("span", { className: "disabled-link", text: "Receipt pending" })
         ])
       ]),
-      el("div", { className: "hero-status" }, [
-        el("span", { className: "status-pill", text: summary.matchedStatus }),
-        el("span", { className: "mono hash-xl", text: shortHash(cards.receiptHash) }),
-        el("p", { className: "muted", text: partner.source.evidenceDraftUntilSprint7 ? "Pre-final evidence snapshot." : "Evidence snapshot." })
+      el("aside", { className: "partner-receipt-terminal" }, [
+        el("div", { className: "partner-terminal-heading" }, [
+          el("span", { className: "status-pill ready", text: summary.matchedStatus }),
+          el("span", { className: "mono", text: "receipt" })
+        ]),
+        el("strong", { className: "mono partner-receipt-hash", text: shortHash(cards.receiptHash) }),
+        ledgerField("Matched tx rate", summary.matchedTxRate),
+        ledgerField("Receipt rows", summary.manifestMatchedReceiptCount),
+        ledgerField("Source", partner.source.evidenceDraftUntilSprint7 ? "pre-final snapshot" : "evidence snapshot")
       ])
     ]),
-    renderEvidencePacket(partner),
-    el("section", { className: "band" }, [
-      el("div", { className: "section-heading" }, [
-        el("p", { className: "eyebrow", text: "KPI summary" }),
-        el("h2", { text: `${summary.campaignId} / ${summary.missionId}` })
-      ]),
-      el("div", { className: "metric-grid" }, [
-        metric("Campaign entries", summary.campaignEntryCount, "fixture and live rows are deduped by run"),
-        metric("Wallet connected", summary.walletConnectedCount, "same campaign, mission, wallet, intent"),
-        metric("Deposit submitted", summary.depositSubmittedCount, "mock testnet transaction count"),
-        metric("Receipt matched", summary.manifestMatchedReceiptCount, "manifest-matched receipt count"),
-        metric("Matched tx rate", summary.matchedTxRate, `${summary.matchedTxRateNumerator}/${summary.matchedTxRateDenominator || 0} deposits`),
-        metric("Mock testnet deposit amount", summary.mockTestnetDepositAmountBaseUnits, `${summary.mockTestnetDepositCount} matched mock deposit`)
-      ])
+    el("section", { className: "partner-kpi-band" }, [
+      partnerKpi("Campaign entries", summary.campaignEntryCount, "deduped by run"),
+      partnerKpi("Wallet connected", summary.walletConnectedCount, "same wallet and intent"),
+      partnerKpi("Deposit submitted", summary.depositSubmittedCount, "mock testnet tx count"),
+      partnerKpi("Receipt matched", summary.manifestMatchedReceiptCount, "manifest-matched rows"),
+      partnerKpi("Matched tx rate", summary.matchedTxRate, `${summary.matchedTxRateNumerator}/${summary.matchedTxRateDenominator || 0} deposits`),
+      partnerKpi("Mock testnet amount", compactInteger(summary.mockTestnetDepositAmountBaseUnits), `base units, ${summary.mockTestnetDepositCount} matched deposit`)
     ]),
-    el("section", { className: "band" }, [
+    el("section", { className: "band partner-ledger-band" }, [
       el("div", { className: "section-heading" }, [
-        el("p", { className: "eyebrow", text: "Evidence cards" }),
+        el("p", { className: "eyebrow", text: "Evidence ledger" }),
         el("h2", { text: "Receipt, transaction, signer, and logs" })
       ]),
-      el("div", { className: "proof-grid" }, [
-        el("section", { className: "panel" }, [
+      el("div", { className: "partner-ledger-grid" }, [
+        el("section", { className: "panel partner-ledger-panel" }, [
           el("div", { className: "panel-heading" }, [el("p", { className: "eyebrow", text: "Receipt" }), el("h2", { text: "Matched output" })]),
-          field("Receipt hash", cards.receiptHash, row?.receiptPermalink),
-          field("Decision tx", cards.decisionTxHash, row?.decisionExplorerUrl),
-          field("Deposit tx", cards.depositTxHash, row?.depositExplorerUrl),
-          field("Intent submitted tx", cards.intentSubmittedTxHash)
+          ledgerField("Receipt hash", cards.receiptHash, row?.receiptPermalink),
+          ledgerField("Decision tx", cards.decisionTxHash, row?.decisionExplorerUrl),
+          ledgerField("Deposit tx", cards.depositTxHash, row?.depositExplorerUrl),
+          ledgerField("Intent submitted tx", cards.intentSubmittedTxHash)
         ]),
-        el("section", { className: "panel" }, [
+        el("section", { className: "panel partner-ledger-panel" }, [
           el("div", { className: "panel-heading" }, [el("p", { className: "eyebrow", text: "Confirmation" }), el("h2", { text: "Standard RPC only" })]),
-          field("Receipt status", cards.standardConfirmation.status),
-          field("Block number", cards.standardConfirmation.blockNumber),
-          field("Block hash", cards.standardConfirmation.blockHash),
-          field("Confirmation depth", cards.standardConfirmation.confirmationDepth),
-          field("Flashblocks namespace", `${cards.fastFeedback.namespace} - not final`)
+          ledgerField("Receipt status", cards.standardConfirmation.status),
+          ledgerField("Block number", cards.standardConfirmation.blockNumber),
+          ledgerField("Block hash", cards.standardConfirmation.blockHash),
+          ledgerField("Confirmation depth", cards.standardConfirmation.confirmationDepth),
+          ledgerField("Flashblocks namespace", `${cards.fastFeedback.namespace} - not final`)
         ]),
-        el("section", { className: "panel" }, [
+        el("section", { className: "panel partner-ledger-panel" }, [
           el("div", { className: "panel-heading" }, [el("p", { className: "eyebrow", text: "Manifest signer" }), el("h2", { text: cards.manifestSigner.signerMatched ? "Recovered signer matched" : "Signer mismatch" })]),
-          field("Expected signer", cards.manifestSigner.expectedSigner),
-          field("Recovered signer", cards.manifestSigner.recoveredSigner),
-          field("Signer matched", cards.manifestSigner.signerMatched ? "yes" : "no")
+          ledgerField("Expected signer", cards.manifestSigner.expectedSigner),
+          ledgerField("Recovered signer", cards.manifestSigner.recoveredSigner),
+          ledgerField("Signer matched", cards.manifestSigner.signerMatched ? "yes" : "no")
         ]),
-        el("section", { className: "panel" }, [
+        el("section", { className: "panel partner-ledger-panel" }, [
           el("div", { className: "panel-heading" }, [el("p", { className: "eyebrow", text: "Decoded logs" }), el("h2", { text: "Manifest evidence" })]),
           el(
             "div",
-            { className: "log-list" },
+            { className: "log-list partner-log-list" },
             cards.decodedLogSummary.map((log) =>
               el("div", { className: "event-row" }, [
                 el("span", { text: `${log.eventName} #${log.logIndex}` }),
@@ -175,22 +203,8 @@ function renderPartnerConsole(model) {
         ])
       ])
     ]),
-    el("section", { className: "band" }, [
-      el("div", { className: "section-heading" }, [
-        el("p", { className: "eyebrow", text: "Fixture source" }),
-        el("h2", { text: "One proof row" })
-      ]),
-      el("section", { className: "panel proof-row" }, [
-        field("Source", row?.source ?? "fixture"),
-        field("Evidence path", partner.source.evidencePath),
-        field("Source timestamp", partner.source.sourceTimestamp),
-        field("Run id", row?.runId),
-        field("Dedupe key", row?.dedupeKey),
-        field("Wallet", row?.wallet),
-        field("Verified state", `${row?.verifiedState ?? "guest"} - read-only`),
-        field("Status", row?.status ?? "pending"),
-        field("Block hash", row?.blockHash)
-      ]),
+    renderEvidencePacket(partner),
+    el("section", { className: "band partner-ledger-band" }, [
       el("p", { className: "notice", text: "Metrics describe one GIWA Sepolia mock testnet action. Flashblocks is shown only as non-final fast feedback." })
     ])
   );
@@ -439,7 +453,7 @@ function render(model) {
 
 async function main() {
   try {
-    const response = await fetch("/flow-data.json", { cache: "no-store" });
+    const response = await fetchWithTimeout("/flow-data.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`flow-data ${response.status}`);
     render(await response.json());
   } catch {

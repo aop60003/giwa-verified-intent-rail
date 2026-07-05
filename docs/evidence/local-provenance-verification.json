@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "verificationKind": "local-provenance-verification",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-26T06:04:40.457Z",
+  "generatedAt": "2026-07-05T05:28:26.179Z",
   "manifestPath": "docs/evidence/local-artifact-manifest.json",
   "reportPath": "docs/evidence/local-provenance-report.json",
   "verificationDecision": "pass",
@@ -15,7 +15,7 @@
     "failures": []
   },
   "reportHashPolicy": "external-only",
-  "reportSha256": "b577abbf271a25ecb399b5ee089dbe44a4ffed763d0134b315cb36e16079545a",
+  "reportSha256": "ae5d68e66f8b1bac9808397e45460ff6ac08c2f3f8f35489c6c1353fc9d50330",
   "sidecar": {
     "path": "docs/evidence/local-provenance-report.json.sha256",
     "decision": "pass"

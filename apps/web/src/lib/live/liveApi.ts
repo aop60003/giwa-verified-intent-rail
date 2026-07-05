@@ -121,10 +121,33 @@ function optionalString(body: Record<string, unknown>, key: string): string | nu
   return value.trim();
 }
 
+function requiredBoundedString(body: Record<string, unknown>, key: string, maxLength: number): string {
+  const value = requiredString(body, key);
+  if (value.length > maxLength) throw new Error(`${key} is too long`);
+  if (/[\u0000-\u001f\u007f]/u.test(value)) throw new Error(`${key} contains unsupported characters`);
+  return value;
+}
+
+function optionalBoundedString(body: Record<string, unknown>, key: string, maxLength: number): string | null {
+  const value = optionalString(body, key);
+  if (value === null || value.length === 0) return null;
+  if (value.length > maxLength) throw new Error(`${key} is too long`);
+  if (/[\u0000-\u001f\u007f]/u.test(value)) throw new Error(`${key} contains unsupported characters`);
+  return value;
+}
+
 function optionalNumber(body: Record<string, unknown>, key: string): number | null {
   const value = body[key];
   if (value === null || value === undefined || value === "") return null;
   if (typeof value !== "number" || !Number.isInteger(value)) throw new Error(`${key} must be an integer`);
+  return value;
+}
+
+function requiredAddress(body: Record<string, unknown>, key: string): string {
+  const value = requiredString(body, key).toLowerCase();
+  if (!/^0x[a-f0-9]{40}$/u.test(value)) {
+    throw new Error(`${key} must be a valid address`);
+  }
   return value;
 }
 
@@ -188,12 +211,12 @@ function runResponse(
     approveAction: {
       enabled: transactionReady,
       reason: transactionReady ? null : "manifest_preview_required",
-      nextSprint: null
+      capability: transactionReady ? "ready" : "manifest_preview_required"
     },
     depositAction: {
       enabled: transactionReady,
       reason: transactionReady ? null : "manifest_preview_required",
-      nextSprint: null
+      capability: transactionReady ? "ready" : "manifest_preview_required"
     },
     approveTxHash: state?.submittedTx?.approveTxHash ?? null,
     depositTxHash: state?.submittedTx?.depositTxHash ?? null,
@@ -243,10 +266,10 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
         const tenantPolicy = rejectBodyTenantOverride(body);
         if (!tenantPolicy.ok) return { status: 400, body: errorBody(tenantPolicy.code, request.requestId) };
         const input: ManifestIssueInput = {
-          wallet: requiredString(body, "wallet").toLowerCase(),
-          campaignId: requiredString(body, "campaignId"),
-          missionId: requiredString(body, "missionId"),
-          referralCode: optionalString(body, "referralCode")
+          wallet: requiredAddress(body, "wallet"),
+          campaignId: requiredBoundedString(body, "campaignId", 96),
+          missionId: requiredBoundedString(body, "missionId", 96),
+          referralCode: optionalBoundedString(body, "referralCode", 96)
         };
         const chainId = optionalNumber(body, "chainId");
         if (chainId !== null && chainId !== GIWA_SEPOLIA_CHAIN_ID) {
@@ -339,7 +362,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             status: updated.status,
             receiptReady: false,
             receiptHash: null,
-            nextSprint: "Sprint 11"
+            verification: { status: "not_started", reason: "deposit_evidence_stored" }
           }
         };
       }
@@ -360,7 +383,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       if (intentRelayRunId !== undefined) {
         return {
           status: 409,
-          body: { error: "chain_action_disabled_until_sprint_11", runId: intentRelayRunId, nextSprint: "Sprint 11" }
+          body: {
+            error: "chain_action_unavailable",
+            runId: intentRelayRunId,
+            reason: "server_wallet_actions_are_disabled"
+          }
         };
       }
 
@@ -370,7 +397,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
         if (deps.verifyRun === undefined) {
           return {
             status: 409,
-            body: { error: "chain_action_disabled_until_sprint_11", runId: verifyRunId, nextSprint: "Sprint 11" }
+            body: { error: "verifier_unavailable", runId: verifyRunId, reason: "local_verifier_not_configured" }
           };
         }
         const run =

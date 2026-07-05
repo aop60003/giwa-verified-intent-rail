@@ -1,4 +1,5 @@
 const app = document.querySelector("#app");
+const REQUEST_TIMEOUT_MS = 8000;
 
 function el(tag, options = {}, children = []) {
   const node = document.createElement(tag);
@@ -22,9 +23,19 @@ function field(label, value, href = null) {
 }
 
 async function json(path) {
-  const response = await fetch(path, { cache: "no-store" });
+  const response = await fetchWithTimeout(path, { cache: "no-store" });
   if (!response.ok) throw new Error(`${path} ${response.status}`);
   return response.json();
+}
+
+async function fetchWithTimeout(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(path, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function optionalJson(path) {
@@ -54,6 +65,8 @@ function renderError() {
 function render(status, health, readiness, snapshot) {
   const control = status?.controlRoom;
   const projection = control?.safeProjection ?? {};
+  const liveItem = control?.openingOrder?.find((item) => item.id === "freshLive" || item.href === "/live");
+  const liveHref = liveItem?.href ?? "http://127.0.0.1:4190/live";
   app.textContent = "";
   app.append(
     el("section", { className: "hero-flow demo-hero" }, [
@@ -65,7 +78,8 @@ function render(status, health, readiness, snapshot) {
           text: "Use this local reviewer surface to choose the live path, dynamic receipt, or recorded fallback."
         }),
         el("div", { className: "hero-actions" }, [
-          el("a", { className: "primary-link", href: "/live", text: "Open live flow" }),
+          el("a", { className: "primary-link", href: liveHref, text: "Open live flow" }),
+          el("a", { className: "secondary-link", href: "/user", text: "User flow" }),
           el("a", { className: "secondary-link", href: "/", text: "Static fallback" }),
           el("a", { className: "secondary-link", href: "/partner", text: "Partner packet" })
         ])

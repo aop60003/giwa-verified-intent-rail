@@ -39,6 +39,12 @@ describe("verifier input evidence", () => {
     expect(computeVerifierInputHash(verifierInputFixture)).toMatch(/^0x[a-f0-9]{64}$/);
   });
 
+  it("requires a non-empty verifier version", () => {
+    expect(() => canonicalVerifierInputPayload({ ...verifierInputFixture, verifierVersion: "  " })).toThrow(
+      "verifierVersion must be a non-empty trimmed string"
+    );
+  });
+
   it("exports Sprint 1 golden vectors for downstream sprints", () => {
     expect(SPRINT1_GOLDEN_VECTORS.campaignIdBytes32.hash).toMatch(/^0x[a-f0-9]{64}$/);
     expect(SPRINT1_GOLDEN_VECTORS.missionIdBytes32.hash).toMatch(/^0x[a-f0-9]{64}$/);

@@ -2,6 +2,8 @@ const app = document.querySelector("#app");
 const GIWA_CHAIN_ID = 91342;
 const GIWA_CHAIN_HEX = "0x164ce";
 const GIWA_EXPLORER_TX_BASE = "https://sepolia-explorer.giwa.io/tx/";
+const REQUEST_TIMEOUT_MS = 8000;
+const RECORDED_RECEIPT_HASH = "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503";
 const USER_RUN_KEY = "giwa:userRunState";
 const USER_RECEIPTS_KEY = "giwa:userReceipts";
 const addChainRequest = {
@@ -15,6 +17,7 @@ const addChainRequest = {
 let walletState = { status: "disconnected", account: null, chainId: null };
 let runState = readJson(USER_RUN_KEY, null);
 let notice = "Ready to review your testnet action.";
+let runtimeState = { checked: false, liveApiAvailable: false, mode: "checking" };
 
 function readJson(key, fallback) {
   try {
@@ -104,7 +107,37 @@ function publicNotice(kind) {
   return notices[kind] ?? "Request was not completed. Try again from the current step.";
 }
 
+async function fetchWithTimeout(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(path, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function readApiJson(path, options = {}) {
+  const response = await fetchWithTimeout(path, options);
+  const body = await response.json();
+  return { response, body };
+}
+
+function liveApiReady() {
+  return runtimeState.checked && runtimeState.liveApiAvailable;
+}
+
+function runtimeNotice() {
+  if (!runtimeState.checked) return "Checking whether wallet submission is available.";
+  if (runtimeState.liveApiAvailable) {
+    return "Wallet submission is available for this browser run.";
+  }
+  return "Wallet submission is unavailable here. You can still inspect the recorded testnet receipt.";
+}
+
 function primaryLabel() {
+  if (!runtimeState.checked) return "Preparing action";
+  if (!runtimeState.liveApiAvailable) return "Open recorded receipt";
   if (walletState.account === null) return "Connect wallet";
   if (walletState.chainId !== GIWA_CHAIN_ID) return "Switch to GIWA Sepolia";
   if (runState?.receiptHash) return "View receipt";
@@ -114,6 +147,8 @@ function primaryLabel() {
 }
 
 function walletCopy() {
+  if (!runtimeState.checked) return "Checking wallet submission availability.";
+  if (!runtimeState.liveApiAvailable) return "Wallet actions are unavailable while viewing recorded evidence.";
   if (walletState.status === "providerMissing") return "Browser wallet was not detected.";
   if (walletState.status === "wrongChain") return "Switch to GIWA Sepolia before continuing.";
   if (walletState.account === null) return "Connect a wallet to review the action.";
@@ -126,7 +161,7 @@ function isExpired() {
 }
 
 function manifestReady() {
-  return walletState.status === "connected" && runState?.manifestPreview && !isExpired() && runState.status !== "manifestInvalidated";
+  return liveApiReady() && walletState.status === "connected" && runState?.manifestPreview && !isExpired() && runState.status !== "manifestInvalidated";
 }
 
 function txReady(kind) {
@@ -137,16 +172,17 @@ function txReady(kind) {
 }
 
 function verifyReady() {
+  if (!liveApiReady()) return false;
   if (!runState?.runId || !runState.depositTxHash) return false;
   if (runState.status === "matched" || runState.status === "mismatched" || runState.status === "failed") return false;
   return runState.verification?.status !== "queued";
 }
 
-function stepIcon(state) {
-  if (state === "complete") return "OK";
-  if (state === "active") return ">";
-  if (state === "blocked") return "!";
-  return "-";
+function statusLabel(state) {
+  if (state === "complete") return "Done";
+  if (state === "active") return "Current";
+  if (state === "blocked") return "Needs review";
+  return "Next";
 }
 
 function progressSteps() {
@@ -158,7 +194,12 @@ function progressSteps() {
   const failed = runState?.status === "mismatched" || runState?.status === "failed";
   const receiptFound = matched || failed || runState?.status === "timeout" || runState?.status === "verifierChecking";
   return [
-    ["wallet_connected", "Wallet connected", "Your wallet is connected to GIWA Sepolia.", walletReady ? "complete" : "active"],
+    [
+      "wallet_connected",
+      "Connect wallet",
+      walletReady ? "Wallet connected on GIWA Sepolia." : "Connect a wallet on GIWA Sepolia.",
+      walletReady ? "complete" : "active"
+    ],
     ["intent_issued", "Intent issued", "The action preview is bound to your wallet.", hasPreview ? "complete" : "pending"],
     ["approval_submitted", "Approval submitted", "Your wallet returned the approval transaction hash.", hasApprove ? "complete" : "pending"],
     ["deposit_submitted", "Deposit submitted", "Your wallet returned the deposit transaction hash.", hasDeposit ? "complete" : "pending"],
@@ -177,14 +218,15 @@ function renderStatusRail() {
     view(
       "ol",
       { className: "status-rail user-status-rail" },
-      progressSteps().map(([id, label, detail, state]) =>
-        view("li", { className: `status-step ${state}`, "data-step": id }, [
-          view("span", { className: "status-icon", text: stepIcon(state), title: state }),
+      progressSteps().map(([id, label, detail, state], index) =>
+        view("li", { className: `status-step ${state}`, "data-step": id, "aria-current": state === "active" ? "step" : null }, [
+          view("span", { className: "status-icon", text: String(index + 1), title: statusLabel(state) }),
           view("span", { className: "status-body" }, [
             view("strong", { text: label }),
             view("span", { text: detail }),
             view("em", { text: id === "standard_rpc_receipt_found" ? "Standard RPC evidence" : "User step" })
-          ])
+          ]),
+          view("span", { className: "status-state", text: statusLabel(state) })
         ])
       )
     )
@@ -209,8 +251,8 @@ function renderExpectedSteps() {
 
 function renderActionSummary() {
   return view("section", { className: "panel user-action-summary" }, [
-    view("p", { className: "eyebrow", text: "Action summary" }),
-    view("h2", { text: "Mock vault testnet action" }),
+    view("p", { className: "eyebrow", text: "Checkout summary" }),
+    view("h2", { text: "First mock vault action" }),
     view("div", { className: "user-gate-grid" }, [
       view("div", { className: "user-gate-card" }, [
         view("span", { className: "field-label", text: "Network" }),
@@ -224,8 +266,8 @@ function renderActionSummary() {
       ]),
       view("div", { className: "user-gate-card" }, [
         view("span", { className: "field-label", text: "Receipt" }),
-        view("strong", { text: runState?.receiptHash ? shortHash(runState.receiptHash) : "After verification" }),
-        view("span", { className: "muted", text: "Matched action only" })
+        view("strong", { text: runState?.receiptHash ? shortHash(runState.receiptHash) : "Issued after match" }),
+        view("span", { className: "muted", text: "Requires verifier match" })
       ])
     ]),
     renderExpectedSteps()
@@ -238,7 +280,7 @@ function renderIntentPanel() {
     return view("section", { className: "panel" }, [
       view("p", { className: "eyebrow", text: "Intent preview" }),
       view("h2", { text: "Review action details" }),
-      view("p", { className: "muted", text: "Connect your wallet and review the action before wallet submission." }),
+      view("p", { className: "muted", text: "Review the action before your wallet asks for approval or deposit submission." }),
       field("Required network", "GIWA Sepolia 91342"),
       field("Technical details", "available after action review")
     ]);
@@ -263,30 +305,63 @@ function renderIntentPanel() {
   ]);
 }
 
+function renderWalletActionControls() {
+  if (
+    !liveApiReady() ||
+    (!runState?.manifestPreview && !runState?.approveTxHash && !runState?.depositTxHash && !runState?.verification)
+  ) {
+    return null;
+  }
+  return view("div", { className: "user-wallet-actions", "aria-label": "Wallet transaction actions" }, [
+    view("button", {
+      type: "button",
+      id: "user-approve-action",
+      disabled: !txReady("approve"),
+      text: runState?.approveTxHash ? "Approval submitted" : "Submit approval"
+    }),
+    view("button", {
+      type: "button",
+      id: "user-deposit-action",
+      disabled: !txReady("deposit"),
+      text: runState?.depositTxHash ? "Deposit submitted" : "Submit deposit"
+    }),
+    view("button", {
+      type: "button",
+      id: "user-verify-action",
+      disabled: !verifyReady(),
+      text: runState?.receiptHash ? "Receipt ready" : "Verify evidence"
+    })
+  ]);
+}
+
 function renderActionPage() {
+  const walletActions = renderWalletActionControls();
   app.textContent = "";
   app.append(
     view("section", { className: "hero-flow user-action-hero" }, [
       view("div", { className: "hero-copy" }, [
         view("p", { className: "eyebrow", text: "GIWA Verified Intent Rail" }),
-        view("h1", { text: "Review your testnet action before signing" }),
+        view("h1", { text: "Review action before signing" }),
         view("p", {
           className: "lead",
-          text: "Connect a wallet, review the intent, submit wallet actions, and receive a receipt after verification."
+          text: "Check the signed intent, submit the GIWA Sepolia wallet actions, and receive a matched testnet receipt."
+        }),
+        view("p", { className: "notice", text: runtimeNotice() }),
+        view("p", {
+          className: "muted",
+          text: "Testnet-only mock action. It does not move mainnet funds, provide returns, or perform identity checks."
         }),
         view("p", { className: "notice", role: "status", "aria-live": "polite", text: notice }),
         view("p", { className: "muted", text: walletCopy() }),
         view("div", { className: "hero-actions user-cta-cluster" }, [
           view("button", { type: "button", id: "user-primary-action", text: primaryLabel() }),
-          view("button", { type: "button", id: "user-approve-action", disabled: !txReady("approve"), text: runState?.approveTxHash ? "Approve submitted" : "Approve" }),
-          view("button", { type: "button", id: "user-deposit-action", disabled: !txReady("deposit"), text: runState?.depositTxHash ? "Deposit submitted" : "Deposit" }),
-          view("button", { type: "button", id: "user-verify-action", disabled: !verifyReady(), text: runState?.receiptHash ? "Receipt ready" : "Verify receipt" }),
           view("a", { className: "secondary-link", href: "/user/help", text: "Need help?" }),
           view("a", { className: "secondary-link", href: "/user/receipts", text: "My receipts" })
         ]),
+        walletActions ?? view("span", { className: "user-wallet-actions-placeholder" }),
         renderStatusRail()
       ]),
-      view("div", {}, [renderActionSummary(), renderIntentPanel()])
+      view("div", { className: "user-checkout-side" }, [renderActionSummary(), renderIntentPanel()])
     ])
   );
   document.querySelector("#user-primary-action")?.addEventListener("click", onPrimaryAction);
@@ -339,7 +414,7 @@ async function switchToGiwa(currentProvider) {
 
 async function issueManifest() {
   if (walletState.account === null || walletState.chainId !== GIWA_CHAIN_ID) return;
-  const response = await fetch("/api/runs", {
+  const { response, body } = await readApiJson("/api/runs", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -350,7 +425,6 @@ async function issueManifest() {
       referralCode: null
     })
   });
-  const body = await response.json();
   if (!response.ok) {
     notice = publicNotice("manifest");
     return;
@@ -370,7 +444,7 @@ async function sendWalletTransaction(request) {
 
 async function submitEvidence() {
   if (!runState?.runId || !runState.depositTxHash) return;
-  const response = await fetch(`/api/runs/${runState.runId}/evidence`, {
+  const { response, body } = await readApiJson(`/api/runs/${runState.runId}/evidence`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -378,7 +452,6 @@ async function submitEvidence() {
       depositTxHash: runState.depositTxHash
     })
   });
-  const body = await response.json();
   if (!response.ok) {
     notice = "Transaction hash was saved locally. Verification can be retried from Help.";
     return;
@@ -391,12 +464,11 @@ async function submitEvidence() {
 
 async function verifyReceipt() {
   if (!verifyReady()) return;
-  const response = await fetch(`/api/runs/${runState.runId}/verify`, {
+  const { response, body } = await readApiJson(`/api/runs/${runState.runId}/verify`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({})
   });
-  const body = await response.json();
   if (!response.ok) {
     notice = publicNotice("verify");
     return;
@@ -408,6 +480,15 @@ async function verifyReceipt() {
 }
 
 async function onPrimaryAction() {
+  if (!runtimeState.checked) {
+    notice = "Action availability is still being checked.";
+    render();
+    return;
+  }
+  if (!runtimeState.liveApiAvailable) {
+    location.href = `/receipt/${RECORDED_RECEIPT_HASH}`;
+    return;
+  }
   const currentProvider = provider();
   if (currentProvider === null) {
     walletState = { status: "providerMissing", account: null, chainId: null };
@@ -505,6 +586,21 @@ function renderReceiptCard(item) {
   ]);
 }
 
+function renderRecordedReceiptCard() {
+  return view("article", { className: "user-receipt-card" }, [
+    view("p", { className: "status-pill ready", text: "recorded" }),
+    view("h2", { text: "Recorded mock vault receipt" }),
+    field("Receipt ID", shortHash(RECORDED_RECEIPT_HASH)),
+    field("Network", "GIWA Sepolia"),
+    field("Status", "verifier matched"),
+    view("p", {
+      className: "muted",
+      text: "Recorded testnet receipt for the sample mock vault action."
+    }),
+    view("a", { className: "secondary-link", href: `/receipt/${RECORDED_RECEIPT_HASH}`, text: "View receipt" })
+  ]);
+}
+
 function filterReceipts(items, filter) {
   if (filter === "all") return items;
   return items.filter((item) => item.state === filter);
@@ -518,18 +614,31 @@ function renderReceiptsList() {
   app.append(
     view("section", { className: "band user-list-band" }, [
       view("div", { className: "section-heading" }, [
-        view("div", {}, [view("p", { className: "eyebrow", text: "My receipts" }), view("h1", { text: "Receipts from this browser" })]),
+        view("div", {}, [view("p", { className: "eyebrow", text: "My receipts" }), view("h1", { text: "Testnet receipt history" })]),
         view("a", { className: "secondary-link", href: "/user", text: "Start action" })
       ]),
-      view("div", { className: "user-filter-row" }, [
-        view("a", { className: "secondary-link", href: "/user/receipts?filter=all", text: "All" }),
-        view("a", { className: "secondary-link", href: "/user/receipts?filter=verified", text: "Verified" }),
-        view("a", { className: "secondary-link", href: "/user/receipts?filter=pending", text: "Pending" }),
-        view("a", { className: "secondary-link", href: "/user/receipts?filter=notMatched", text: "Not matched" })
-      ]),
-      items.length === 0
-        ? view("p", { className: "notice", text: "No receipts yet. Start an action to create your first receipt." })
-        : view("div", { className: "proof-grid" }, items.map(renderReceiptCard))
+      view("div", { className: "user-receipts-layout" }, [
+        view("aside", { className: "panel user-receipts-sidebar" }, [
+          view("p", { className: "eyebrow", text: "Filters" }),
+          view("div", { className: "user-filter-row" }, [
+            view("a", { className: "secondary-link", href: "/user/receipts?filter=all", text: "All" }),
+            view("a", { className: "secondary-link", href: "/user/receipts?filter=verified", text: "Verified" }),
+            view("a", { className: "secondary-link", href: "/user/receipts?filter=pending", text: "Pending" }),
+            view("a", { className: "secondary-link", href: "/user/receipts?filter=notMatched", text: "Not matched" })
+          ])
+        ]),
+        items.length === 0
+          ? view("div", { className: "user-empty-receipts" }, [
+              view("p", {
+                className: "notice",
+                text: runtimeState.liveApiAvailable
+                  ? "No receipts saved in this browser yet. Start an action to create your first receipt."
+                  : "No receipts saved in this browser yet. You can inspect the recorded testnet receipt below."
+              }),
+              renderRecordedReceiptCard()
+            ])
+          : view("div", { className: "proof-grid user-receipt-grid" }, items.map(renderReceiptCard))
+      ])
     ])
   );
 }
@@ -542,7 +651,7 @@ async function renderReceiptRoute() {
   const shouldReadReceiptApi = runState?.receiptHash === hash || Boolean(runState?.depositTxHash);
   if (shouldReadReceiptApi) {
     try {
-      const response = await fetch(`/api/receipts/${hash}`);
+      const response = await fetchWithTimeout(`/api/receipts/${hash}`);
       body = response.ok ? await response.json() : null;
     } catch {
       body = null;
@@ -554,6 +663,51 @@ async function renderReceiptRoute() {
   const txExplorerUrl = explorerTxUrl(depositTxHash);
   const blockNumber = body?.blockNumber ?? body?.receipt?.blockNumber ?? null;
   const state = matched ? "verified" : body?.status === "failed" ? "not matched" : "pending";
+  if (!matched && hash.toLowerCase() === RECORDED_RECEIPT_HASH.toLowerCase()) {
+    app.textContent = "";
+    app.append(
+      view("section", { className: "hero-flow receipt-hero user-receipt-page" }, [
+        view("div", { className: "hero-copy" }, [
+          view("p", { className: "eyebrow", text: "Testnet receipt" }),
+          view("h1", { text: "Recorded receipt ready" }),
+          view("p", {
+            className: "lead",
+            text: "The sample mock vault action has a recorded verifier-matched testnet receipt."
+          }),
+          view("div", { className: "hero-actions user-receipt-actions" }, [
+            view("button", { type: "button", id: "copy-recorded-receipt-link", text: "Copy receipt link" }),
+            view("a", { className: "secondary-link", href: `/receipt/${RECORDED_RECEIPT_HASH}`, text: "Open public receipt" }),
+            view("a", { className: "secondary-link", href: "/user/help", text: "Need help?" })
+          ])
+        ]),
+        view("article", { className: "user-receipt-card user-receipt-detail" }, [
+          view("p", { className: "status-pill ready", text: "matched" }),
+          view("h2", { text: "Recorded mock vault receipt" }),
+          field("Receipt ID", shortHash(RECORDED_RECEIPT_HASH)),
+          field("Network", "GIWA Sepolia"),
+          field("Action", "Mock vault testnet action"),
+          field("Evidence source", "standard RPC block evidence"),
+          view("p", {
+            className: "muted",
+            text: "Testnet-only receipt. It does not move mainnet funds, provide returns, or perform identity checks."
+          }),
+          view("details", { className: "panel user-technical-details" }, [
+            view("summary", { text: "Technical proof" }),
+            field("Receipt hash", RECORDED_RECEIPT_HASH)
+          ])
+        ])
+      ])
+    );
+    document.querySelector("#copy-recorded-receipt-link")?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        notice = "Receipt link copied.";
+      } catch {
+        notice = publicNotice("copy");
+      }
+    });
+    return;
+  }
   app.textContent = "";
   app.append(
     view("section", { className: "hero-flow receipt-hero user-receipt-page" }, [
@@ -608,11 +762,17 @@ function renderHelp() {
       view("div", { className: "hero-copy" }, [
         view("p", { className: "eyebrow", text: "Help / Recovery" }),
         view("h1", { text: "Recover a receipt check" }),
-        view("p", { className: "lead", text: "Enter a valid transaction hash and retry verification from the current browser run." }),
+        view("p", {
+          className: "lead",
+          text: runtimeState.liveApiAvailable
+            ? "Enter a valid transaction hash and retry verification from the current browser run."
+            : "Recovery is available after a wallet run. You can inspect the recorded testnet receipt while no run is active."
+        }),
         view("p", { className: "notice", role: "status", "aria-live": "polite", text: notice }),
         view("div", { className: "hero-actions" }, [
           view("a", { className: "secondary-link", href: "/user", text: "Back to action" }),
-          view("a", { className: "secondary-link", href: "/user/receipts", text: "My receipts" })
+          view("a", { className: "secondary-link", href: "/user/receipts", text: "My receipts" }),
+          view("a", { className: "secondary-link", href: `/receipt/${RECORDED_RECEIPT_HASH}`, text: "View recorded receipt" })
         ])
       ]),
       view("section", { className: "user-help-panel user-help-card" }, [
@@ -658,7 +818,7 @@ function renderHelp() {
 async function invalidateRun(reason) {
   if (runState?.runId) {
     try {
-      await fetch(`/api/runs/${runState.runId}/invalidate`, {
+      await fetchWithTimeout(`/api/runs/${runState.runId}/invalidate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ reason })
@@ -669,6 +829,21 @@ async function invalidateRun(reason) {
   }
   runState = { ...runState, status: "manifestInvalidated", manifestPreview: null };
   writeJson(USER_RUN_KEY, runState);
+}
+
+async function refreshRuntimeMode() {
+  try {
+    const response = await fetchWithTimeout("/readyz", { cache: "no-store" });
+    const body = response.ok ? await response.json() : {};
+    runtimeState = {
+      checked: true,
+      liveApiAvailable: body?.ready === true && body?.mode !== "static-fallback",
+      mode: typeof body?.mode === "string" ? body.mode : "unavailable"
+    };
+  } catch {
+    runtimeState = { checked: true, liveApiAvailable: false, mode: "unavailable" };
+  }
+  render();
 }
 
 function render() {
@@ -704,3 +879,4 @@ if (currentProvider?.on) {
 }
 
 render();
+void refreshRuntimeMode();

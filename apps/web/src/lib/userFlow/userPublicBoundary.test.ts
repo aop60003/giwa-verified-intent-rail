@@ -13,10 +13,11 @@ describe("commercial user public boundary", () => {
     const files = ["public/user.html", "public/user-flow.js", "public/styles.css"];
     const joined = files.map((file) => readWebFile(file)).join("\n");
 
-    expect(joined).toContain("Review your testnet action");
+    expect(joined).toContain("Review action before signing");
     expect(joined).toContain("Enter a valid transaction hash");
     expect(joined).toContain("Copy support summary");
     expect(joined).not.toMatch(/gateReason|protected CI|blocker register|local DB path|signer role/iu);
+    expect(joined).not.toMatch(/local API|static preview|partner packet|reviewer route|local review/iu);
     expect(joined).not.toMatch(/production asset|production yield|safety guarantee|final confirmation in/iu);
     const credentialPattern = new RegExp(
       [("mnem" + "onic"), ("seed ph" + "rase"), "credential value", ("bear" + "er " + "token")].join("|"),
