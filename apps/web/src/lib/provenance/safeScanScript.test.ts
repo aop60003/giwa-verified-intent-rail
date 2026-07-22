@@ -15,6 +15,15 @@ describe("safe scan script contract", () => {
     );
   });
 
+  it("allows only the exact server runtime injection policy filename as a documentation reference", () => {
+    const script = safeScanScript();
+
+    expect(script).toContain(
+      '$normalizedText.Contains("giwa-lightsail-env-and-secret-injection-preflight.md")'
+    );
+    expect(script).not.toContain('$RuleId -eq "sensitive-term") { return $true }');
+  });
+
   it("detects common secret-like names without printing real env values", () => {
     const script = safeScanScript().toLowerCase();
 

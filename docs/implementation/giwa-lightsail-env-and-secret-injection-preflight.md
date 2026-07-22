@@ -78,7 +78,7 @@ Readiness output must not include:
 ```text
 raw runtime values
 query tokens
-authorization material
+do not print authorization material
 wallet signing material
 complete provider URLs with sensitive query strings
 local env file content

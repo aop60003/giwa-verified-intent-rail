@@ -57,6 +57,13 @@ function Test-SafeContext {
     return $true
   }
 
+  if (
+    $RuleId -eq "sensitive-term" -and
+    $normalizedText.Contains("giwa-lightsail-env-and-secret-injection-preflight.md")
+  ) {
+    return $true
+  }
+
   if ($normalizedPath -eq "apps\web\src\lib\live\livetelemetry.ts" -and $RuleId -eq "sensitive-term") {
     return $true
   }

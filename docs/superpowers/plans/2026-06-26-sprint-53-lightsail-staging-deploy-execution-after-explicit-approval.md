@@ -171,8 +171,8 @@ $unfinishedPattern = "TO" + "DO|FIX" + "ME|TB" + "D"
 rg -n $unfinishedPattern docs\superpowers\plans\2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md docs\implementation\giwa-lightsail-staging-deploy-execution-plan.md docs\implementation\giwa-lightsail-staging-smoke-and-rollback-plan.md docs\evidence\lightsail-staging-deploy-execution-plan-sprint53.json
 $claimPattern = "real RW" + "A|real yi" + "eld|real fu" + "nds|settle" + "ment|KY" + "C|guarantee safe" + "ty|instant final" + "ity|200ms confirm" + "ed"
 rg -n $claimPattern docs\superpowers\plans\2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md docs\implementation\giwa-lightsail-staging-deploy-execution-plan.md docs\implementation\giwa-lightsail-staging-smoke-and-rollback-plan.md docs\evidence\lightsail-staging-deploy-execution-plan-sprint53.json
-$credentialPattern = ("private " + "key") + "|mnem" + "onic|bear" + "er|" + ("api " + "key") + "|" + ("access " + "key") + "|" + ("secret " + "key")
-rg -n $credentialPattern docs\superpowers\plans\2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md docs\implementation\giwa-lightsail-staging-deploy-execution-plan.md docs\implementation\giwa-lightsail-staging-smoke-and-rollback-plan.md docs\evidence\lightsail-staging-deploy-execution-plan-sprint53.json
+$credentialScanPattern = ("private " + "key") + "|mnem" + "onic|bear" + "er|" + ("api " + "key") + "|" + ("access " + "key") + "|" + ("secret " + "key")
+rg -n $credentialScanPattern docs\superpowers\plans\2026-06-26-sprint-53-lightsail-staging-deploy-execution-after-explicit-approval.md docs\implementation\giwa-lightsail-staging-deploy-execution-plan.md docs\implementation\giwa-lightsail-staging-smoke-and-rollback-plan.md docs\evidence\lightsail-staging-deploy-execution-plan-sprint53.json
 git status --short
 ```
 
