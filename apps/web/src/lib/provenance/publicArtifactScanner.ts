@@ -81,13 +81,47 @@ function scanJsonKeys(path: string, value: unknown): boolean {
   return false;
 }
 
-function scanJsonStringValues(value: unknown): boolean {
+function isAllowedVariableNameEvidenceContract(path: string, value: Record<string, unknown>): boolean {
+  const names = value.serverOnlyNames;
+  return (
+    path.startsWith("docs/evidence/") &&
+    path.endsWith(".json") &&
+    value.variableNamesOnly === true &&
+    value.valuesIncluded === false &&
+    Array.isArray(names) &&
+    names.length > 0 &&
+    names.every((name) => typeof name === "string" && /^[A-Z][A-Z0-9_]*$/u.test(name))
+  );
+}
+
+function scanJsonStringValues(path: string, value: unknown): boolean {
   if (typeof value === "string") return BLOCKED_KEY_PATTERN.test(value);
-  if (Array.isArray(value)) return value.some(scanJsonStringValues);
+  if (Array.isArray(value)) return value.some((item) => scanJsonStringValues(path, item));
   if (value !== null && typeof value === "object") {
-    return Object.values(value).some(scanJsonStringValues);
+    const record = value as Record<string, unknown>;
+    const allowServerOnlyNames = isAllowedVariableNameEvidenceContract(path, record);
+    return Object.entries(record).some(([key, child]) => {
+      if (key === "serverOnlyNames" && allowServerOnlyNames) return false;
+      return scanJsonStringValues(path, child);
+    });
   }
   return false;
+}
+
+function withoutEmptyUrlPasswordChecks(content: string): string {
+  const urlVariables = new Set<string>();
+  for (const match of content.matchAll(/\b(?:const|let)\s+([A-Za-z_]\w*)\s*=\s*new\s+URL\s*\(/gu)) {
+    const variable = match[1];
+    if (variable !== undefined) urlVariables.add(variable);
+  }
+  let result = content;
+  for (const variable of urlVariables) {
+    result = result.replace(
+      new RegExp(`\\b${variable}\\.password\\s*===\\s*(?:""|'')`, "gu"),
+      ""
+    );
+  }
+  return result;
 }
 
 export function scanPublicArtifactText(input: { path: string; content: string }): PublicArtifactScanResult {
@@ -138,7 +172,7 @@ export function scanPublicArtifactText(input: { path: string; content: string })
         valuePrinted: false
       });
     }
-    if (scanJsonStringValues(parsed)) {
+    if (scanJsonStringValues(path, parsed)) {
       findings.push({
         ruleId: "credential-like-key",
         severity: "block",
@@ -150,12 +184,13 @@ export function scanPublicArtifactText(input: { path: string; content: string })
       });
     }
   } catch {
-    if (BLOCKED_KEY_PATTERN.test(input.content)) {
+    const credentialScanContent = withoutEmptyUrlPasswordChecks(input.content);
+    if (BLOCKED_KEY_PATTERN.test(credentialScanContent)) {
       findings.push({
         ruleId: "credential-like-key",
         severity: "block",
         path,
-        line: lineOf(input.content, BLOCKED_KEY_PATTERN),
+        line: lineOf(credentialScanContent, BLOCKED_KEY_PATTERN),
         matchClass: "credential-key-name",
         decision: "blocked",
         valuePrinted: false

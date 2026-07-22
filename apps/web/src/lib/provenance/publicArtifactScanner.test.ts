@@ -76,6 +76,99 @@ describe("public artifact scanner", () => {
     }
   });
 
+  it("allows a standard URL parser check that rejects credentialed URLs", () => {
+    const result = scanPublicArtifactText({
+      path: "apps/web/public/user-flow.js",
+      content: [
+        "const parsed = new URL(value);",
+        'const safe = parsed.protocol === "https:" && parsed.username === "" && parsed.password === "";'
+      ].join("\n")
+    });
+
+    expect(result.decision).toBe("pass");
+    expect(result.findings).toEqual([]);
+  });
+
+  it("keeps blocking JavaScript credential variables, assignments, and markers", () => {
+    for (const content of [
+      "const password = input;",
+      "config.password = input;",
+      "const parsed = new URL(value); parsed.password = input;",
+      'const header = "Authorization: Bearer synthetic";'
+    ]) {
+      const result = scanPublicArtifactText({ path: "apps/web/public/user-flow.js", content });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({ ruleId: "credential-like-key", decision: "blocked" });
+    }
+  });
+
+  it("allows environment variable names only in an explicit public evidence contract", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight.json",
+      content: JSON.stringify({
+        envContract: {
+          variableNamesOnly: true,
+          valuesIncluded: false,
+          serverOnlyNames: ["HOST", "CAMPAIGN_SIGNER_PRIVATE_KEY", "VERIFIER_PRIVATE_KEY"]
+        }
+      })
+    });
+
+    expect(result.decision).toBe("pass");
+    expect(result.findings).toEqual([]);
+  });
+
+  it("blocks evidence variable-name exceptions outside their exact safe context", () => {
+    const safeContract = {
+      variableNamesOnly: true,
+      valuesIncluded: false,
+      serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY"]
+    };
+    const unsafeCases = [
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY=synthetic"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { valuesIncluded: false, serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, variableNamesOnly: false }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, valuesIncluded: true }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, note: "CAMPAIGN_SIGNER_PRIVATE_KEY" }
+      },
+      { path: "apps/web/public/preflight.json", value: safeContract },
+      { path: "docs/implementation/preflight.json", value: safeContract }
+    ];
+
+    for (const unsafeCase of unsafeCases) {
+      const result = scanPublicArtifactText({
+        path: unsafeCase.path,
+        content: JSON.stringify(unsafeCase.value)
+      });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({
+        ruleId: "credential-like-key",
+        matchClass: "credential-marker",
+        decision: "blocked"
+      });
+    }
+  });
+
   it("allows public addresses, transaction hashes, receipt hashes, and bounded status", () => {
     const result = scanPublicArtifactText({
       path: "apps/web/public/live-demo-snapshot.json",
