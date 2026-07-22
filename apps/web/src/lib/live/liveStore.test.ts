@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { createMemoryLiveStore, createSqliteLiveStore } from "./liveStore.ts";
+import type { LiveStore } from "./liveStore.ts";
 import { REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
 import type { LiveRunRecord } from "./liveTypes.ts";
 
@@ -26,6 +27,85 @@ function run(overrides: Partial<LiveRunRecord> = {}): LiveRunRecord {
     updatedAt: "2026-06-17T00:00:00.000Z",
     ...overrides
   };
+}
+
+function persistCrashWindowEvidence(store: LiveStore): void {
+  store.createRun(
+    run({
+      runId: "stale-decided",
+      idempotencyKey: "stale-decided",
+      intentHash: "0xstale-decided",
+      status: "verifierChecking",
+      createdAt: "2026-06-01T00:00:00.000Z",
+      updatedAt: "2026-06-01T00:00:00.000Z"
+    })
+  );
+  store.saveSubmittedTx({
+    runId: "stale-decided",
+    approveTxHash: null,
+    depositTxHash: "0xstale-decided-deposit",
+    submittedAt: "2026-06-01T00:01:00.000Z"
+  });
+  store.saveVerifierInput({
+    runId: "stale-decided",
+    verifierInputHash: "0xstale-decided-verifier",
+    canonicalPayload: "{}",
+    canonicalPayloadBytesHex: "0x7b7d",
+    createdAt: "2026-06-01T00:02:00.000Z"
+  });
+  store.saveDecision({
+    intentHash: "0xstale-decided",
+    depositTxHash: "0xstale-decided-deposit",
+    decision: "mismatched",
+    failureReason: "target_mismatch",
+    verifierInputHash: "0xstale-decided-verifier",
+    receiptHash: null,
+    decisionTxHash: null,
+    issuedAt: 1780272000
+  });
+  store.enqueueVerificationJob({
+    tenantId: "local",
+    runId: "stale-decided",
+    reason: "manual_verify",
+    createdAt: "2026-06-01T00:03:00.000Z"
+  });
+
+  store.createRun(
+    run({
+      runId: "stale-receipted",
+      idempotencyKey: "stale-receipted",
+      intentHash: "0xstale-receipted",
+      status: "verifierChecking",
+      createdAt: "2026-06-01T00:00:00.000Z",
+      updatedAt: "2026-06-01T00:00:00.000Z"
+    })
+  );
+  store.saveSubmittedTx({
+    runId: "stale-receipted",
+    approveTxHash: null,
+    depositTxHash: "0xstale-receipted-deposit",
+    submittedAt: "2026-06-01T00:01:00.000Z"
+  });
+  store.saveVerifierInput({
+    runId: "stale-receipted",
+    verifierInputHash: "0xstale-receipted-verifier",
+    canonicalPayload: "{}",
+    canonicalPayloadBytesHex: "0x7b7d",
+    createdAt: "2026-06-01T00:02:00.000Z"
+  });
+  store.saveReceipt({
+    receiptHash: "0xstale-receipted-receipt",
+    intentHash: "0xstale-receipted",
+    payloadJson: "{}",
+    canonicalPayload: "{}",
+    canonicalPayloadBytesHex: "0x7b7d"
+  });
+  store.enqueueVerificationJob({
+    tenantId: "local",
+    runId: "stale-receipted",
+    reason: "manual_verify",
+    createdAt: "2026-06-01T00:03:00.000Z"
+  });
 }
 
 describe("live store", () => {
@@ -228,6 +308,7 @@ describe("live store", () => {
       canonicalPayload: "{}",
       canonicalPayloadBytesHex: "0x7b7d"
     });
+    persistCrashWindowEvidence(store);
 
     expect(store.getRunForCapabilityHash("run-1", capabilityHash)?.runId).toBe("run-1");
     expect(store.getRunForCapabilityHash("run-1", "b".repeat(64))).toBeUndefined();
@@ -241,6 +322,19 @@ describe("live store", () => {
     expect(store.getVerificationJobForRun("stale-incomplete")).toBeUndefined();
     expect(store.getDecisionByIntentHash("0xstale-matched")?.decision).toBe("matched");
     expect(store.getReceipt("0xstale-matched-receipt")?.intentHash).toBe("0xstale-matched");
+    expect(store.getRun("stale-decided")?.status).toBe("verifierChecking");
+    expect(store.getSubmittedTx("stale-decided")?.depositTxHash).toBe("0xstale-decided-deposit");
+    expect(store.getVerifierInput("0xstale-decided-verifier")?.runId).toBe("stale-decided");
+    expect(store.getDecisionByIntentHash("0xstale-decided")?.decision).toBe("mismatched");
+    expect(store.getVerificationJobForRun("stale-decided")?.status).toBe("pending");
+    expect(store.getRun("stale-receipted")?.status).toBe("verifierChecking");
+    expect(store.getSubmittedTx("stale-receipted")?.depositTxHash).toBe("0xstale-receipted-deposit");
+    expect(store.getVerifierInput("0xstale-receipted-verifier")?.runId).toBe("stale-receipted");
+    expect(store.getReceipt("0xstale-receipted-receipt")?.intentHash).toBe("0xstale-receipted");
+    expect(store.getReceiptForTenant("local", "0xstale-receipted-receipt")?.intentHash).toBe(
+      "0xstale-receipted"
+    );
+    expect(store.getVerificationJobForRun("stale-receipted")?.status).toBe("pending");
   });
 });
 
@@ -428,6 +522,7 @@ describe("sqlite live store", () => {
           canonicalPayload: "{}",
           canonicalPayloadBytesHex: "0x7b7d"
         });
+        persistCrashWindowEvidence(store);
 
         expect(store.getRunForCapabilityHash("run-1", capabilityHash)?.runId).toBe("run-1");
         expect(store.getRunForCapabilityHash("run-1", "b".repeat(64))).toBeUndefined();
@@ -439,6 +534,19 @@ describe("sqlite live store", () => {
         expect(store.getSubmittedTx("stale-incomplete")).toBeUndefined();
         expect(store.getVerifierInput("0xstale-incomplete-verifier")).toBeUndefined();
         expect(store.getVerificationJobForRun("stale-incomplete")).toBeUndefined();
+        expect(store.getRun("stale-decided")?.status).toBe("verifierChecking");
+        expect(store.getSubmittedTx("stale-decided")?.depositTxHash).toBe("0xstale-decided-deposit");
+        expect(store.getVerifierInput("0xstale-decided-verifier")?.runId).toBe("stale-decided");
+        expect(store.getDecisionByIntentHash("0xstale-decided")?.decision).toBe("mismatched");
+        expect(store.getVerificationJobForRun("stale-decided")?.status).toBe("pending");
+        expect(store.getRun("stale-receipted")?.status).toBe("verifierChecking");
+        expect(store.getSubmittedTx("stale-receipted")?.depositTxHash).toBe("0xstale-receipted-deposit");
+        expect(store.getVerifierInput("0xstale-receipted-verifier")?.runId).toBe("stale-receipted");
+        expect(store.getReceipt("0xstale-receipted-receipt")?.intentHash).toBe("0xstale-receipted");
+        expect(store.getReceiptForTenant("local", "0xstale-receipted-receipt")?.intentHash).toBe(
+          "0xstale-receipted"
+        );
+        expect(store.getVerificationJobForRun("stale-receipted")?.status).toBe("pending");
       } finally {
         store.close();
       }
@@ -454,6 +562,15 @@ describe("sqlite live store", () => {
         });
         expect(reloaded.getDecisionByIntentHash("0xstale-matched")?.decision).toBe("matched");
         expect(reloaded.getReceipt("0xstale-matched-receipt")?.intentHash).toBe("0xstale-matched");
+        expect(reloaded.getRun("stale-decided")?.status).toBe("verifierChecking");
+        expect(reloaded.getVerifierInput("0xstale-decided-verifier")?.runId).toBe("stale-decided");
+        expect(reloaded.getDecisionByIntentHash("0xstale-decided")?.decision).toBe("mismatched");
+        expect(reloaded.getRun("stale-receipted")?.status).toBe("verifierChecking");
+        expect(reloaded.getVerifierInput("0xstale-receipted-verifier")?.runId).toBe("stale-receipted");
+        expect(reloaded.getReceipt("0xstale-receipted-receipt")?.intentHash).toBe("0xstale-receipted");
+        expect(reloaded.getReceiptForTenant("local", "0xstale-receipted-receipt")?.intentHash).toBe(
+          "0xstale-receipted"
+        );
       } finally {
         reloaded.close();
       }

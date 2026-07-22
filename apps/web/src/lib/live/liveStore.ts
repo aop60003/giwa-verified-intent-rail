@@ -211,8 +211,18 @@ export function createMemoryLiveStore(): LiveStore {
       };
     },
     pruneIncompleteRuns(cutoffIso) {
+      const evidenceIntentHashes = new Set<string>();
+      for (const decision of decisionsByIntent.values()) {
+        evidenceIntentHashes.add(decision.intentHash.toLowerCase());
+      }
+      for (const receipt of receiptsByHash.values()) {
+        evidenceIntentHashes.add(receipt.intentHash.toLowerCase());
+      }
       const staleRuns = [...runsById.values()].filter(
-        (run) => run.createdAt < cutoffIso && !isTerminalLiveRunStatus(run.status)
+        (run) =>
+          run.createdAt < cutoffIso &&
+          !isTerminalLiveRunStatus(run.status) &&
+          !evidenceIntentHashes.has(run.intentHash.toLowerCase())
       );
 
       for (const run of staleRuns) {
@@ -681,21 +691,28 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       return readLiveSchemaState(db);
     },
     pruneIncompleteRuns(cutoffIso) {
-      const incompleteRunFilter =
-        "runId in (select runId from runs where createdAt < ? and status not in ('matched', 'mismatched', 'failed'))";
+      const pruneCandidateQuery = `
+        select candidate_runs.runId
+        from runs as candidate_runs
+        where candidate_runs.createdAt < ?
+          and candidate_runs.status not in ('matched', 'mismatched', 'failed')
+          and not exists (
+            select 1 from decisions
+            where lower(decisions.intentHash) = lower(candidate_runs.intentHash)
+          )
+          and not exists (
+            select 1 from receipts
+            where lower(receipts.intentHash) = lower(candidate_runs.intentHash)
+          )
+      `;
+      const incompleteRunFilter = `runId in (${pruneCandidateQuery})`;
       db.exec("begin immediate");
       try {
-        const staleRuns = db
-          .prepare(
-            "select runId from runs where createdAt < ? and status not in ('matched', 'mismatched', 'failed')"
-          )
-          .all(cutoffIso);
+        const staleRuns = db.prepare(pruneCandidateQuery).all(cutoffIso);
         db.prepare(`delete from submitted_txs where ${incompleteRunFilter}`).run(cutoffIso);
         db.prepare(`delete from verifier_inputs where ${incompleteRunFilter}`).run(cutoffIso);
         db.prepare(`delete from verification_jobs where ${incompleteRunFilter}`).run(cutoffIso);
-        db.prepare("delete from runs where createdAt < ? and status not in ('matched', 'mismatched', 'failed')").run(
-          cutoffIso
-        );
+        db.prepare(`delete from runs where ${incompleteRunFilter}`).run(cutoffIso);
         db.exec("commit");
         return staleRuns.length;
       } catch (error) {
