@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { createMemoryLiveStore, createSqliteLiveStore } from "./liveStore.ts";
+import { REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
 import type { LiveRunRecord } from "./liveTypes.ts";
 
 function run(overrides: Partial<LiveRunRecord> = {}): LiveRunRecord {
@@ -161,6 +162,86 @@ describe("live store", () => {
     expect(second.jobId).toBe(first.jobId);
     expect(store.getVerificationJobForRun("run-1")?.status).toBe("pending");
   });
+
+  it("binds capabilities and prunes only incomplete runs in memory", () => {
+    const store = createMemoryLiveStore();
+    const capabilityHash = "a".repeat(64);
+    store.createRun(
+      run({
+        capabilityHash,
+        createdAt: "2026-07-02T00:00:00.000Z",
+        updatedAt: "2026-07-02T00:00:00.000Z"
+      })
+    );
+    store.createRun(
+      run({
+        runId: "stale-incomplete",
+        idempotencyKey: "stale-incomplete",
+        intentHash: "0xstale-incomplete",
+        createdAt: "2026-06-01T00:00:00.000Z",
+        updatedAt: "2026-06-01T00:00:00.000Z"
+      })
+    );
+    store.createRun(
+      run({
+        runId: "stale-matched",
+        idempotencyKey: "stale-matched",
+        intentHash: "0xstale-matched",
+        status: "matched",
+        createdAt: "2026-06-01T00:00:00.000Z",
+        updatedAt: "2026-06-01T00:00:00.000Z"
+      })
+    );
+    store.saveSubmittedTx({
+      runId: "stale-incomplete",
+      approveTxHash: null,
+      depositTxHash: "0xstale-incomplete-deposit",
+      submittedAt: "2026-06-01T00:01:00.000Z"
+    });
+    store.saveVerifierInput({
+      runId: "stale-incomplete",
+      verifierInputHash: "0xstale-incomplete-verifier",
+      canonicalPayload: "{}",
+      canonicalPayloadBytesHex: "0x7b7d",
+      createdAt: "2026-06-01T00:02:00.000Z"
+    });
+    store.enqueueVerificationJob({
+      tenantId: "local",
+      runId: "stale-incomplete",
+      reason: "deposit_submitted",
+      createdAt: "2026-06-01T00:03:00.000Z"
+    });
+    store.saveDecision({
+      intentHash: "0xstale-matched",
+      depositTxHash: "0xstale-matched-deposit",
+      decision: "matched",
+      failureReason: null,
+      verifierInputHash: "0xstale-matched-verifier",
+      receiptHash: "0xstale-matched-receipt",
+      decisionTxHash: null,
+      issuedAt: 1780272000
+    });
+    store.saveReceipt({
+      receiptHash: "0xstale-matched-receipt",
+      intentHash: "0xstale-matched",
+      payloadJson: "{}",
+      canonicalPayload: "{}",
+      canonicalPayloadBytesHex: "0x7b7d"
+    });
+
+    expect(store.getRunForCapabilityHash("run-1", capabilityHash)?.runId).toBe("run-1");
+    expect(store.getRunForCapabilityHash("run-1", "b".repeat(64))).toBeUndefined();
+    expect(store.checkWritable()).toBe(true);
+    expect(store.getSchemaState().migrations).toEqual(REQUIRED_LIVE_MIGRATIONS);
+    expect(store.pruneIncompleteRuns("2026-07-01T00:00:00.000Z")).toBe(1);
+    expect(store.getRun("stale-incomplete")).toBeUndefined();
+    expect(store.getRun("stale-matched")?.status).toBe("matched");
+    expect(store.getSubmittedTx("stale-incomplete")).toBeUndefined();
+    expect(store.getVerifierInput("0xstale-incomplete-verifier")).toBeUndefined();
+    expect(store.getVerificationJobForRun("stale-incomplete")).toBeUndefined();
+    expect(store.getDecisionByIntentHash("0xstale-matched")?.decision).toBe("matched");
+    expect(store.getReceipt("0xstale-matched-receipt")?.intentHash).toBe("0xstale-matched");
+  });
 });
 
 describe("sqlite live store", () => {
@@ -258,6 +339,124 @@ describe("sqlite live store", () => {
 
       expect(migration).toBeDefined();
       expect(jobsTable).toBeDefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("persists capability and receipt metadata while pruning only incomplete runs", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-live-store-"));
+    const dbPath = join(dir, "live.sqlite");
+    const capabilityHash = "a".repeat(64);
+    try {
+      const store = createSqliteLiveStore(dbPath);
+      try {
+        store.createRun(
+          run({
+            capabilityHash,
+            intentHash: `0x${"a".repeat(64)}`,
+            createdAt: "2026-07-02T00:00:00.000Z",
+            updatedAt: "2026-07-02T00:00:00.000Z"
+          })
+        );
+        store.saveDecision({
+          intentHash: `0x${"a".repeat(64)}`,
+          depositTxHash: `0x${"d".repeat(64)}`,
+          decision: "matched",
+          failureReason: null,
+          verifierInputHash: `0x${"9".repeat(64)}`,
+          receiptHash: `0x${"8".repeat(64)}`,
+          decisionTxHash: null,
+          issuedAt: 1790000000,
+          standardRpcReceiptStatus: 1,
+          depositBlockNumber: 123,
+          depositBlockHash: `0x${"c".repeat(64)}`,
+          confirmationDepth: 3
+        });
+        store.createRun(
+          run({
+            runId: "stale-incomplete",
+            idempotencyKey: "stale-incomplete",
+            intentHash: "0xstale-incomplete",
+            createdAt: "2026-06-01T00:00:00.000Z",
+            updatedAt: "2026-06-01T00:00:00.000Z"
+          })
+        );
+        store.createRun(
+          run({
+            runId: "stale-matched",
+            idempotencyKey: "stale-matched",
+            intentHash: "0xstale-matched",
+            status: "matched",
+            createdAt: "2026-06-01T00:00:00.000Z",
+            updatedAt: "2026-06-01T00:00:00.000Z"
+          })
+        );
+        store.saveSubmittedTx({
+          runId: "stale-incomplete",
+          approveTxHash: null,
+          depositTxHash: "0xstale-incomplete-deposit",
+          submittedAt: "2026-06-01T00:01:00.000Z"
+        });
+        store.saveVerifierInput({
+          runId: "stale-incomplete",
+          verifierInputHash: "0xstale-incomplete-verifier",
+          canonicalPayload: "{}",
+          canonicalPayloadBytesHex: "0x7b7d",
+          createdAt: "2026-06-01T00:02:00.000Z"
+        });
+        store.enqueueVerificationJob({
+          tenantId: "local",
+          runId: "stale-incomplete",
+          reason: "deposit_submitted",
+          createdAt: "2026-06-01T00:03:00.000Z"
+        });
+        store.saveDecision({
+          intentHash: "0xstale-matched",
+          depositTxHash: "0xstale-matched-deposit",
+          decision: "matched",
+          failureReason: null,
+          verifierInputHash: "0xstale-matched-verifier",
+          receiptHash: "0xstale-matched-receipt",
+          decisionTxHash: null,
+          issuedAt: 1780272000
+        });
+        store.saveReceipt({
+          receiptHash: "0xstale-matched-receipt",
+          intentHash: "0xstale-matched",
+          payloadJson: "{}",
+          canonicalPayload: "{}",
+          canonicalPayloadBytesHex: "0x7b7d"
+        });
+
+        expect(store.getRunForCapabilityHash("run-1", capabilityHash)?.runId).toBe("run-1");
+        expect(store.getRunForCapabilityHash("run-1", "b".repeat(64))).toBeUndefined();
+        expect(store.checkWritable()).toBe(true);
+        expect(store.getSchemaState().migrations).toEqual(REQUIRED_LIVE_MIGRATIONS);
+        expect(store.pruneIncompleteRuns("2026-07-01T00:00:00.000Z")).toBe(1);
+        expect(store.getRun("stale-incomplete")).toBeUndefined();
+        expect(store.getRun("stale-matched")?.status).toBe("matched");
+        expect(store.getSubmittedTx("stale-incomplete")).toBeUndefined();
+        expect(store.getVerifierInput("0xstale-incomplete-verifier")).toBeUndefined();
+        expect(store.getVerificationJobForRun("stale-incomplete")).toBeUndefined();
+      } finally {
+        store.close();
+      }
+
+      const reloaded = createSqliteLiveStore(dbPath);
+      try {
+        expect(reloaded.getRunForCapabilityHash("run-1", capabilityHash)?.capabilityHash).toBe(capabilityHash);
+        expect(reloaded.getDecisionByIntentHash(`0x${"a".repeat(64)}`)).toMatchObject({
+          standardRpcReceiptStatus: 1,
+          depositBlockNumber: 123,
+          depositBlockHash: `0x${"c".repeat(64)}`,
+          confirmationDepth: 3
+        });
+        expect(reloaded.getDecisionByIntentHash("0xstale-matched")?.decision).toBe("matched");
+        expect(reloaded.getReceipt("0xstale-matched-receipt")?.intentHash).toBe("0xstale-matched");
+      } finally {
+        reloaded.close();
+      }
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

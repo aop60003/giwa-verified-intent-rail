@@ -27,6 +27,7 @@ export const DEFAULT_LIVE_TENANT_ID = "local";
 export type LiveRunRecord = {
   runId: string;
   tenantId?: string;
+  capabilityHash?: string | null;
   idempotencyKey: string;
   wallet: string;
   campaignId: string;
@@ -58,6 +59,10 @@ export type DecisionRecord = {
   receiptHash: string | null;
   decisionTxHash: string | null;
   issuedAt: number;
+  standardRpcReceiptStatus?: 1 | 0 | null;
+  depositBlockNumber?: number | null;
+  depositBlockHash?: string | null;
+  confirmationDepth?: number | null;
 };
 
 export type ReceiptRecord = {

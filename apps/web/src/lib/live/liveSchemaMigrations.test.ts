@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluateLiveSchemaState } from "./liveSchemaMigrations.ts";
+import { evaluateLiveSchemaState, REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
 
 describe("evaluateLiveSchemaState", () => {
+  it("tracks every required live store migration", () => {
+    expect(REQUIRED_LIVE_MIGRATIONS).toEqual([
+      "001_live_base",
+      "002_nullable_decision_tx_hash",
+      "003_verification_jobs",
+      "004_run_capability_hash",
+      "005_decision_rpc_metadata"
+    ]);
+  });
+
   it("rejects pre-Sprint14 decisions schema", () => {
     const result = evaluateLiveSchemaState({
       migrations: [],

@@ -7,12 +7,19 @@ import type {
   SubmittedTxRecord,
   VerifierInputRecord
 } from "./liveTypes.ts";
-import { DEFAULT_LIVE_TENANT_ID as DEFAULT_TENANT, normalizeLiveRunStatus } from "./liveTypes.ts";
+import { REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
+import type { LiveSchemaStateInput } from "./liveSchemaMigrations.ts";
+import {
+  DEFAULT_LIVE_TENANT_ID as DEFAULT_TENANT,
+  isTerminalLiveRunStatus,
+  normalizeLiveRunStatus
+} from "./liveTypes.ts";
 import type { VerificationJobReason, VerificationJobRecord } from "./verificationJobQueue.ts";
 
 export type LiveStore = {
   createRun(input: LiveRunRecord): LiveRunRecord;
   getRun(runId: string): LiveRunRecord | undefined;
+  getRunForCapabilityHash(runId: string, capabilityHash: string): LiveRunRecord | undefined;
   getRunForTenant(tenantId: string, runId: string): LiveRunRecord | undefined;
   listRuns(): LiveRunRecord[];
   listRunsForTenant(tenantId: string): LiveRunRecord[];
@@ -33,6 +40,9 @@ export type LiveStore = {
     createdAt: string;
   }): VerificationJobRecord;
   getVerificationJobForRun(runId: string): VerificationJobRecord | undefined;
+  checkWritable(): boolean;
+  getSchemaState(): LiveSchemaStateInput;
+  pruneIncompleteRuns(cutoffIso: string): number;
 };
 
 export type ClosableLiveStore = LiveStore & {
@@ -78,6 +88,11 @@ export function createMemoryLiveStore(): LiveStore {
     },
     getRun(runId) {
       return runsById.get(runId);
+    },
+    getRunForCapabilityHash(runId, capabilityHash) {
+      const run = runsById.get(runId);
+      if (run === undefined || run.capabilityHash !== capabilityHash) return undefined;
+      return run;
     },
     getRunForTenant(tenantId, runId) {
       const run = runsById.get(runId);
@@ -175,6 +190,53 @@ export function createMemoryLiveStore(): LiveStore {
     getVerificationJobForRun(runId) {
       const id = verificationJobIdByRun.get(runId);
       return id === undefined ? undefined : verificationJobsById.get(id);
+    },
+    checkWritable() {
+      return true;
+    },
+    getSchemaState() {
+      return {
+        migrations: [...REQUIRED_LIVE_MIGRATIONS],
+        tables: {
+          runs: [{ name: "capabilityHash", notNull: false }],
+          decisions: [
+            { name: "decisionTxHash", notNull: false },
+            { name: "standardRpcReceiptStatus", notNull: false },
+            { name: "depositBlockNumber", notNull: false },
+            { name: "depositBlockHash", notNull: false },
+            { name: "confirmationDepth", notNull: false }
+          ]
+        },
+        requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
+      };
+    },
+    pruneIncompleteRuns(cutoffIso) {
+      const staleRuns = [...runsById.values()].filter(
+        (run) => run.createdAt < cutoffIso && !isTerminalLiveRunStatus(run.status)
+      );
+
+      for (const run of staleRuns) {
+        runsById.delete(run.runId);
+        runsByIdempotency.delete(idempotencyLookupKey(run));
+
+        const submitted = submittedByRun.get(run.runId);
+        if (submitted !== undefined) {
+          submittedRunByDeposit.delete(submitted.depositTxHash.toLowerCase());
+          submittedByRun.delete(run.runId);
+        }
+
+        for (const [verifierInputHash, verifierInput] of verifierInputsByHash) {
+          if (verifierInput.runId === run.runId) verifierInputsByHash.delete(verifierInputHash);
+        }
+
+        const verificationJobId = verificationJobIdByRun.get(run.runId);
+        if (verificationJobId !== undefined) {
+          verificationJobsById.delete(verificationJobId);
+          verificationJobIdByRun.delete(run.runId);
+        }
+      }
+
+      return staleRuns.length;
     }
   };
 }
@@ -199,10 +261,25 @@ function numberValue(row: Record<string, unknown>, key: string): number {
   throw new Error(`${key} is not a number`);
 }
 
+function nullableNumberValue(row: Record<string, unknown>, key: string): number | null {
+  const value = row[key];
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
+  throw new Error(`${key} is not a number`);
+}
+
+function nullableReceiptStatusValue(row: Record<string, unknown>, key: string): 1 | 0 | null {
+  const value = nullableNumberValue(row, key);
+  if (value === null || value === 0 || value === 1) return value;
+  throw new Error(`${key} is not a receipt status`);
+}
+
 function rowToRun(row: Record<string, unknown>): LiveRunRecord {
   return {
     runId: stringValue(row, "runId"),
     tenantId: nullableStringValue(row, "tenantId") ?? DEFAULT_TENANT,
+    capabilityHash: nullableStringValue(row, "capabilityHash"),
     idempotencyKey: stringValue(row, "idempotencyKey"),
     wallet: stringValue(row, "wallet"),
     campaignId: stringValue(row, "campaignId"),
@@ -242,7 +319,11 @@ function rowToDecision(row: Record<string, unknown>): DecisionRecord {
     verifierInputHash: stringValue(row, "verifierInputHash"),
     receiptHash: nullableStringValue(row, "receiptHash"),
     decisionTxHash: nullableStringValue(row, "decisionTxHash"),
-    issuedAt: numberValue(row, "issuedAt")
+    issuedAt: numberValue(row, "issuedAt"),
+    standardRpcReceiptStatus: nullableReceiptStatusValue(row, "standardRpcReceiptStatus"),
+    depositBlockNumber: nullableNumberValue(row, "depositBlockNumber"),
+    depositBlockHash: nullableStringValue(row, "depositBlockHash"),
+    confirmationDepth: nullableNumberValue(row, "confirmationDepth")
   };
 }
 
@@ -293,6 +374,7 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     create table if not exists runs (
       runId text primary key,
       tenantId text not null default 'local',
+      capabilityHash text,
       idempotencyKey text not null,
       wallet text not null,
       campaignId text not null,
@@ -324,7 +406,11 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       verifierInputHash text not null,
       receiptHash text unique,
       decisionTxHash text,
-      issuedAt integer not null
+      issuedAt integer not null,
+      standardRpcReceiptStatus integer,
+      depositBlockNumber integer,
+      depositBlockHash text,
+      confirmationDepth integer
     );
 
     create table if not exists receipts (
@@ -364,7 +450,12 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     );
   `);
     ensureRunTenantIdColumn(db);
+    ensureNullableColumn(db, "runs", "capabilityHash", "text");
     ensureNullableDecisionTxHash(db, dbPath);
+    ensureNullableColumn(db, "decisions", "standardRpcReceiptStatus", "integer");
+    ensureNullableColumn(db, "decisions", "depositBlockNumber", "integer");
+    ensureNullableColumn(db, "decisions", "depositBlockHash", "text");
+    ensureNullableColumn(db, "decisions", "confirmationDepth", "integer");
     recordLocalMigrations(db);
   } catch (error) {
     db.close();
@@ -386,12 +477,13 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       }
       db.prepare(
         `insert into runs (
-          runId, tenantId, idempotencyKey, wallet, campaignId, missionId, referralCode, nonce, intentHash,
+          runId, tenantId, capabilityHash, idempotencyKey, wallet, campaignId, missionId, referralCode, nonce, intentHash,
           manifestJson, manifestSignature, status, expiryUnix, createdAt, updatedAt
-        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         normalized.runId,
         normalized.tenantId,
+        normalized.capabilityHash ?? null,
         normalized.idempotencyKey,
         normalized.wallet,
         normalized.campaignId,
@@ -410,6 +502,10 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     },
     getRun(runId) {
       const row = db.prepare("select * from runs where runId = ?").get(runId);
+      return row === undefined ? undefined : rowToRun(row);
+    },
+    getRunForCapabilityHash(runId, capabilityHash) {
+      const row = db.prepare("select * from runs where runId = ? and capabilityHash = ?").get(runId, capabilityHash);
       return row === undefined ? undefined : rowToRun(row);
     },
     getRunForTenant(tenantId, runId) {
@@ -454,8 +550,9 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       if (existingByDeposit !== undefined) throw new Error("depositTxHash already has a terminal decision");
       db.prepare(
         `insert into decisions (
-          intentHash, depositTxHash, decision, failureReason, verifierInputHash, receiptHash, decisionTxHash, issuedAt
-        ) values (?, ?, ?, ?, ?, ?, ?, ?)`
+          intentHash, depositTxHash, decision, failureReason, verifierInputHash, receiptHash, decisionTxHash, issuedAt,
+          standardRpcReceiptStatus, depositBlockNumber, depositBlockHash, confirmationDepth
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         input.intentHash,
         input.depositTxHash,
@@ -464,7 +561,11 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
         input.verifierInputHash,
         input.receiptHash,
         input.decisionTxHash,
-        input.issuedAt
+        input.issuedAt,
+        input.standardRpcReceiptStatus ?? null,
+        input.depositBlockNumber ?? null,
+        input.depositBlockHash ?? null,
+        input.confirmationDepth ?? null
       );
       return input;
     },
@@ -560,6 +661,48 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       const row = db.prepare("select * from verification_jobs where runId = ?").get(runId);
       return row === undefined ? undefined : rowToVerificationJob(row);
     },
+    checkWritable() {
+      let writable = false;
+      try {
+        db.exec("begin immediate");
+        writable = true;
+      } catch (_error) {
+        writable = false;
+      } finally {
+        try {
+          db.exec("rollback");
+        } catch (_error) {
+          writable = false;
+        }
+      }
+      return writable;
+    },
+    getSchemaState() {
+      return readLiveSchemaState(db);
+    },
+    pruneIncompleteRuns(cutoffIso) {
+      const incompleteRunFilter =
+        "runId in (select runId from runs where createdAt < ? and status not in ('matched', 'mismatched', 'failed'))";
+      db.exec("begin immediate");
+      try {
+        const staleRuns = db
+          .prepare(
+            "select runId from runs where createdAt < ? and status not in ('matched', 'mismatched', 'failed')"
+          )
+          .all(cutoffIso);
+        db.prepare(`delete from submitted_txs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.prepare(`delete from verifier_inputs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.prepare(`delete from verification_jobs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.prepare("delete from runs where createdAt < ? and status not in ('matched', 'mismatched', 'failed')").run(
+          cutoffIso
+        );
+        db.exec("commit");
+        return staleRuns.length;
+      } catch (error) {
+        db.exec("rollback");
+        throw error;
+      }
+    },
     close() {
       db.close();
     }
@@ -570,6 +713,18 @@ function ensureRunTenantIdColumn(db: DatabaseSync): void {
   const columns = db.prepare("pragma table_info(runs)").all() as Record<string, unknown>[];
   if (!columns.some((row) => row.name === "tenantId")) {
     db.exec("alter table runs add column tenantId text not null default 'local'");
+  }
+}
+
+function ensureNullableColumn(
+  db: DatabaseSync,
+  table: "runs" | "decisions",
+  column: "capabilityHash" | "standardRpcReceiptStatus" | "depositBlockNumber" | "depositBlockHash" | "confirmationDepth",
+  type: "text" | "integer"
+): void {
+  const columns = db.prepare(`pragma table_info(${table})`).all();
+  if (!columns.some((row) => row.name === column)) {
+    db.exec(`alter table ${table} add column ${column} ${type}`);
   }
 }
 
@@ -588,10 +743,45 @@ function recordLocalMigrations(db: DatabaseSync): void {
   const migrations = [
     ["001_live_base", "local-live-base"],
     ["002_nullable_decision_tx_hash", "nullable-decision-tx-hash"],
-    ["003_verification_jobs", "verification-jobs"]
+    ["003_verification_jobs", "verification-jobs"],
+    ["004_run_capability_hash", "run-capability-hash"],
+    ["005_decision_rpc_metadata", "decision-rpc-metadata"]
   ] as const;
   const insert = db.prepare("insert or ignore into schema_migrations (id, checksum, appliedAt) values (?, ?, ?)");
   for (const migration of migrations) {
     insert.run(migration[0], migration[1], appliedAt);
   }
+}
+
+function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
+  const migrations = db
+    .prepare("select id from schema_migrations order by rowid asc")
+    .all()
+    .map((row) => stringValue(row, "id"));
+  const tableNames = [
+    "runs",
+    "submitted_txs",
+    "decisions",
+    "receipts",
+    "verifier_inputs",
+    "verification_jobs",
+    "schema_migrations"
+  ] as const;
+  const tables: LiveSchemaStateInput["tables"] = {};
+
+  for (const tableName of tableNames) {
+    tables[tableName] = db
+      .prepare(`pragma table_info(${tableName})`)
+      .all()
+      .map((row) => ({
+        name: stringValue(row, "name"),
+        notNull: numberValue(row, "notnull") === 1
+      }));
+  }
+
+  return {
+    migrations,
+    tables,
+    requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
+  };
 }

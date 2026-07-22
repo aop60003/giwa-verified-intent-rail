@@ -16,7 +16,9 @@ export type LiveSchemaStateResult =
 export const REQUIRED_LIVE_MIGRATIONS = [
   "001_live_base",
   "002_nullable_decision_tx_hash",
-  "003_verification_jobs"
+  "003_verification_jobs",
+  "004_run_capability_hash",
+  "005_decision_rpc_metadata"
 ] as const;
 
 export function evaluateLiveSchemaState(input: LiveSchemaStateInput): LiveSchemaStateResult {
