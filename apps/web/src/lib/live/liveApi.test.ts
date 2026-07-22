@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   canonicalReceiptPayload,
   canonicalReceiptPayloadBytesHex,
+  canonicalPayloadBytesHex,
   canonicalVerifierInputPayload,
   canonicalVerifierInputPayloadBytesHex,
   computeReceiptHash,
   computeVerifierInputHash,
+  hashCanonicalPayload,
   type ReceiptPayload,
   type VerifierInputPayload
 } from "../../../../../packages/protocol/src/index.ts";
@@ -62,7 +64,7 @@ describe("live API contracts", () => {
     expect(response.body.intentHash).toBe("0xintent");
   });
 
-  it("returns the existing run for an idempotent create request", async () => {
+  it("keeps the existing run when a repeated create issues an unstored capability", async () => {
     const store = createMemoryLiveStore();
     const api = createLiveApiHandler({
       store,
@@ -91,7 +93,9 @@ describe("live API contracts", () => {
     const first = await api(request);
     const second = await api(request);
 
-    expect(first.body.runId).toBe(second.body.runId);
+    expect(first.status).toBe(201);
+    expect(first.body.runId).toBe("run-1111");
+    expect(second).toEqual({ status: 409, body: { error: "run_capability_conflict" } });
     expect(store.listRuns()).toHaveLength(1);
   });
 
@@ -866,6 +870,225 @@ describe("live API contracts", () => {
     expect(JSON.stringify(response.body)).not.toContain(hashLiveRunCapability(TEST_RUN_CAPABILITY));
   });
 
+  it("keeps a matched terminal run and its public receipt immutable after participant mutations", async () => {
+    const store = createMemoryLiveStore();
+    const intentHash = `0x${"a".repeat(64)}`;
+    const originalDepositTxHash = `0x${"d".repeat(64)}`;
+    const verifierCanonicalPayload = "{\"kind\":\"verifier-input\"}";
+    const verifierInputHash = hashCanonicalPayload(verifierCanonicalPayload);
+    const receiptCanonicalPayload = "{\"status\":\"matched\"}";
+    const receiptHash = hashCanonicalPayload(receiptCanonicalPayload);
+    store.createRun({
+      runId: "run-terminal",
+      tenantId: "local",
+      capabilityHash: hashLiveRunCapability(TEST_RUN_CAPABILITY),
+      idempotencyKey: "local:run-terminal",
+      wallet: "0x1111111111111111111111111111111111111111",
+      campaignId: "gasok-demo",
+      missionId: "first-mock-vault-deposit",
+      referralCode: null,
+      nonce: "nonce-terminal",
+      intentHash,
+      manifestJson: "{}",
+      manifestSignature: "0xsig",
+      status: "matched",
+      expiryUnix: 1790003600,
+      createdAt: "2026-06-19T00:00:00.000Z",
+      updatedAt: "2026-06-19T00:02:00.000Z"
+    });
+    store.saveSubmittedTx({
+      runId: "run-terminal",
+      approveTxHash: null,
+      depositTxHash: originalDepositTxHash,
+      submittedAt: "2026-06-19T00:01:00.000Z"
+    });
+    store.saveDecision({
+      intentHash,
+      depositTxHash: originalDepositTxHash,
+      decision: "matched",
+      failureReason: null,
+      verifierInputHash,
+      receiptHash,
+      decisionTxHash: null,
+      issuedAt: 1790000020,
+      standardRpcReceiptStatus: 1,
+      depositBlockNumber: 10,
+      depositBlockHash: `0x${"e".repeat(64)}`,
+      confirmationDepth: 4
+    });
+    store.saveVerifierInput({
+      runId: "run-terminal",
+      verifierInputHash,
+      canonicalPayload: verifierCanonicalPayload,
+      canonicalPayloadBytesHex: canonicalPayloadBytesHex(verifierCanonicalPayload),
+      createdAt: "2026-06-19T00:02:00.000Z"
+    });
+    store.saveReceipt({
+      receiptHash,
+      intentHash,
+      payloadJson: receiptCanonicalPayload,
+      canonicalPayload: receiptCanonicalPayload,
+      canonicalPayloadBytesHex: canonicalPayloadBytesHex(receiptCanonicalPayload)
+    });
+    const api = createLiveApiHandler({
+      store,
+      mode: "staging-testnet",
+      now: () => "2026-06-19T00:03:00.000Z",
+      issueManifest: async () => {
+        throw new Error("not reached");
+      }
+    });
+    const beforeSubmitted = store.getSubmittedTx("run-terminal");
+    const beforeDecision = store.getDecisionByIntentHash(intentHash);
+    const beforeReceipt = store.getReceipt(receiptHash);
+    const publicReceiptBefore = await api({ method: "GET", pathname: `/api/receipts/${receiptHash}` });
+
+    const wrongCapabilityEvidence = await api({
+      method: "POST",
+      pathname: "/api/runs/run-terminal/evidence",
+      runCapability: "B".repeat(43),
+      body: { approveTxHash: null, depositTxHash: `0x${"c".repeat(64)}` }
+    });
+    const wrongCapabilityInvalidate = await api({
+      method: "POST",
+      pathname: "/api/runs/run-terminal/invalidate",
+      runCapability: "B".repeat(43),
+      body: { reason: "account_changed" }
+    });
+    const evidence = await api({
+      method: "POST",
+      pathname: "/api/runs/run-terminal/evidence",
+      runCapability: TEST_RUN_CAPABILITY,
+      body: { approveTxHash: null, depositTxHash: `0x${"c".repeat(64)}` }
+    });
+    const invalidate = await api({
+      method: "POST",
+      pathname: "/api/runs/run-terminal/invalidate",
+      runCapability: TEST_RUN_CAPABILITY,
+      body: { reason: "account_changed" }
+    });
+    const publicReceiptAfter = await api({ method: "GET", pathname: `/api/receipts/${receiptHash}` });
+
+    expect(publicReceiptBefore.status).toBe(200);
+    expect(wrongCapabilityEvidence).toEqual({ status: 404, body: { error: "run_not_found" } });
+    expect(wrongCapabilityInvalidate).toEqual({ status: 404, body: { error: "run_not_found" } });
+    expect(evidence).toEqual({ status: 409, body: { error: "run_terminal" } });
+    expect(invalidate).toEqual({ status: 409, body: { error: "run_terminal" } });
+    expect(store.getRun("run-terminal")?.status).toBe("matched");
+    expect(store.getSubmittedTx("run-terminal")).toEqual(beforeSubmitted);
+    expect(store.getDecisionByIntentHash(intentHash)).toEqual(beforeDecision);
+    expect(store.getReceipt(receiptHash)).toEqual(beforeReceipt);
+    expect(publicReceiptAfter.status).toBe(200);
+  });
+
+  it.each(["mismatched", "failed"] as const)(
+    "rejects evidence and invalidation for %s terminal run status without a persisted decision",
+    async (status) => {
+      const store = createMemoryLiveStore();
+      store.createRun({
+        runId: `run-${status}`,
+        capabilityHash: hashLiveRunCapability(TEST_RUN_CAPABILITY),
+        idempotencyKey: `local:run-${status}`,
+        wallet: "0x1111111111111111111111111111111111111111",
+        campaignId: "gasok-demo",
+        missionId: "first-mock-vault-deposit",
+        referralCode: null,
+        nonce: `nonce-${status}`,
+        intentHash: status === "mismatched" ? `0x${"a".repeat(64)}` : `0x${"b".repeat(64)}`,
+        manifestJson: "{}",
+        manifestSignature: "0xsig",
+        status,
+        expiryUnix: 1790003600,
+        createdAt: "2026-06-19T00:00:00.000Z",
+        updatedAt: "2026-06-19T00:02:00.000Z"
+      });
+      const api = createLiveApiHandler({
+        store,
+        mode: "staging-testnet",
+        now: () => "2026-06-19T00:03:00.000Z",
+        issueManifest: async () => {
+          throw new Error("not reached");
+        }
+      });
+
+      const evidence = await api({
+        method: "POST",
+        pathname: `/api/runs/run-${status}/evidence`,
+        runCapability: TEST_RUN_CAPABILITY,
+        body: { approveTxHash: null, depositTxHash: `0x${"c".repeat(64)}` }
+      });
+      const invalidate = await api({
+        method: "POST",
+        pathname: `/api/runs/run-${status}/invalidate`,
+        runCapability: TEST_RUN_CAPABILITY,
+        body: { reason: "account_changed" }
+      });
+
+      expect(evidence).toEqual({ status: 409, body: { error: "run_terminal" } });
+      expect(invalidate).toEqual({ status: 409, body: { error: "run_terminal" } });
+      expect(store.getRun(`run-${status}`)?.status).toBe(status);
+      expect(store.getSubmittedTx(`run-${status}`)).toBeUndefined();
+    }
+  );
+
+  it("rejects terminal mutations when a persisted decision exists before the run status catches up", async () => {
+    const store = createMemoryLiveStore();
+    const intentHash = `0x${"a".repeat(64)}`;
+    store.createRun({
+      runId: "run-status-lag",
+      capabilityHash: hashLiveRunCapability(TEST_RUN_CAPABILITY),
+      idempotencyKey: "local:run-status-lag",
+      wallet: "0x1111111111111111111111111111111111111111",
+      campaignId: "gasok-demo",
+      missionId: "first-mock-vault-deposit",
+      referralCode: null,
+      nonce: "nonce-status-lag",
+      intentHash,
+      manifestJson: "{}",
+      manifestSignature: "0xsig",
+      status: "depositSubmitted",
+      expiryUnix: 1790003600,
+      createdAt: "2026-06-19T00:00:00.000Z",
+      updatedAt: "2026-06-19T00:02:00.000Z"
+    });
+    store.saveDecision({
+      intentHash,
+      depositTxHash: `0x${"d".repeat(64)}`,
+      decision: "mismatched",
+      failureReason: "MISSING_REQUIRED_LOG",
+      verifierInputHash: `0x${"9".repeat(64)}`,
+      receiptHash: null,
+      decisionTxHash: null,
+      issuedAt: 1790000020
+    });
+    const api = createLiveApiHandler({
+      store,
+      mode: "staging-testnet",
+      now: () => "2026-06-19T00:03:00.000Z",
+      issueManifest: async () => {
+        throw new Error("not reached");
+      }
+    });
+
+    const evidence = await api({
+      method: "POST",
+      pathname: "/api/runs/run-status-lag/evidence",
+      runCapability: TEST_RUN_CAPABILITY,
+      body: { approveTxHash: null, depositTxHash: `0x${"c".repeat(64)}` }
+    });
+    const invalidate = await api({
+      method: "POST",
+      pathname: "/api/runs/run-status-lag/invalidate",
+      runCapability: TEST_RUN_CAPABILITY,
+      body: { reason: "account_changed" }
+    });
+
+    expect(evidence).toEqual({ status: 409, body: { error: "run_terminal" } });
+    expect(invalidate).toEqual({ status: 409, body: { error: "run_terminal" } });
+    expect(store.getRun("run-status-lag")?.status).toBe("depositSubmitted");
+    expect(store.getSubmittedTx("run-status-lag")).toBeUndefined();
+  });
+
   it("keeps receipt route locked after Sprint 10 deposit evidence submission", async () => {
     const store = createMemoryLiveStore();
     const api = createLiveApiHandler({
@@ -1041,6 +1264,71 @@ describe("live API contracts", () => {
     expect(JSON.stringify(projected.body)).not.toContain(hashLiveRunCapability(TEST_RUN_CAPABILITY));
   });
 
+  it("rejects a duplicate issued runId when the newly issued capability was not stored", async () => {
+    const store = createMemoryLiveStore();
+    const capabilities = [TEST_RUN_CAPABILITY, "B".repeat(43)];
+    let capabilityIndex = 0;
+    const api = createLiveApiHandler({
+      store,
+      mode: "staging-testnet",
+      publicConfig: TEST_PUBLIC_CONFIG,
+      issueRunCapability: () => {
+        const value = capabilities[capabilityIndex++];
+        if (value === undefined) throw new Error("unexpected capability request");
+        return { value, hash: hashLiveRunCapability(value) };
+      },
+      now: () => "2026-06-19T00:00:00.000Z",
+      issueManifest: async () => ({
+        runId: "run-duplicate",
+        nonce: "nonce-duplicate",
+        intentHash: `0x${"a".repeat(64)}`,
+        manifestJson: "{}",
+        manifestSignature: "0xsig",
+        expiryUnix: 1790003600,
+        preview: null
+      })
+    });
+    const request = {
+      method: "POST" as const,
+      pathname: "/api/runs",
+      body: {
+        wallet: "0x1111111111111111111111111111111111111111",
+        chainId: 91342,
+        referralCode: null
+      }
+    };
+
+    const first = await api(request);
+    const firstRead = await api({
+      method: "GET",
+      pathname: "/api/runs/run-duplicate",
+      runCapability: TEST_RUN_CAPABILITY
+    });
+    const second = await api(request);
+    const firstReadAfterConflict = await api({
+      method: "GET",
+      pathname: "/api/runs/run-duplicate",
+      runCapability: TEST_RUN_CAPABILITY
+    });
+    const secondCapabilityRead = await api({
+      method: "GET",
+      pathname: "/api/runs/run-duplicate",
+      runCapability: "B".repeat(43)
+    });
+    const serializedConflict = JSON.stringify(second.body);
+
+    expect(first.status).toBe(201);
+    expect(first.body.runCapability).toBe(TEST_RUN_CAPABILITY);
+    expect(firstRead.status).toBe(200);
+    expect(second).toEqual({ status: 409, body: { error: "run_capability_conflict" } });
+    expect(serializedConflict).not.toContain("B".repeat(43));
+    expect(serializedConflict).not.toContain(hashLiveRunCapability(TEST_RUN_CAPABILITY));
+    expect(serializedConflict).not.toContain(hashLiveRunCapability("B".repeat(43)));
+    expect(firstReadAfterConflict.status).toBe(200);
+    expect(secondCapabilityRead).toEqual({ status: 404, body: { error: "run_not_found" } });
+    expect(store.getRun("run-duplicate")?.capabilityHash).toBe(hashLiveRunCapability(TEST_RUN_CAPABILITY));
+  });
+
   it("rejects fixed-policy overrides and accepts only equal legacy campaign and mission values", async () => {
     const rejectedBodies = [
       { campaignId: "other-campaign" },
@@ -1122,6 +1410,24 @@ describe("live API contracts", () => {
       pathname: "/api/runs",
       body: { wallet: "0x1111111111111111111111111111111111111111", chainId: 91342, referralCode: null }
     });
+    store.createRun({
+      runId: "run-invalidate",
+      tenantId: "local",
+      capabilityHash: hashLiveRunCapability(TEST_RUN_CAPABILITY),
+      idempotencyKey: "local:run-invalidate",
+      wallet: "0x1111111111111111111111111111111111111111",
+      campaignId: "gasok-demo",
+      missionId: "first-mock-vault-deposit",
+      referralCode: null,
+      nonce: "nonce-invalidate",
+      intentHash: `0x${"b".repeat(64)}`,
+      manifestJson: "{}",
+      manifestSignature: "0xsig",
+      status: "manifestIssued",
+      expiryUnix: 1790003600,
+      createdAt: "2026-06-19T00:00:00.000Z",
+      updatedAt: "2026-06-19T00:00:00.000Z"
+    });
 
     const missing = await api({ method: "GET", pathname: "/api/runs/run-capability" });
     const incorrect = await api({
@@ -1168,7 +1474,7 @@ describe("live API contracts", () => {
     });
     const invalidated = await api({
       method: "POST",
-      pathname: "/api/runs/run-capability/invalidate",
+      pathname: "/api/runs/run-invalidate/invalidate",
       runCapability: TEST_RUN_CAPABILITY,
       body: { reason: "account_changed" }
     });
@@ -1346,6 +1652,111 @@ describe("live API contracts", () => {
     expect(JSON.stringify(response.body)).not.toContain("manifestJson");
     expect(JSON.stringify(response.body)).not.toContain("capabilityHash");
     expect(JSON.stringify(response.body)).not.toContain(hashLiveRunCapability(TEST_RUN_CAPABILITY));
+  });
+
+  it("requires hosted operator credentials with runs:read scope for demo status", async () => {
+    const api = createLiveApiHandler({
+      store: createMemoryLiveStore(),
+      mode: "staging-testnet",
+      now: () => "2026-06-19T00:00:00.000Z",
+      issueManifest: async () => {
+        throw new Error("not reached");
+      }
+    });
+
+    const unauthenticated = await api({
+      method: "GET",
+      pathname: "/api/demo/status",
+      auth: null,
+      requestId: "req_demo_1"
+    });
+    const wrongScope = await api({
+      method: "GET",
+      pathname: "/api/demo/status",
+      auth: {
+        actorId: "cred-partner",
+        tenantId: "tenant-alpha",
+        scopes: ["partner:read"],
+        mode: "credential"
+      },
+      requestId: "req_demo_2"
+    });
+
+    expect(unauthenticated).toEqual({
+      status: 401,
+      body: { error: "unauthorized", requestId: "req_demo_1" }
+    });
+    expect(wrongScope).toEqual({
+      status: 403,
+      body: { error: "forbidden", requestId: "req_demo_2" }
+    });
+  });
+
+  it("scopes hosted operator demo status to the authenticated tenant", async () => {
+    const store = createMemoryLiveStore();
+    const now = "2026-06-19T00:00:00.000Z";
+    store.createRun({
+      runId: "run-alpha",
+      tenantId: "tenant-alpha",
+      idempotencyKey: "tenant-alpha:run-alpha",
+      wallet: "0x1111111111111111111111111111111111111111",
+      campaignId: "gasok-demo",
+      missionId: "first-mock-vault-deposit",
+      referralCode: null,
+      nonce: "nonce-alpha",
+      intentHash: `0x${"a".repeat(64)}`,
+      manifestJson: "{}",
+      manifestSignature: "0xsig",
+      status: "manifestIssued",
+      expiryUnix: 1790003600,
+      createdAt: now,
+      updatedAt: now
+    });
+    store.createRun({
+      runId: "run-beta",
+      tenantId: "tenant-beta",
+      idempotencyKey: "tenant-beta:run-beta",
+      wallet: "0x2222222222222222222222222222222222222222",
+      campaignId: "gasok-demo",
+      missionId: "first-mock-vault-deposit",
+      referralCode: null,
+      nonce: "nonce-beta",
+      intentHash: `0x${"b".repeat(64)}`,
+      manifestJson: "{}",
+      manifestSignature: "0xsig",
+      status: "matched",
+      expiryUnix: 1790003600,
+      createdAt: "2026-06-19T00:01:00.000Z",
+      updatedAt: "2026-06-19T00:01:00.000Z"
+    });
+    const api = createLiveApiHandler({
+      store,
+      mode: "staging-testnet",
+      now: () => now,
+      issueManifest: async () => {
+        throw new Error("not reached");
+      }
+    });
+
+    const response = await api({
+      method: "GET",
+      pathname: "/api/demo/status",
+      auth: {
+        actorId: "cred-operator",
+        tenantId: "tenant-alpha",
+        scopes: ["runs:read"],
+        mode: "credential"
+      }
+    });
+    const serialized = JSON.stringify(response.body);
+
+    expect(response.status).toBe(200);
+    expect(response.body.controlRoom).toMatchObject({
+      safeProjection: { latestRun: { runId: "run-alpha" } }
+    });
+    expect(serialized).not.toContain("run-beta");
+    expect(serialized).not.toContain("0x2222222222222222222222222222222222222222");
+    expect(serialized).not.toContain(`0x${"b".repeat(64)}`);
   });
 
   it("runs staging-testnet verification synchronously even when a job queue is configured", async () => {

@@ -9,7 +9,7 @@ import type {
   SubmittedTxRecord,
   VerifierInputRecord
 } from "./liveTypes.ts";
-import { DEFAULT_LIVE_TENANT_ID } from "./liveTypes.ts";
+import { DEFAULT_LIVE_TENANT_ID, isTerminalLiveRunStatus } from "./liveTypes.ts";
 import type { LiveManifestPreview } from "./liveManifestIssuer.ts";
 import type { VerificationJobQueue } from "./verificationJobQueue.ts";
 import { evaluateCommercialReceiptGate } from "./commercialReceiptGate.ts";
@@ -114,6 +114,10 @@ function participantRun(
   if ((deps.mode ?? "local") === "local") return deps.store.getRun(runId);
   if (typeof request.runCapability !== "string") return undefined;
   return deps.store.getRunForCapabilityHash(runId, hashLiveRunCapability(request.runCapability));
+}
+
+function hasTerminalRunState(deps: LiveApiDependencies, run: LiveRunRecord): boolean {
+  return isTerminalLiveRunStatus(run.status) || deps.store.getDecisionByIntentHash(run.intentHash) !== undefined;
 }
 
 const RUN_CREATE_KEYS = new Set(["wallet", "chainId", "referralCode", "campaignId", "missionId"]);
@@ -326,6 +330,9 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           createdAt: timestamp,
           updatedAt: timestamp
         });
+        if (run.capabilityHash !== capability.hash) {
+          return { status: 409, body: errorBody("run_capability_conflict", request.requestId) };
+        }
 
         return { status: 201, body: { ...runResponse(run, issued), runCapability: capability.value } };
       }
@@ -348,6 +355,9 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       if (evidenceRunId !== undefined) {
         const run = participantRun(deps, request, evidenceRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
+        if (hasTerminalRunState(deps, run)) {
+          return { status: 409, body: errorBody("run_terminal", request.requestId) };
+        }
         const timestamp = deps.now();
         if (run.status === "manifestInvalidated") {
           return { status: 409, body: { error: "manifest_invalidated" } };
@@ -389,6 +399,9 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       if (invalidateRunId !== undefined) {
         const run = participantRun(deps, request, invalidateRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
+        if (hasTerminalRunState(deps, run)) {
+          return { status: 409, body: errorBody("run_terminal", request.requestId) };
+        }
         const updated = deps.store.updateRunStatus(invalidateRunId, "manifestInvalidated", deps.now());
         return { status: 200, body: { ...runResponse(updated), invalidationAccepted: true } };
       }
@@ -582,7 +595,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       }
 
       if (request.method === "GET" && request.pathname === "/api/demo/status") {
-        const rows = deps.store.listRuns();
+        if (hosted && request.auth == null) return unauthorized(request);
+        if (hosted && !scopeAllowed(deps, request, "runs:read")) return forbidden(request);
+        const rows = hosted
+          ? deps.store.listRunsForTenant(requestTenant(request))
+          : deps.store.listRuns();
         const latestRun = selectLatestRun(rows);
         const decision = latestRun === null ? undefined : deps.store.getDecisionByIntentHash(latestRun.intentHash);
         const controlRoom = buildLiveDemoControlRoom({
