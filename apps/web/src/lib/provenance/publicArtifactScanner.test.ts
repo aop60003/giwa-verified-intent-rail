@@ -200,6 +200,54 @@ describe("public artifact scanner", () => {
     );
   });
 
+  it("blocks duplicate evidence members without printing an overwritten value", () => {
+    const overwrittenValue = "PASSWORD=synthetic";
+    const contract = JSON.stringify(variableNameContract());
+    const content = `{"envContract":${contract.slice(0, -1)},"note":"${overwrittenValue}","note":"safe"}}`;
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({
+      ruleId: "duplicate-json-key",
+      matchClass: "duplicate-object-key",
+      valuePrinted: false
+    });
+    expect(JSON.stringify(result)).not.toContain(overwrittenValue);
+  });
+
+  it("blocks duplicate members in nested JSON objects", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/nested.json",
+      content: '{"outer":{"note":"first","note":"second"}}'
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({ ruleId: "duplicate-json-key" });
+  });
+
+  it("blocks escaped-equivalent JSON member names", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/escaped.json",
+      content: '{"\\u006eote":"first","note":"second"}'
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({ ruleId: "duplicate-json-key" });
+  });
+
+  it("allows the same member name in separate sibling objects", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/siblings.json",
+      content: '{"left":{"note":"safe"},"right":{"note":"safe"}}'
+    });
+
+    expect(result.decision).toBe("pass");
+    expect(result.findings).toEqual([]);
+  });
+
   it("blocks malformed server-only name contracts even when their entries are not sensitive", () => {
     const unsafeCases = [
       { path: "docs/evidence/preflight.json", value: { serverOnlyNames: ["HOST"] } },

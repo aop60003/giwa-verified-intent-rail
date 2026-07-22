@@ -2,13 +2,25 @@ import type { ArtifactEntry, LocalArtifactManifest } from "./artifactManifest.ts
 import { isExcludedArtifactPath, normalizeArtifactPath } from "./artifactManifest.ts";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  isObjectLiteralExpression,
+  isPropertyAssignment,
+  isStringLiteral,
+  parseJsonText,
+  type Node
+} from "typescript";
 
 export type PublicArtifactScanFinding = {
-  ruleId: "credential-like-key" | "unsupported-claim" | "excluded-surface";
+  ruleId: "credential-like-key" | "duplicate-json-key" | "unsupported-claim" | "excluded-surface";
   severity: "block" | "info";
   path: string;
   line: number | null;
-  matchClass: "credential-key-name" | "credential-marker" | "claim-boundary" | "excluded-path";
+  matchClass:
+    | "credential-key-name"
+    | "credential-marker"
+    | "duplicate-object-key"
+    | "claim-boundary"
+    | "excluded-path";
   decision: "blocked" | "skipped";
   valuePrinted: false;
 };
@@ -153,6 +165,29 @@ function scanJsonStringValues(
   return false;
 }
 
+function hasDuplicateJsonObjectKeys(content: string): boolean {
+  const sourceFile = parseJsonText("public-artifact.json", content);
+  let duplicateFound = false;
+  const visit = (node: Node): void => {
+    if (duplicateFound) return;
+    if (isObjectLiteralExpression(node)) {
+      const names = new Set<string>();
+      for (const property of node.properties) {
+        if (!isPropertyAssignment(property) || !isStringLiteral(property.name)) continue;
+        const name = property.name.text;
+        if (names.has(name)) {
+          duplicateFound = true;
+          return;
+        }
+        names.add(name);
+      }
+    }
+    node.forEachChild(visit);
+  };
+  visit(sourceFile);
+  return duplicateFound;
+}
+
 export function scanPublicArtifactText(input: { path: string; content: string }): PublicArtifactScanResult {
   const path = normalizeArtifactPath(input.path);
   if (isExcludedArtifactPath(path)) {
@@ -190,6 +225,17 @@ export function scanPublicArtifactText(input: { path: string; content: string })
 
   try {
     const parsed = JSON.parse(input.content) as unknown;
+    if (hasDuplicateJsonObjectKeys(input.content)) {
+      findings.push({
+        ruleId: "duplicate-json-key",
+        severity: "block",
+        path,
+        line: null,
+        matchClass: "duplicate-object-key",
+        decision: "blocked",
+        valuePrinted: false
+      });
+    }
     if (scanJsonKeys(path, parsed)) {
       findings.push({
         ruleId: "credential-like-key",
