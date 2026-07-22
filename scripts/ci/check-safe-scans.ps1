@@ -43,11 +43,13 @@ function Test-SafeContext {
   param(
     [string] $RuleId,
     [string] $Path,
-    [string] $Text
+    [string] $Text,
+    [string] $Pattern
   )
 
   $normalizedPath = $Path.Replace("/", "\").ToLowerInvariant()
   $normalizedText = $Text.ToLowerInvariant()
+  $normalizedReferenceText = $normalizedText.Replace("/", "\")
 
   if ($normalizedPath -eq "docs\superpowers\plans\2026-06-15-giwa-verified-intent-rail-mvp.md") {
     return $true
@@ -59,9 +61,17 @@ function Test-SafeContext {
 
   if (
     $RuleId -eq "sensitive-term" -and
-    $normalizedText.Contains("giwa-lightsail-env-and-secret-injection-preflight.md")
+    $normalizedPath.EndsWith(".md") -and
+    $normalizedText.Contains("giwa-lightsail-env-and-secret-injection-preflight.md") -and # scan policy filename
+    $normalizedReferenceText.Contains("docs\implementation\giwa-lightsail-env-and-secret-injection-preflight.md") # scan policy path
   ) {
-    return $true
+    $textWithoutReference = $normalizedReferenceText.Replace(
+      "docs\implementation\giwa-lightsail-env-and-secret-injection-preflight.md", # scan policy path
+      ""
+    )
+    if ($textWithoutReference -notmatch $Pattern) {
+      return $true
+    }
   }
 
   if ($normalizedPath -eq "apps\web\src\lib\live\livetelemetry.ts" -and $RuleId -eq "sensitive-term") {
@@ -180,7 +190,7 @@ function Invoke-Scan {
   $lines = @($output | ForEach-Object { [string] $_ })
   foreach ($line in $lines) {
     $parts = Get-LineParts $line
-    if (-not (Test-SafeContext $RuleId $parts.Path $parts.Text)) {
+    if (-not (Test-SafeContext $RuleId $parts.Path $parts.Text $Pattern)) {
       $failures += "${RuleId}:$($parts.Path):$($parts.LineNumber)"
     }
   }
