@@ -8,6 +8,7 @@ import { buildLiveReceipt } from "./liveReceiptBuilder.ts";
 import { normalizeLiveVerifierPolicy, type LiveVerifierPolicyInput } from "./liveVerifierPolicy.ts";
 import { matchLiveDeposit } from "./matchLiveDeposit.ts";
 import {
+  isStandardRpcReceiptRetryableError,
   snapshotDepositTransaction,
   snapshotTransaction,
   type StandardRpcReceiptClient
@@ -31,9 +32,9 @@ export type LiveVerifierServiceResult = {
   verifierInputHash: Hex;
   receiptHash: Hex | null;
   decisionTxHash: null;
-  standardRpcReceiptStatus: 1 | 0;
-  depositBlockNumber: number;
-  depositBlockHash: Hex;
+  standardRpcReceiptStatus: 1 | 0 | null;
+  depositBlockNumber: number | null;
+  depositBlockHash: Hex | null;
   confirmationDepth: number;
   receipt?: ReceiptRecord;
   verifierInputRecord?: {
@@ -51,11 +52,28 @@ const ZERO_HASH = `0x${"0".repeat(64)}` as Hex;
 export async function verifyLiveRun(input: LiveVerifierServiceInput): Promise<LiveVerifierServiceResult> {
   const verifierVersion = input.verifierVersion ?? DEFAULT_VERIFIER_VERSION;
   const policy = input.trustPolicy === undefined ? undefined : normalizeLiveVerifierPolicy(input.trustPolicy);
-  const depositSnapshot = await snapshotDepositTransaction(input.receiptClient, input.submittedTx.depositTxHash as Hex);
-  const approveSnapshot =
-    input.submittedTx.approveTxHash === null
-      ? null
-      : await snapshotTransaction(input.receiptClient, input.submittedTx.approveTxHash as Hex);
+  let depositSnapshot;
+  let approveSnapshot;
+  try {
+    depositSnapshot = await snapshotDepositTransaction(input.receiptClient, input.submittedTx.depositTxHash as Hex);
+    approveSnapshot =
+      input.submittedTx.approveTxHash === null
+        ? null
+        : await snapshotTransaction(input.receiptClient, input.submittedTx.approveTxHash as Hex);
+  } catch (error) {
+    if (!isStandardRpcReceiptRetryableError(error)) throw error;
+    return {
+      decision: "timeout",
+      failureReason: "UNDER_CONFIRMED",
+      verifierInputHash: ZERO_HASH,
+      receiptHash: null,
+      decisionTxHash: null,
+      standardRpcReceiptStatus: null,
+      depositBlockNumber: null,
+      depositBlockHash: null,
+      confirmationDepth: 0
+    };
+  }
   const decodedLogSnapshots = decodeDepositReceiptLogs([
     ...(approveSnapshot?.receipt.logs ?? []),
     ...depositSnapshot.receipt.logs

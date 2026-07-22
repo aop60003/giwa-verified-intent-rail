@@ -27,7 +27,12 @@ export function evaluateLiveRequestSafety(input: LiveRequestSafetyInput): LiveRe
     return { ok: false, status: 405, code: "method_not_allowed" };
   }
 
-  if (input.allowedOrigins.length > 0 && (input.origin === undefined || !input.allowedOrigins.includes(input.origin))) {
+  if (
+    input.pathname.startsWith("/api/") &&
+    input.method === "POST" &&
+    input.allowedOrigins.length > 0 &&
+    (input.origin === undefined || !input.allowedOrigins.includes(input.origin))
+  ) {
     return { ok: false, status: 403, code: "origin_not_allowed" };
   }
 

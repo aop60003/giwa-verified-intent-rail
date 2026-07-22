@@ -72,14 +72,47 @@ export type CreateStandardRpcReceiptClientInput =
     };
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+export const STANDARD_RPC_RECEIPT_RETRYABLE_CODE = "standard_rpc_receipt_retryable" as const;
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+export class StandardRpcReceiptRetryableError extends Error {
+  readonly code = STANDARD_RPC_RECEIPT_RETRYABLE_CODE;
+
+  constructor() {
+    super(STANDARD_RPC_RECEIPT_RETRYABLE_CODE);
+    this.name = "StandardRpcReceiptRetryableError";
+  }
+}
+
+export function isStandardRpcReceiptRetryableError(error: unknown): error is StandardRpcReceiptRetryableError {
+  return error instanceof StandardRpcReceiptRetryableError;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timeout: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_resolve, reject) => {
-    timeout = setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+    timeout = setTimeout(() => reject(new StandardRpcReceiptRetryableError()), timeoutMs);
   });
 
   return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeout));
+}
+
+function isReceiptNotFound(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: unknown }).code;
+  return error.name === "TransactionReceiptNotFoundError" || code === "TRANSACTION_RECEIPT_NOT_FOUND";
+}
+
+async function getTransactionReceipt(
+  client: StandardRpcReceiptClient,
+  txHash: Hex
+): Promise<Record<string, unknown>> {
+  try {
+    return await withTimeout(client.transport.getTransactionReceipt({ hash: txHash }), client.timeoutMs);
+  } catch (error) {
+    if (isStandardRpcReceiptRetryableError(error)) throw error;
+    if (isReceiptNotFound(error)) throw new StandardRpcReceiptRetryableError();
+    throw error;
+  }
 }
 
 function numberFromBlock(value: unknown, field: string): number {
@@ -173,15 +206,15 @@ export async function snapshotTransaction(
   client: StandardRpcReceiptClient,
   txHash: Hex
 ): Promise<StandardRpcTransactionBundle> {
-  const chainId = await withTimeout(client.transport.getChainId(), client.timeoutMs, "eth_chainId");
+  const chainId = await withTimeout(client.transport.getChainId(), client.timeoutMs);
   if (chainId !== client.chainId) {
     throw new Error(`wrong chain: expected ${client.chainId}, received ${chainId}`);
   }
 
   const [transactionRaw, receiptRaw, headRaw] = await Promise.all([
-    withTimeout(client.transport.getTransaction({ hash: txHash }), client.timeoutMs, "eth_getTransactionByHash"),
-    withTimeout(client.transport.getTransactionReceipt({ hash: txHash }), client.timeoutMs, "eth_getTransactionReceipt"),
-    withTimeout(client.transport.getBlockNumber(), client.timeoutMs, "eth_blockNumber")
+    withTimeout(client.transport.getTransaction({ hash: txHash }), client.timeoutMs),
+    getTransactionReceipt(client, txHash),
+    withTimeout(client.transport.getBlockNumber(), client.timeoutMs)
   ]);
   const transaction = normalizeTransaction(transactionRaw, txHash);
   const receipt = normalizeReceipt(receiptRaw, txHash);
@@ -191,8 +224,7 @@ export async function snapshotTransaction(
   }
   const blockRaw = await withTimeout(
     client.transport.getBlock({ blockNumber: BigInt(receipt.blockNumber) }),
-    client.timeoutMs,
-    "eth_getBlockByNumber"
+    client.timeoutMs
   );
   const depositBlock = normalizeBlock(blockRaw, receipt.blockNumber, receipt.blockHash);
 

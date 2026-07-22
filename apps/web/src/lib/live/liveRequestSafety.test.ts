@@ -39,6 +39,18 @@ describe("evaluateLiveRequestSafety", () => {
     ).toEqual({ ok: false, status: 403, code: "origin_not_allowed" });
   });
 
+  it("accepts same-origin API reads without an Origin header", () => {
+    expect(
+      evaluateLiveRequestSafety({
+        method: "GET",
+        pathname: "/api/runs/run-1",
+        origin: undefined,
+        allowedOrigins: ["https://partner.example"],
+        contentType: undefined
+      })
+    ).toEqual({ ok: true });
+  });
+
   it("requires JSON content type for POST API requests with a body", () => {
     expect(
       evaluateLiveRequestSafety({

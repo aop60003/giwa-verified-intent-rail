@@ -73,7 +73,7 @@ function log(
   return { address, logIndex, topics, data, transactionHash: sourceTxHash, blockNumber, blockHash };
 }
 
-function makeClient({ reverted = false, wrongWallet = false } = {}) {
+function makeClient({ reverted = false, wrongWallet = false, receiptPending = false, transactionFailure = false } = {}) {
   const amount = BigInt(manifest.amountBaseUnits);
   const depositInput = encodeFunctionData({
     abi: vaultAbi,
@@ -127,6 +127,7 @@ function makeClient({ reverted = false, wrongWallet = false } = {}) {
         return 91342;
       },
       async getTransaction(input) {
+        if (transactionFailure) throw new Error("upstream_failure_canary");
         const hash = input?.hash ?? submittedTx.depositTxHash;
         return {
           hash,
@@ -137,6 +138,11 @@ function makeClient({ reverted = false, wrongWallet = false } = {}) {
         };
       },
       async getTransactionReceipt(input) {
+        if (receiptPending) {
+          const error = new Error("provider detail must not escape");
+          error.name = "TransactionReceiptNotFoundError";
+          throw error;
+        }
         const hash = input?.hash ?? submittedTx.depositTxHash;
         return {
           status: reverted ? "reverted" : "success",
@@ -249,5 +255,39 @@ describe("live verifier service", () => {
     expect(result.decision).toBe("mismatched");
     expect(result.failureReason).toBe("SIGNER_MISMATCH");
     expect(result.receipt).toBeUndefined();
+  });
+
+  it("returns retryable timeout metadata when the Standard RPC receipt is not available yet", async () => {
+    const result = await verifyLiveRun({
+      run,
+      submittedTx,
+      receiptClient: makeClient({ receiptPending: true }),
+      nowSeconds: () => 1790000020,
+      verifierVersion: "live-sprint-14"
+    });
+
+    expect(result).toMatchObject({
+      decision: "timeout",
+      failureReason: "UNDER_CONFIRMED",
+      standardRpcReceiptStatus: null,
+      depositBlockNumber: null,
+      depositBlockHash: null,
+      confirmationDepth: 0,
+      receiptHash: null,
+      decisionTxHash: null
+    });
+    expect(result.receipt).toBeUndefined();
+  });
+
+  it("does not convert untyped upstream failures into retryable verification results", async () => {
+    await expect(
+      verifyLiveRun({
+        run,
+        submittedTx,
+        receiptClient: makeClient({ transactionFailure: true }),
+        nowSeconds: () => 1790000020,
+        verifierVersion: "live-sprint-14"
+      })
+    ).rejects.toThrow("upstream_failure_canary");
   });
 });

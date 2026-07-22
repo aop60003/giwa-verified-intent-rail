@@ -1,7 +1,6 @@
 import type { LiveStore } from "./liveStore.ts";
 import type { HostedRuntimeMode } from "./hostedMode.ts";
 import { hasLiveAuthScope, type LiveAuthContext } from "./liveAuth.ts";
-import { rejectBodyTenantOverride } from "./liveTenantPolicy.ts";
 import type {
   DecisionRecord,
   LiveRunRecord,
@@ -17,6 +16,17 @@ import { evaluateCommercialReceiptGate } from "./commercialReceiptGate.ts";
 import { toLiveApiErrorBody } from "./liveApiErrors.ts";
 import { failureCodeDisplayCopy, toBoundedFailureCode, toSafeFailureReason } from "../verifier/liveFailureCode.ts";
 import { buildLiveDemoControlRoom, selectLatestRun } from "./liveDemoControlRoom.ts";
+import {
+  hashLiveRunCapability,
+  issueLiveRunCapability,
+  type IssuedLiveRunCapability
+} from "./liveParticipantCapability.ts";
+import {
+  GASOK_CAMPAIGN_ID,
+  GASOK_MISSION_ID,
+  type LivePublicConfig
+} from "./livePublicConfig.ts";
+import { classifyLiveApiRoute } from "./liveRoutePolicy.ts";
 
 const GIWA_SEPOLIA_CHAIN_ID = 91342;
 
@@ -25,6 +35,7 @@ export type LiveApiRequest = {
   pathname: string;
   body?: unknown;
   auth?: LiveAuthContext | null;
+  runCapability?: string | null;
   requestId?: string;
 };
 
@@ -55,6 +66,8 @@ export type LiveApiDependencies = {
   mode?: HostedRuntimeMode;
   baseUrl?: string;
   verificationJobs?: VerificationJobQueue;
+  issueRunCapability?: () => IssuedLiveRunCapability;
+  publicConfig?: LivePublicConfig;
   now: () => string;
   issueManifest: (input: ManifestIssueInput) => Promise<ManifestIssueResult>;
   verifyRun?: (input: { run: LiveRunRecord; submittedTx: SubmittedTxRecord }) => Promise<{
@@ -63,9 +76,9 @@ export type LiveApiDependencies = {
     verifierInputHash: string;
     receiptHash: string | null;
     decisionTxHash: string | null;
-    standardRpcReceiptStatus: 1 | 0;
-    depositBlockNumber: number;
-    depositBlockHash: string;
+    standardRpcReceiptStatus: 1 | 0 | null;
+    depositBlockNumber: number | null;
+    depositBlockHash: string | null;
     confirmationDepth: number;
     receipt?: ReceiptRecord;
     verifierInputRecord?: VerifierInputRecord;
@@ -80,14 +93,6 @@ function requestTenant(request: LiveApiRequest): string {
   return request.auth?.tenantId ?? DEFAULT_LIVE_TENANT_ID;
 }
 
-function hostedAuthFailure(deps: LiveApiDependencies, request: LiveApiRequest): LiveApiResponse | null {
-  const mode = deps.mode ?? "local";
-  if (mode !== "local" && request.pathname.startsWith("/api/") && request.auth == null) {
-    return { status: 401, body: errorBody("unauthorized", request.requestId) };
-  }
-  return null;
-}
-
 function scopeAllowed(deps: LiveApiDependencies, request: LiveApiRequest, scope: Parameters<typeof hasLiveAuthScope>[1]): boolean {
   if ((deps.mode ?? "local") === "local") return true;
   return request.auth !== null && request.auth !== undefined && hasLiveAuthScope(request.auth, scope);
@@ -95,6 +100,34 @@ function scopeAllowed(deps: LiveApiDependencies, request: LiveApiRequest, scope:
 
 function forbidden(request: LiveApiRequest): LiveApiResponse {
   return { status: 403, body: errorBody("forbidden", request.requestId) };
+}
+
+function unauthorized(request: LiveApiRequest, error = "unauthorized"): LiveApiResponse {
+  return { status: 401, body: errorBody(error, request.requestId) };
+}
+
+function participantRun(
+  deps: LiveApiDependencies,
+  request: LiveApiRequest,
+  runId: string
+): LiveRunRecord | undefined {
+  if ((deps.mode ?? "local") === "local") return deps.store.getRun(runId);
+  if (typeof request.runCapability !== "string") return undefined;
+  return deps.store.getRunForCapabilityHash(runId, hashLiveRunCapability(request.runCapability));
+}
+
+const RUN_CREATE_KEYS = new Set(["wallet", "chainId", "referralCode", "campaignId", "missionId"]);
+
+function assertFixedRunPolicy(body: Record<string, unknown>): void {
+  if (Object.keys(body).some((key) => !RUN_CREATE_KEYS.has(key))) {
+    throw new Error("fixed_policy_override_not_allowed");
+  }
+  if (body.campaignId !== undefined && body.campaignId !== GASOK_CAMPAIGN_ID) {
+    throw new Error("fixed_policy_override_not_allowed");
+  }
+  if (body.missionId !== undefined && body.missionId !== GASOK_MISSION_ID) {
+    throw new Error("fixed_policy_override_not_allowed");
+  }
 }
 
 function objectBody(value: unknown): Record<string, unknown> {
@@ -234,18 +267,27 @@ function runIdFrom(pathname: string, suffix = ""): string | undefined {
 export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveApiRequest) => Promise<LiveApiResponse> {
   return async function handle(request): Promise<LiveApiResponse> {
     try {
-      const authFailure = hostedAuthFailure(deps, request);
-      if (authFailure !== null) return authFailure;
+      const routeClass = classifyLiveApiRoute(request.method, request.pathname);
+      const hosted = (deps.mode ?? "local") !== "local";
+      if (hosted && routeClass === "partner" && request.auth == null) return unauthorized(request);
+      if (hosted && routeClass === "participant" && typeof request.runCapability !== "string") {
+        return unauthorized(request, "run_capability_required");
+      }
+
+      if (request.method === "GET" && request.pathname === "/api/public/config") {
+        if (deps.publicConfig === undefined) {
+          return { status: 503, body: errorBody("public_config_unavailable", request.requestId) };
+        }
+        return { status: 200, body: deps.publicConfig };
+      }
 
       if (request.method === "POST" && request.pathname === "/api/runs") {
-        if (!scopeAllowed(deps, request, "runs:write")) return forbidden(request);
         const body = objectBody(request.body);
-        const tenantPolicy = rejectBodyTenantOverride(body);
-        if (!tenantPolicy.ok) return { status: 400, body: errorBody(tenantPolicy.code, request.requestId) };
+        assertFixedRunPolicy(body);
         const input: ManifestIssueInput = {
           wallet: requiredString(body, "wallet").toLowerCase(),
-          campaignId: requiredString(body, "campaignId"),
-          missionId: requiredString(body, "missionId"),
+          campaignId: GASOK_CAMPAIGN_ID,
+          missionId: GASOK_MISSION_ID,
           referralCode: optionalString(body, "referralCode")
         };
         const chainId = optionalNumber(body, "chainId");
@@ -256,14 +298,21 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           };
         }
         const issued = await deps.issueManifest(input);
+        const capability = (deps.issueRunCapability ?? issueLiveRunCapability)();
         const timestamp = deps.now();
         const tenantId = requestTenant(request);
         const run = deps.store.createRun({
           runId: issued.runId,
           tenantId,
-          idempotencyKey: [tenantId, input.wallet, input.campaignId, input.missionId, input.referralCode ?? ""].join(
-            ":"
-          ),
+          capabilityHash: capability.hash,
+          idempotencyKey: [
+            tenantId,
+            issued.runId,
+            input.wallet,
+            input.campaignId,
+            input.missionId,
+            input.referralCode ?? ""
+          ].join(":"),
           wallet: input.wallet,
           campaignId: input.campaignId,
           missionId: input.missionId,
@@ -278,16 +327,12 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           updatedAt: timestamp
         });
 
-        return { status: 201, body: runResponse(run, issued) };
+        return { status: 201, body: { ...runResponse(run, issued), runCapability: capability.value } };
       }
 
       const getRunId = request.method === "GET" ? runIdFrom(request.pathname) : undefined;
       if (getRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "runs:read")) return forbidden(request);
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(getRunId)
-            : deps.store.getRunForTenant(requestTenant(request), getRunId);
+        const run = participantRun(deps, request, getRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         return {
           status: 200,
@@ -301,11 +346,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       const evidenceRunId = request.method === "POST" ? runIdFrom(request.pathname, "/evidence") : undefined;
       if (evidenceRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "runs:write")) return forbidden(request);
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(evidenceRunId)
-            : deps.store.getRunForTenant(requestTenant(request), evidenceRunId);
+        const run = participantRun(deps, request, evidenceRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         const timestamp = deps.now();
         if (run.status === "manifestInvalidated") {
@@ -346,11 +387,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       const invalidateRunId = request.method === "POST" ? runIdFrom(request.pathname, "/invalidate") : undefined;
       if (invalidateRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "runs:write")) return forbidden(request);
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(invalidateRunId)
-            : deps.store.getRunForTenant(requestTenant(request), invalidateRunId);
+        const run = participantRun(deps, request, invalidateRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         const updated = deps.store.updateRunStatus(invalidateRunId, "manifestInvalidated", deps.now());
         return { status: 200, body: { ...runResponse(updated), invalidationAccepted: true } };
@@ -358,6 +395,9 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       const intentRelayRunId = request.method === "POST" ? runIdFrom(request.pathname, "/intent-submit") : undefined;
       if (intentRelayRunId !== undefined) {
+        if (participantRun(deps, request, intentRelayRunId) === undefined) {
+          return { status: 404, body: { error: "run_not_found" } };
+        }
         return {
           status: 409,
           body: { error: "chain_action_disabled_until_sprint_11", runId: intentRelayRunId, nextSprint: "Sprint 11" }
@@ -366,18 +406,14 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       const verifyRunId = request.method === "POST" ? runIdFrom(request.pathname, "/verify") : undefined;
       if (verifyRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "verify:write")) return forbidden(request);
+        const run = participantRun(deps, request, verifyRunId);
+        if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         if (deps.verifyRun === undefined) {
           return {
             status: 409,
             body: { error: "chain_action_disabled_until_sprint_11", runId: verifyRunId, nextSprint: "Sprint 11" }
           };
         }
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(verifyRunId)
-            : deps.store.getRunForTenant(requestTenant(request), verifyRunId);
-        if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         const submittedTx = deps.store.getSubmittedTx(verifyRunId);
         if (submittedTx === undefined) return { status: 409, body: { error: "deposit_evidence_required" } };
 
@@ -403,7 +439,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           };
         }
 
-        if ((deps.mode ?? "local") !== "local" && deps.verificationJobs !== undefined) {
+        if ((deps.mode ?? "local") === "prod-testnet" && deps.verificationJobs !== undefined) {
           const job = deps.verificationJobs.enqueue({
             tenantId: requestTenant(request),
             runId: verifyRunId,
@@ -450,7 +486,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
               standardRpcReceiptStatus: result.standardRpcReceiptStatus,
               depositBlockNumber: result.depositBlockNumber,
               depositBlockHash: result.depositBlockHash,
-              confirmationDepth: result.confirmationDepth
+              confirmationDepth: result.confirmationDepth,
+              verification: {
+                status: "retryable",
+                retryPath: `/api/runs/${verifyRunId}/verify`
+              }
             }
           };
         }
@@ -468,7 +508,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           verifierInputHash: result.verifierInputHash,
           receiptHash: result.receiptHash,
           decisionTxHash: result.decisionTxHash,
-          issuedAt: nowUnix(deps.now())
+          issuedAt: nowUnix(deps.now()),
+          standardRpcReceiptStatus: result.standardRpcReceiptStatus,
+          depositBlockNumber: result.depositBlockNumber,
+          depositBlockHash: result.depositBlockHash,
+          confirmationDepth: result.confirmationDepth
         });
         const updated = deps.store.updateRunStatus(verifyRunId, decision.decision, deps.now());
         return {
@@ -492,12 +536,8 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       }
 
       if (request.method === "GET" && request.pathname.startsWith("/api/receipts/")) {
-        if (!scopeAllowed(deps, request, "receipts:read")) return forbidden(request);
         const receiptHash = request.pathname.slice("/api/receipts/".length);
-        const receipt =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getReceipt(receiptHash)
-            : deps.store.getReceiptForTenant(requestTenant(request), receiptHash);
+        const receipt = deps.store.getReceipt(receiptHash);
         if (receipt === undefined) return { status: 404, body: { error: "receipt_not_found" } };
         const decision = deps.store.getDecisionByIntentHash(receipt.intentHash);
         const verifierInput =
@@ -530,19 +570,19 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             payload,
             payloadJson: receipt.payloadJson,
             canonicalPayload: receipt.canonicalPayload,
-            canonicalPayloadBytesHex: receipt.canonicalPayloadBytesHex
+            canonicalPayloadBytesHex: receipt.canonicalPayloadBytesHex,
+            verifierInputHash: decision?.verifierInputHash ?? null,
+            standardRpcReceiptStatus: decision?.standardRpcReceiptStatus ?? null,
+            depositBlockNumber: decision?.depositBlockNumber ?? null,
+            depositBlockHash: decision?.depositBlockHash ?? null,
+            confirmationDepth: decision?.confirmationDepth ?? null,
+            testnetNotice: "Testnet-only. No real asset, no yield, no RWA claim."
           }
         };
       }
 
       if (request.method === "GET" && request.pathname === "/api/demo/status") {
-        if (!scopeAllowed(deps, request, "partner:read") && !scopeAllowed(deps, request, "runs:read")) {
-          return forbidden(request);
-        }
-        const rows =
-          (deps.mode ?? "local") === "local" && request.auth == null
-            ? deps.store.listRuns()
-            : deps.store.listRunsForTenant(requestTenant(request));
+        const rows = deps.store.listRuns();
         const latestRun = selectLatestRun(rows);
         const decision = latestRun === null ? undefined : deps.store.getDecisionByIntentHash(latestRun.intentHash);
         const controlRoom = buildLiveDemoControlRoom({
@@ -569,7 +609,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       }
 
       if (request.method === "GET" && request.pathname === "/api/partner/runs") {
-        if (!scopeAllowed(deps, request, "partner:read") && !scopeAllowed(deps, request, "runs:read")) {
+        if (!scopeAllowed(deps, request, "partner:read")) {
           return forbidden(request);
         }
         const rows =
@@ -591,6 +631,12 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       return { status: 404, body: { error: "not_found" } };
     } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message === "fixed_policy_override_not_allowed" || error.message === "run_capability_required")
+      ) {
+        return { status: 400, body: errorBody(error.message, request.requestId) };
+      }
       return {
         status: 400,
         body: toLiveApiErrorBody(error, request.requestId)
