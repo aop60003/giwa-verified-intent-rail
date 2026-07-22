@@ -1,6 +1,6 @@
 # GIWA Verified Intent Rail
 
-This repository contains the final submission pack for the GASOK MVP concept. The public-facing product name is `GIWA Verified Intent Rail`.
+This repository contains the implementation and submission-preparation workspace for the GASOK MVP concept. The public-facing product name is `GIWA Verified Intent Rail`. The evaluator-facing staging deployment and final submission evidence have not been completed yet.
 
 ## Canonical Document
 
@@ -8,22 +8,56 @@ Use [03_giwa_verified_intent_rail_positioning.md](03_giwa_verified_intent_rail_p
 
 ## Current Routing / Stop Condition
 
-Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md) as the current implementation routing document.
+Use [the July GASOK staging implementation plan](docs/superpowers/plans/2026-07-22-gasok-selection-staging-submission-implementation.md) as the current implementation routing document and [the approved staging design](docs/superpowers/specs/2026-07-22-gasok-selection-staging-submission-design.md) as its design authority.
 
-The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
+The older [sprint index](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md), [original MVP plan](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md), Sprint 51 architecture, Sprint 52 preflight, and Sprint 53 execution plans remain historical records. They must not override the current runbook or be treated as evidence of a completed deployment.
 
-Current state is a local-review handoff freeze with Sprint 53 Lightsail staging deploy execution planning completed locally after the Sprint 51 architecture and Sprint 52 preflight package. Sprint 53 defines the explicit-approval deployment sequence, smoke plan, rollback path, evidence capture, and go/no-go handoff, but it does not create infrastructure, deploy, configure DNS/HTTPS, connect managed infrastructure, or change protected CI status. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, Sprint 49 evidence, Sprint 50 visual QA evidence, Sprint 51 Lightsail plan, Sprint 52 preflight package, and Sprint 53 execution plan before any demo route or staging discussion. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current source of truth for a later approved Lightsail rollout is [the GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md). Public deployment, DNS, HTTPS, fresh staging wallet actions, video capture, and final submission freeze have not occurred. Protected CI evidence is the default release authority; no GASOK-only local-advisory exception is currently recorded. Git push, host package installation, DNS, HTTPS/certificate work, wallet actions, and DB restore remain explicit human approval gates.
+
+## Current GASOK Staging Pack
+
+Submission and operations documents:
+
+- [GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md)
+- [Korean-first 90-second demo script](docs/implementation/giwa-gasok-demo-script.md)
+- [Submission no-go/go checklist](docs/implementation/giwa-gasok-submission-checklist.md)
+- [Historical Sprint 53 deployment plan](docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md)
+- [Historical Sprint 53 smoke and rollback plan](docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md)
+
+Versioned Lightsail assets:
+
+- [Static service unit](ops/lightsail/systemd/giwa-static.service)
+- [Live service unit](ops/lightsail/systemd/giwa-live.service)
+- [Backup service unit](ops/lightsail/systemd/giwa-backup.service)
+- [Backup timer unit](ops/lightsail/systemd/giwa-backup.timer)
+- [Nginx staging template](ops/lightsail/nginx/giwa-staging.conf.template)
+- [Nginx config renderer](ops/lightsail/render-nginx-config.mjs)
+- [SQLite backup script](ops/lightsail/scripts/backup-live-db.sh)
+- [On-host local smoke script](ops/lightsail/scripts/smoke-local.sh)
+
+Approved public route ownership:
+
+| Route family | Normal owner | Live upstream failure |
+| --- | --- | --- |
+| `/`, `/demo`, `/partner` | static service on `127.0.0.1:4176` | static remains available |
+| `/user*` | live service on `127.0.0.1:4177` | recorded static user fallback |
+| `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | bounded HTTP `503` JSON |
+
+SQLite storage and the in-memory rate limiter are intentionally one-instance GASOK testnet-staging choices, not horizontal-scaling claims.
 
 ## Final Demo Pack
 
 Open these first:
 
+- [Current GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md)
+- [Current GASOK demo script](docs/implementation/giwa-gasok-demo-script.md)
+- [Current GASOK submission checklist](docs/implementation/giwa-gasok-submission-checklist.md)
 - [External blocker monitoring and staging handoff](docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md)
 - [Partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
-- [Demo script](docs/implementation/giwa-mvp-demo-script.md)
-- [Runbook](docs/implementation/giwa-mvp-runbook.md)
-- [Acceptance checklist](docs/implementation/giwa-mvp-acceptance-checklist.md)
-- [Submission evidence map](docs/implementation/giwa-mvp-submission-evidence.md)
+- [Historical local demo script](docs/implementation/giwa-mvp-demo-script.md)
+- [Historical local runbook](docs/implementation/giwa-mvp-runbook.md)
+- [Historical local acceptance checklist](docs/implementation/giwa-mvp-acceptance-checklist.md)
+- [Historical submission evidence map](docs/implementation/giwa-mvp-submission-evidence.md)
 
 Recommended demo order:
 
@@ -75,6 +109,8 @@ Evidence paths:
 - [docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json](docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json)
 
 ## Hosted Ops Readiness
+
+The sprint-by-sprint narrative below is retained for provenance and historical context. References to a sprint as "current" describe that sprint's recorded state at the time; they do not override the July GASOK staging pack above and do not prove public deployment.
 
 Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18 adds the partner beta rehearsal package. Sprint 19 adds staging deployment preparation gates. These are gates and runbooks only; they do not authorize public hosting or deployment.
 
@@ -208,6 +244,8 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Evidence retention policy](docs/implementation/giwa-evidence-retention-policy.md)
 
 ## Local Live MVP
+
+This section records historical localhost rehearsals. Its URLs and hashes are not current public staging or final submission evidence.
 
 Sprint 12 adds a local live rehearsal path while keeping the Sprint 7 static fallback intact. The final fresh wallet rehearsal used:
 
