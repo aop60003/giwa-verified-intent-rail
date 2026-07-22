@@ -12,4 +12,8 @@ describe("classifyLiveApiRoute", () => {
     expect(classifyLiveApiRoute("GET", "/api/partner/runs")).toBe("partner");
     expect(classifyLiveApiRoute("GET", "/api/unknown")).toBe("unknown");
   });
+
+  it("classifies demo status as a protected partner boundary", () => {
+    expect(classifyLiveApiRoute("GET", "/api/demo/status")).toBe("partner");
+  });
 });
