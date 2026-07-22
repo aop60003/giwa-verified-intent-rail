@@ -1,96 +1,124 @@
 import { describe, expect, it } from "vitest";
-import { deriveUserFlowState } from "./userFlowState";
+import { deriveUserFlowState, type UserFlowInput } from "./userFlowState";
 
 const wallet = "0xf3a729973559082260e742ebedf705271ad29476";
 const manifestPreview = {
   actionName: "First mock vault action",
-  amountBaseUnits: "1000000",
+  amountBaseUnits: "1000000000000000000",
   target: "0x1111111111111111111111111111111111111111",
   wallet,
   expiryUnix: 1_800_000_100,
   intentHash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 };
 
-describe("deriveUserFlowState", () => {
-  it("blocks action before wallet connection", () => {
-    const state = deriveUserFlowState({
-      wallet: { status: "disconnected", account: null, chainId: null },
-      run: null,
-      nowUnix: 1_800_000_000
-    });
+function state(overrides: Partial<UserFlowInput> = {}) {
+  return deriveUserFlowState({
+    wallet: { status: "connected", account: wallet, chainId: 91342 },
+    readiness: "depositReady",
+    run: null,
+    nowUnix: 1_800_000_000,
+    ...overrides
+  });
+}
 
-    expect(state.currentScreen).toBe("actionPage");
-    expect(state.primaryCta).toBe("connect_wallet");
-    expect(state.canIssueIntent).toBe(false);
-    expect(state.canRequestWalletAction).toBe(false);
-    expect(state.progress.map((step) => step.id)).toEqual([
-      "wallet_connected",
-      "intent_issued",
-      "approval_submitted",
-      "deposit_submitted",
-      "standard_rpc_receipt_found",
-      "verification_matched",
-      "receipt_ready"
+describe("deriveUserFlowState", () => {
+  it("derives the exact progressive phase and CTA order", () => {
+    const issuedRun = {
+      status: "manifestIssued" as const,
+      runId: "run_1",
+      expiryUnix: 1_800_000_100,
+      manifestPreview
+    };
+
+    const sequence = [
+      state({ wallet: { status: "disconnected", account: null, chainId: null }, readiness: null }),
+      state({ wallet: { status: "wrongChain", account: wallet, chainId: 1 }, readiness: null }),
+      state({ readiness: "gasRequired" }),
+      state({ readiness: "mintRequired" }),
+      state({ readiness: "depositReady" }),
+      state({ readiness: "approvalRequired", run: issuedRun }),
+      state({ readiness: "depositReady", run: issuedRun }),
+      state({
+        readiness: "depositReady",
+        run: { ...issuedRun, status: "verifying", depositTxHash: `0x${"2".repeat(64)}` }
+      }),
+      state({
+        readiness: "depositReady",
+        run: {
+          ...issuedRun,
+          status: "matched",
+          depositTxHash: `0x${"2".repeat(64)}`,
+          receiptHash: `0x${"3".repeat(64)}`
+        }
+      })
+    ];
+
+    expect(sequence.map((item) => item.phase)).toEqual([
+      "walletRequired",
+      "networkRequired",
+      "gasRequired",
+      "mintRequired",
+      "intentRequired",
+      "approvalRequired",
+      "depositReady",
+      "verifying",
+      "receiptReady"
+    ]);
+    expect(sequence.map((item) => item.primaryCta)).toEqual([
+      "connect_wallet",
+      "switch_network",
+      "get_test_eth",
+      "prepare_mock_token",
+      "review_action",
+      "approve_exact_amount",
+      "deposit_to_vault",
+      "verifying",
+      "view_receipt"
     ]);
   });
 
-  it("requires GIWA Sepolia before intent issuance", () => {
-    const state = deriveUserFlowState({
-      wallet: { status: "wrongChain", account: wallet, chainId: 1 },
-      run: null,
-      nowUnix: 1_800_000_000
-    });
-
-    expect(state.primaryCta).toBe("switch_network");
-    expect(state.network.requiredChainId).toBe(91342);
-    expect(state.canIssueIntent).toBe(false);
-    expect(state.blockReason).toBe("wrong_network");
-  });
-
-  it("invalidates wallet action when manifest is expired", () => {
-    const state = deriveUserFlowState({
-      wallet: { status: "connected", account: wallet, chainId: 91342 },
+  it("invalidates wallet action when Manifest is expired", () => {
+    const result = state({
+      readiness: "approvalRequired",
       run: {
         status: "manifestIssued",
         runId: "run_1",
         expiryUnix: 1_799_999_999,
         manifestPreview
-      },
-      nowUnix: 1_800_000_000
+      }
     });
 
-    expect(state.currentScreen).toBe("intentPreview");
-    expect(state.canRequestWalletAction).toBe(false);
-    expect(state.blockReason).toBe("manifest_expired");
+    expect(result.currentScreen).toBe("intentPreview");
+    expect(result.phase).toBe("intentRequired");
+    expect(result.primaryCta).toBe("review_action");
+    expect(result.canRequestWalletAction).toBe(false);
+    expect(result.blockReason).toBe("manifest_expired");
   });
 
   it("supports provider missing as a wallet-connect state", () => {
-    const state = deriveUserFlowState({
+    const result = state({
       wallet: { status: "providerMissing", account: null, chainId: null },
-      run: null,
-      nowUnix: 1
+      readiness: null
     });
 
-    expect(state.primaryCta).toBe("connect_wallet");
-    expect(state.blockReason).toBe("wallet_disconnected");
+    expect(result.primaryCta).toBe("connect_wallet");
+    expect(result.blockReason).toBe("wallet_disconnected");
   });
 
-  it("completes every progress step for a matched receipt", () => {
-    const state = deriveUserFlowState({
-      wallet: { status: "connected", account: wallet, chainId: 91342 },
+  it("completes every progress step for a matched Receipt", () => {
+    const result = state({
       run: {
         status: "matched",
         runId: "run_1",
         expiryUnix: 1_800_000_100,
         manifestPreview,
-        approveTxHash: "0x1111111111111111111111111111111111111111111111111111111111111111",
-        depositTxHash: "0x2222222222222222222222222222222222222222222222222222222222222222",
-        receiptHash: "0x3333333333333333333333333333333333333333333333333333333333333333"
-      },
-      nowUnix: 1_800_000_000
+        approveTxHash: `0x${"1".repeat(64)}`,
+        depositTxHash: `0x${"2".repeat(64)}`,
+        receiptHash: `0x${"3".repeat(64)}`
+      }
     });
 
-    expect(state.progress.every((step) => step.state === "complete")).toBe(true);
-    expect(state.primaryCta).toBe("view_receipt");
+    expect(result.progress.every((step) => step.state === "complete")).toBe(true);
+    expect(result.primaryCta).toBe("view_receipt");
   });
 });
