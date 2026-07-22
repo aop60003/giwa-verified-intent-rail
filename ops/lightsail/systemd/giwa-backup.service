@@ -1,0 +1,17 @@
+[Unit]
+Description=GIWA live staging SQLite backup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=giwa
+Group=giwa
+WorkingDirectory=/opt/giwa/current
+EnvironmentFile=/etc/giwa/giwa-live.runtime
+ExecStart=/opt/giwa/current/ops/lightsail/scripts/backup-live-db.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/giwa/backups
+UMask=0077

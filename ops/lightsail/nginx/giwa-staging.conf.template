@@ -1,0 +1,86 @@
+upstream giwa_static {
+  server 127.0.0.1:4176;
+}
+
+upstream giwa_live {
+  server 127.0.0.1:4177;
+}
+
+server {
+  listen 80;
+  server_name __GIWA_STAGE_HOST__;
+
+  client_max_body_size 64k;
+  proxy_connect_timeout 3s;
+  proxy_read_timeout 15s;
+  proxy_send_timeout 15s;
+  proxy_http_version 1.1;
+
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-Host $host;
+
+  location ^~ /api/ {
+    proxy_pass http://giwa_live;
+    proxy_intercept_errors on;
+    error_page 502 503 504 = @giwa_api_unavailable;
+  }
+
+  location = /healthz {
+    proxy_pass http://giwa_live;
+    proxy_intercept_errors on;
+    error_page 502 503 504 = @giwa_api_unavailable;
+  }
+
+  location = /readyz {
+    proxy_pass http://giwa_live;
+    proxy_intercept_errors on;
+    error_page 502 503 504 = @giwa_api_unavailable;
+  }
+
+  location = /user {
+    proxy_pass http://giwa_live;
+    proxy_intercept_errors on;
+    error_page 502 503 504 = @giwa_static_user_fallback;
+  }
+
+  location ^~ /user/ {
+    proxy_pass http://giwa_live;
+    proxy_intercept_errors on;
+    error_page 502 503 504 = @giwa_static_user_fallback;
+  }
+
+  location = /live {
+    proxy_pass http://giwa_live;
+  }
+
+  location = /demo {
+    proxy_pass http://giwa_static;
+  }
+
+  location = /partner {
+    proxy_pass http://giwa_static;
+  }
+
+  location = / {
+    proxy_pass http://giwa_static;
+  }
+
+  location / {
+    proxy_pass http://giwa_static;
+  }
+
+  location @giwa_api_unavailable {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 503 '{"error":"service_unavailable"}';
+  }
+
+  location @giwa_static_user_fallback {
+    internal;
+    proxy_intercept_errors off;
+    proxy_pass http://giwa_static;
+  }
+}

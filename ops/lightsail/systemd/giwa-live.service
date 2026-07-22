@@ -1,0 +1,29 @@
+[Unit]
+Description=GIWA live staging service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=giwa
+Group=giwa
+WorkingDirectory=/opt/giwa/current
+Environment=HOST=127.0.0.1
+Environment=PORT=4177
+Environment=GIWA_LIVE_MODE=staging-testnet
+Environment=GIWA_SKIP_PUBLIC_EXPORT=1
+EnvironmentFile=/etc/giwa/giwa-live.runtime
+ExecStart=/usr/bin/node --experimental-strip-types apps/web/scripts/serve-live.mjs
+Restart=on-failure
+RestartSec=5s
+KillSignal=SIGTERM
+TimeoutStopSec=15s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/giwa
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

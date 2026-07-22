@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily GIWA live staging SQLite backup
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=30m
+Unit=giwa-backup.service
+
+[Install]
+WantedBy=timers.target
