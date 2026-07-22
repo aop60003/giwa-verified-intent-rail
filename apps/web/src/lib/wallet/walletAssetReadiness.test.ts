@@ -50,4 +50,38 @@ describe("wallet asset readiness", () => {
       })
     ).toEqual({ next: "deposit_ready", approveRequired: false });
   });
+
+  it("allows a zero minimum gas threshold", () => {
+    expect(
+      evaluateWalletAssetReadiness({
+        gasWei: 0n,
+        minGasWei: 0n,
+        tokenBalance: 10n,
+        requiredAmount: 10n,
+        allowance: 10n
+      })
+    ).toEqual({ next: "deposit_ready", approveRequired: false });
+  });
+
+  it("rejects non-positive required amounts and negative wallet asset values", () => {
+    const valid = {
+      gasWei: 1n,
+      minGasWei: 1n,
+      tokenBalance: 10n,
+      requiredAmount: 10n,
+      allowance: 10n
+    };
+    const invalidInputs = [
+      { ...valid, requiredAmount: 0n },
+      { ...valid, requiredAmount: -1n },
+      { ...valid, gasWei: -1n },
+      { ...valid, minGasWei: -1n },
+      { ...valid, tokenBalance: -1n },
+      { ...valid, allowance: -1n }
+    ];
+
+    for (const input of invalidInputs) {
+      expect(() => evaluateWalletAssetReadiness(input)).toThrow("wallet asset readiness values are out of range");
+    }
+  });
 });

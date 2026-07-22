@@ -7,6 +7,16 @@ export function evaluateWalletAssetReadiness(input: {
   requiredAmount: bigint;
   allowance: bigint;
 }): { next: WalletAssetNext; approveRequired: boolean } {
+  if (
+    input.gasWei < 0n ||
+    input.minGasWei < 0n ||
+    input.tokenBalance < 0n ||
+    input.requiredAmount <= 0n ||
+    input.allowance < 0n
+  ) {
+    throw new Error("wallet asset readiness values are out of range");
+  }
+
   const approveRequired = input.allowance < input.requiredAmount;
 
   if (input.gasWei < input.minGasWei) return { next: "gas_required", approveRequired };

@@ -31,7 +31,8 @@ export type Eip1193CallRequest = {
   data: `0x${string}`;
 };
 
-export type Eip1193TransactionReceipt = Record<string, unknown> & {
+export type Eip1193TransactionReceipt = {
+  transactionHash: `0x${string}`;
   status: "0x1" | "0x0";
 };
 
@@ -61,28 +62,51 @@ function txHashFromProvider(value: unknown): `0x${string}` {
   return value.toLowerCase() as `0x${string}`;
 }
 
-function bigintFromProviderHex(value: unknown, field: string): bigint {
-  if (typeof value !== "string" || !/^0x[0-9a-fA-F]+$/u.test(value)) {
-    throw new Error(`${field} must be 0x-prefixed hex`);
+const MAX_UINT256 = (1n << 256n) - 1n;
+
+function quantityFromProvider(value: unknown): bigint {
+  if (typeof value !== "string" || !/^0x(?:0|[1-9a-fA-F][0-9a-fA-F]*)$/u.test(value)) {
+    throw new Error("provider balance must be a canonical uint256 quantity");
+  }
+
+  const quantity = BigInt(value);
+  if (quantity > MAX_UINT256) {
+    throw new Error("provider balance must be a canonical uint256 quantity");
+  }
+
+  return quantity;
+}
+
+function abiWordFromProvider(value: unknown): bigint {
+  if (typeof value !== "string" || !/^0x[0-9a-fA-F]{64}$/u.test(value)) {
+    throw new Error("provider call result must be 32-byte ABI data");
   }
 
   return BigInt(value);
 }
 
-function receiptFromProvider(value: unknown): Eip1193ReceiptPollResult {
+function receiptFromProvider(value: unknown, requestedTransactionHash: `0x${string}`): Eip1193ReceiptPollResult {
   if (value === null) return { status: "pending" };
   if (typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("provider receipt status must be 0x1 or 0x0");
+    throw new Error("provider receipt must be an object");
   }
 
   const receipt = value as Record<string, unknown>;
+  if (typeof receipt.transactionHash !== "string" || !/^0x[a-fA-F0-9]{64}$/u.test(receipt.transactionHash)) {
+    throw new Error("provider receipt transaction hash must be bytes32 hex");
+  }
+  const transactionHash = receipt.transactionHash.toLowerCase() as `0x${string}`;
+  if (transactionHash !== requestedTransactionHash.toLowerCase()) {
+    throw new Error("provider receipt transaction hash must match requested transaction hash");
+  }
   if (receipt.status !== "0x1" && receipt.status !== "0x0") {
     throw new Error("provider receipt status must be 0x1 or 0x0");
   }
 
+  const projectedReceipt: Eip1193TransactionReceipt = { transactionHash, status: receipt.status };
   return receipt.status === "0x1"
-    ? { status: "success", receipt: receipt as Eip1193TransactionReceipt }
-    : { status: "reverted", receipt: receipt as Eip1193TransactionReceipt };
+    ? { status: "success", receipt: projectedReceipt }
+    : { status: "reverted", receipt: projectedReceipt };
 }
 
 export function createEip1193WalletAdapter(provider: Eip1193Provider): Eip1193WalletAdapter {
@@ -94,20 +118,15 @@ export function createEip1193WalletAdapter(provider: Eip1193Provider): Eip1193Wa
       return chainIdFromHex(await provider.request({ method: "eth_chainId" }));
     },
     async getBalance(account) {
-      return bigintFromProviderHex(
-        await provider.request({ method: "eth_getBalance", params: [account, "latest"] }),
-        "provider balance"
-      );
+      return quantityFromProvider(await provider.request({ method: "eth_getBalance", params: [account, "latest"] }));
     },
     async call(request) {
-      return bigintFromProviderHex(
-        await provider.request({ method: "eth_call", params: [request, "latest"] }),
-        "provider call result"
-      );
+      return abiWordFromProvider(await provider.request({ method: "eth_call", params: [request, "latest"] }));
     },
     async getTransactionReceipt(transactionHash) {
       return receiptFromProvider(
-        await provider.request({ method: "eth_getTransactionReceipt", params: [transactionHash] })
+        await provider.request({ method: "eth_getTransactionReceipt", params: [transactionHash] }),
+        transactionHash
       );
     },
     async requestSwitchChain(chainIdHex) {
