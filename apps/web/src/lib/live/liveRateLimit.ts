@@ -29,6 +29,12 @@ export const LIVE_RATE_LIMIT_POLICY = {
 
 export type LiveRateLimitRoute = { kind: "create" } | { kind: "verify"; runId: string } | null;
 
+export type LiveClientIpInput = {
+  socketAddress: string | undefined;
+  realIpHeader: string | string[] | undefined;
+  isIp: (value: string) => number;
+};
+
 function hashBucketValue(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex").slice(0, 16);
 }
@@ -43,6 +49,36 @@ export function classifyLiveRateLimitRoute(method: string, pathname: string): Li
   if (method !== "POST") return null;
   const matched = /^\/api\/runs\/([^/]+)\/verify$/u.exec(pathname);
   return matched?.[1] === undefined ? null : { kind: "verify", runId: matched[1] };
+}
+
+function validIp(value: string | undefined, isIp: (value: string) => number): string | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 && !trimmed.includes(",") && isIp(trimmed) > 0 ? trimmed : undefined;
+}
+
+function isLoopbackIp(value: string, isIp: (value: string) => number): boolean {
+  const normalized = value.toLowerCase();
+  if (normalized === "::1") return true;
+  if (isIp(normalized) === 4) return normalized.startsWith("127.");
+  return isIp(normalized) === 6 && normalized.startsWith("::ffff:127.");
+}
+
+export function selectLiveClientIp(input: LiveClientIpInput): string {
+  const socketAddress = validIp(input.socketAddress, input.isIp) ?? "unknown";
+  if (!isLoopbackIp(socketAddress, input.isIp) || Array.isArray(input.realIpHeader)) return socketAddress;
+  return validIp(input.realIpHeader, input.isIp) ?? socketAddress;
+}
+
+export function parseLivePartnerCredentialHashes(value: string | undefined): string[] {
+  if (value === undefined || value.trim().length === 0) {
+    throw new Error("Invalid partner credential hash configuration");
+  }
+  const entries = value.split(",").map((entry) => entry.trim().toLowerCase());
+  if (entries.some((entry) => !/^[a-f0-9]{64}$/u.test(entry)) || new Set(entries).size !== entries.length) {
+    throw new Error("Invalid partner credential hash configuration");
+  }
+  return entries;
 }
 
 export function createMemoryLiveRateLimiter(options: { nowMs: () => number }): MemoryLiveRateLimiter {

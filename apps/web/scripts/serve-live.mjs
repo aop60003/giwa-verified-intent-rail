@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { createReadStream, existsSync, mkdirSync, readFileSync } from "node:fs";
-import { dirname, extname, join, normalize, resolve } from "node:path";
+import { isIP } from "node:net";
+import { dirname, extname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -21,7 +22,9 @@ import {
   LIVE_RATE_LIMIT_POLICY,
   classifyLiveRateLimitRoute,
   createMemoryLiveRateLimiter,
-  liveRateLimitBucket
+  liveRateLimitBucket,
+  parseLivePartnerCredentialHashes,
+  selectLiveClientIp
 } from "../src/lib/live/liveRateLimit.ts";
 import { evaluateLiveRequestSafety } from "../src/lib/live/liveRequestSafety.ts";
 import { redactLiveLogEvent } from "../src/lib/live/liveTelemetry.ts";
@@ -43,7 +46,6 @@ const deploymentPath = fileURLToPath(new URL("../src/generated/deployment.json",
 const port = Number(process.env.PORT ?? 4177);
 const liveMode = process.env.GIWA_LIVE_MODE ?? "local";
 const host = process.env.HOST ?? "127.0.0.1";
-const dbPath = resolve(workspaceRoot, process.env.GIWA_LIVE_DB_PATH ?? "apps/web/.data/live-mvp-sprint12.sqlite");
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const CAPABILITY_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
@@ -97,10 +99,25 @@ function loadLocalEnv(processEnv) {
   return { effectiveEnv, loadedEnvFiles };
 }
 
-async function startLiveServer() {
-  if (process.env.GIWA_SKIP_PUBLIC_EXPORT !== "1") exportFlowData();
-  mkdirSync(dirname(dbPath), { recursive: true });
+function isWithinRoot(candidatePath, rootPath) {
+  const relativePath = relative(resolve(rootPath), resolve(candidatePath));
+  return (
+    relativePath === "" ||
+    (relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath))
+  );
+}
 
+function requireExternalHostedDbPath(configuredPath) {
+  if (!isAbsolute(configuredPath)) throw new Error("Hosted live DB path must be absolute");
+  const dbPath = resolve(configuredPath);
+  const immutableRoots = [workspaceRoot, resolve("/opt/giwa/current"), resolve("/opt/giwa/releases")];
+  if (immutableRoots.some((rootPath) => isWithinRoot(dbPath, rootPath))) {
+    throw new Error("Hosted live DB path must be outside the immutable release tree");
+  }
+  return dbPath;
+}
+
+async function startLiveServer() {
   const loadedEnv =
     liveMode === "local" ? loadLocalEnv(process.env) : { effectiveEnv: { ...process.env }, loadedEnvFiles: [] };
   const readiness = buildRedactedLiveEnvReadiness({
@@ -110,7 +127,7 @@ async function startLiveServer() {
     CAMPAIGN_SIGNER_PRIVATE_KEY: loadedEnv.effectiveEnv.CAMPAIGN_SIGNER_PRIVATE_KEY,
     INTENT_SUBMITTER_PRIVATE_KEY: loadedEnv.effectiveEnv.INTENT_SUBMITTER_PRIVATE_KEY,
     VERIFIER_PRIVATE_KEY: loadedEnv.effectiveEnv.VERIFIER_PRIVATE_KEY,
-    GIWA_LIVE_DB_PATH: dbPath
+    GIWA_LIVE_DB_PATH: loadedEnv.effectiveEnv.GIWA_LIVE_DB_PATH
   });
   const hostedReadiness = buildRedactedHostedEnvReadiness({
     GIWA_LIVE_MODE: liveMode,
@@ -127,10 +144,10 @@ async function startLiveServer() {
     .split(",")
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
-  const credentialHashes = (loadedEnv.effectiveEnv.GIWA_LIVE_PARTNER_CREDENTIAL_HASHES ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
+  const credentialHashes =
+    liveMode === "local"
+      ? []
+      : parseLivePartnerCredentialHashes(loadedEnv.effectiveEnv.GIWA_LIVE_PARTNER_CREDENTIAL_HASHES);
   const partnerTenantId = loadedEnv.effectiveEnv.GIWA_LIVE_PARTNER_TENANT_ID ?? "tenant_default";
   const credentials = credentialHashes.map((tokenHash, index) => ({
     id: `partner-${index + 1}`,
@@ -142,7 +159,7 @@ async function startLiveServer() {
     mode: liveMode,
     mockMode,
     host,
-    authReady: liveMode === "local" || credentials.length > 0,
+    authReady: liveMode === "local" || credentialHashes.length > 0,
     tenantReady: true,
     rateLimitReady: true,
     requestSafetyReady: true,
@@ -171,13 +188,24 @@ async function startLiveServer() {
     process.exit();
   }
 
-  if (!readiness.ok && !mockMode) {
+  if (!readiness.ok && !(liveMode === "local" && mockMode)) {
     process.exitCode = 1;
     console.error("Live env readiness failed. Set GIWA_LIVE_MOCK_MODE=1 only for local API contract mode.");
     process.exit();
   }
 
-  const serverEnv = mockMode ? null : requireLiveServerEnv({ ...loadedEnv.effectiveEnv, GIWA_LIVE_DB_PATH: dbPath });
+  const serverEnv = liveMode === "local" && mockMode ? null : requireLiveServerEnv(loadedEnv.effectiveEnv);
+  const dbPath =
+    liveMode === "local"
+      ? resolve(
+          workspaceRoot,
+          serverEnv?.dbPath ??
+            loadedEnv.effectiveEnv.GIWA_LIVE_DB_PATH ??
+            "apps/web/.data/live-mvp-sprint12.sqlite"
+        )
+      : requireExternalHostedDbPath(serverEnv.dbPath);
+  if (process.env.GIWA_SKIP_PUBLIC_EXPORT !== "1") exportFlowData();
+  mkdirSync(dirname(dbPath), { recursive: true });
   const deployment = JSON.parse(readFileSync(deploymentPath, "utf8"));
   const campaignSignerAccount = serverEnv === null ? null : privateKeyToAccount(serverEnv.campaignSignerPrivateKey);
   const publicBaseUrl =
@@ -309,11 +337,15 @@ async function startLiveServer() {
     return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  function rateLimitInputs(routeClass, auth, request, url) {
-    const source = request.socket.remoteAddress ?? "unknown";
+  function preAuthRateLimitInputs(request, url) {
+    const clientIp = selectLiveClientIp({
+      socketAddress: request.socket.remoteAddress,
+      realIpHeader: request.headers["x-real-ip"],
+      isIp: isIP
+    });
     const inputs = [
       {
-        bucket: liveRateLimitBucket({ kind: "ip", value: source, tenantId: auth?.tenantId }),
+        bucket: liveRateLimitBucket({ kind: "ip", value: clientIp }),
         limit: LIVE_RATE_LIMIT_POLICY.generalPerIpPerMinute,
         windowMs: 60_000
       }
@@ -321,7 +353,7 @@ async function startLiveServer() {
     const route = classifyLiveRateLimitRoute(request.method ?? "GET", url.pathname);
     if (route?.kind === "create") {
       inputs.push({
-        bucket: liveRateLimitBucket({ kind: "create", value: source }),
+        bucket: liveRateLimitBucket({ kind: "create", value: clientIp }),
         limit: LIVE_RATE_LIMIT_POLICY.createRunPerIpPerMinute,
         windowMs: 60_000
       });
@@ -333,14 +365,26 @@ async function startLiveServer() {
         windowMs: 60_000
       });
     }
-    if (routeClass === "partner" && auth !== null) {
-      inputs.push({
-        bucket: liveRateLimitBucket({ kind: "credential", value: auth.actorId, tenantId: auth.tenantId }),
-        limit: LIVE_RATE_LIMIT_POLICY.partnerPerCredentialPerMinute,
-        windowMs: 60_000
-      });
-    }
     return inputs;
+  }
+
+  function partnerRateLimitInput(auth) {
+    return {
+      bucket: liveRateLimitBucket({ kind: "credential", value: auth.actorId, tenantId: auth.tenantId }),
+      limit: LIVE_RATE_LIMIT_POLICY.partnerPerCredentialPerMinute,
+      windowMs: 60_000
+    };
+  }
+
+  function consumeRateLimits(inputs, response, id) {
+    for (const input of inputs) {
+      const decision = rateLimiter.consume(input);
+      if (!decision.allowed) {
+        sendJson(response, 429, { error: decision.code, retryAfterMs: decision.retryAfterMs, requestId: id });
+        return false;
+      }
+    }
+    return true;
   }
 
   function readRunCapabilityHeader(value) {
@@ -425,7 +469,7 @@ async function startLiveServer() {
       const body = buildLiveReadinessBody({
         mode: liveMode,
         envReady: (readiness.ok || (liveMode === "local" && mockMode)) && hostedReadiness.ok,
-        authReady: liveMode === "local" || credentials.length > 0,
+        authReady: liveMode === "local" || credentialHashes.length > 0,
         tenantReady: partnerTenantId.trim().length > 0,
         repositoryReady: schemaState.ok,
         rateLimitReady: true,
@@ -446,6 +490,7 @@ async function startLiveServer() {
 
     if (url.pathname.startsWith("/api/")) {
       const routeClass = classifyLiveApiRoute(request.method ?? "GET", url.pathname);
+      if (!consumeRateLimits(preAuthRateLimitInputs(request, url), response, id)) return;
       const safety = evaluateLiveRequestSafety({
         method: request.method ?? "GET",
         pathname: url.pathname,
@@ -458,6 +503,16 @@ async function startLiveServer() {
         return;
       }
 
+      let auth = null;
+      if (routeClass === "partner" && liveMode !== "local") {
+        const authResult = authenticateLiveRequest({ headers: request.headers, credentials });
+        if (!authResult.ok) {
+          sendJson(response, authResult.status, { error: authResult.code, requestId: id });
+          return;
+        }
+        auth = authResult.context;
+        if (!consumeRateLimits([partnerRateLimitInput(auth)], response, id)) return;
+      }
       let parsedBody;
       try {
         parsedBody = request.method === "POST" ? await readBody(request) : undefined;
@@ -470,22 +525,6 @@ async function startLiveServer() {
           requestId: id
         });
         return;
-      }
-      let auth = null;
-      if (routeClass === "partner" && liveMode !== "local") {
-        const authResult = authenticateLiveRequest({ headers: request.headers, credentials });
-        if (!authResult.ok) {
-          sendJson(response, authResult.status, { error: authResult.code, requestId: id });
-          return;
-        }
-        auth = authResult.context;
-      }
-      for (const input of rateLimitInputs(routeClass, auth, request, url)) {
-        const decision = rateLimiter.consume(input);
-        if (!decision.allowed) {
-          sendJson(response, 429, { error: decision.code, retryAfterMs: decision.retryAfterMs, requestId: id });
-          return;
-        }
       }
       const result = await api({
         method: request.method ?? "GET",

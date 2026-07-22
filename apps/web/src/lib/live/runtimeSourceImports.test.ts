@@ -86,4 +86,38 @@ describe("live server source imports", () => {
     expect(source).toMatch(/clearInterval\(pruneTimer\)[\s\S]{0,700}server\.close\([\s\S]{0,700}store\.close\(\)/u);
     expect(source).not.toContain("process.exit(0)");
   });
+
+  it("validates raw hosted DB configuration before any startup write and keeps it outside release roots", () => {
+    const source = readRuntimeSource("scripts/serve-live.mjs");
+    const readinessIndex = source.indexOf("buildRedactedLiveEnvReadiness({");
+    const requireEnvIndex = source.indexOf("requireLiveServerEnv(loadedEnv.effectiveEnv)");
+    const exportIndex = source.indexOf("exportFlowData();");
+    const mkdirIndex = source.indexOf("mkdirSync(");
+    const storeIndex = source.indexOf("createSqliteLiveStore(");
+
+    expect(source).not.toMatch(/const dbPath = resolve\(workspaceRoot, process\.env\.GIWA_LIVE_DB_PATH \?\?/u);
+    expect(source).toContain("GIWA_LIVE_DB_PATH: loadedEnv.effectiveEnv.GIWA_LIVE_DB_PATH");
+    expect(source).not.toContain("GIWA_LIVE_DB_PATH: dbPath");
+    expect(requireEnvIndex).toBeGreaterThan(readinessIndex);
+    expect(exportIndex).toBeGreaterThan(requireEnvIndex);
+    expect(mkdirIndex).toBeGreaterThan(requireEnvIndex);
+    expect(storeIndex).toBeGreaterThan(mkdirIndex);
+    expect(source).toContain("requireExternalHostedDbPath(serverEnv.dbPath)");
+    expect(source).toMatch(/function isWithinRoot\([\s\S]{0,500}relative\(/u);
+    expect(source).toMatch(/function requireExternalHostedDbPath\([\s\S]{0,1000}isAbsolute\([\s\S]{0,1000}isWithinRoot\(/u);
+    expect(source).toContain('resolve("/opt/giwa/current")');
+    expect(source).toContain('resolve("/opt/giwa/releases")');
+  });
+
+  it("uses strictly validated partner hashes and a loopback-only X-Real-IP identity", () => {
+    const source = readRuntimeSource("scripts/serve-live.mjs");
+
+    expect(source).toContain("parseLivePartnerCredentialHashes(");
+    expect(source).toContain("authReady: liveMode === \"local\" || credentialHashes.length > 0");
+    expect(source).toContain("selectLiveClientIp({");
+    expect(source).toContain('realIpHeader: request.headers["x-real-ip"]');
+    expect(source).toContain("isIp: isIP");
+    expect(source).not.toContain("x-forwarded-for");
+    expect(source).not.toMatch(/console\.(?:log|error)\([^\n]*(?:credentialHashes|tokenHash)/u);
+  });
 });

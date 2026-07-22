@@ -46,4 +46,23 @@ describe("commercial user route mapping", () => {
     expect(telemetryCall).not.toContain("runCapability");
     expect(telemetryCall).not.toContain("x-giwa-run-capability");
   });
+
+  it("applies client and route limits before request parsing or partner authentication", () => {
+    const source = readWebFile("scripts/serve-live.mjs");
+    const preAuthLimitIndex = source.indexOf("preAuthRateLimitInputs(", source.indexOf("const server ="));
+    const safetyIndex = source.indexOf("evaluateLiveRequestSafety(", source.indexOf("const server ="));
+    const readBodyIndex = source.indexOf("await readBody(", source.indexOf("const server ="));
+    const authenticateIndex = source.indexOf("authenticateLiveRequest(", source.indexOf("const server ="));
+    const partnerLimitIndex = source.indexOf("partnerRateLimitInput(", authenticateIndex);
+
+    expect(preAuthLimitIndex).toBeGreaterThan(-1);
+    expect(preAuthLimitIndex).toBeLessThan(safetyIndex);
+    expect(preAuthLimitIndex).toBeLessThan(readBodyIndex);
+    expect(preAuthLimitIndex).toBeLessThan(authenticateIndex);
+    expect(partnerLimitIndex).toBeGreaterThan(authenticateIndex);
+    expect(partnerLimitIndex).toBeLessThan(readBodyIndex);
+    expect(source.match(/preAuthRateLimitInputs\(/gu)).toHaveLength(2);
+    expect(source).toMatch(/if \(route\?\.kind === "create"\)[\s\S]{0,350}createRunPerIpPerMinute/u);
+    expect(source).toMatch(/if \(route\?\.kind === "verify"\)[\s\S]{0,350}verifyPerRunPerMinute/u);
+  });
 });
