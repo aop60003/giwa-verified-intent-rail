@@ -10,7 +10,7 @@
 
 ## 사전 화면 준비
 
-- `/user`를 첫 화면으로 열고 `/user/receipt/<matched-receipt-hash>`, explorer transaction, `/partner`, `/demo` fallback을 별도 탭에 준비한다.
+- `/user`를 첫 화면으로 열고 `/user/receipt/<matched-receipt-hash>`와 explorer transaction을 fresh-run 탭으로, `/partner`와 `/demo`를 checked-in recorded fallback 탭으로 별도 준비한다.
 - 연결에 사용할 evaluator wallet과 GIWA Sepolia network만 확인한다. wallet signing은 발표자가 직접 승인한다.
 - gas/token이 이미 충분한 녹화와 permissionless mock-token mint가 필요한 녹화 중 하나를 실제 상태에 맞게 선택한다.
 - live dependency가 지연되면 사용할 기록된 static example을 준비하되 `recorded fallback`이라고 말한다.
@@ -57,11 +57,11 @@
 - **증거 큐:** transaction status, block number/hash, confirmation depth, verifier input hash, terminal `Manifest matched` 상태를 보여준다.
 - **fallback 큐:** RPC가 지연되면 pending 상태와 explorer를 보여준다. bounded verification retry만 사용하며, mismatch/failed면 Receipt가 열리지 않는 화면을 그대로 보여준다.
 
-## 80–90초: 공개 Receipt, explorer, partner evidence, static fallback
+## 80–90초: fresh 공개 Receipt와 recorded partner/static fallback
 
-- **발화:** "일치한 뒤에만 이 공개 Receipt가 열립니다. explorer transaction과 partner evidence가 같은 run을 가리키고, live가 잠시 내려가도 기록된 static example은 구분해서 남습니다."
-- **화면 동작:** 공개 Receipt의 receipt hash와 explorer 링크를 보여준 뒤 `/partner`의 redacted evidence를 짧게 보여주고 `/demo` 또는 `/`의 recorded fallback 탭으로 마친다.
-- **증거 큐:** public Receipt URL/hash, deposit explorer transaction, exact source commit 또는 verification summary 링크, partner surface가 서로 같은 실제 run을 가리켜야 한다.
+- **발화:** "일치한 뒤에만 이 fresh 공개 Receipt가 열리고 explorer의 같은 deposit을 가리킵니다. `/partner`는 방금 실행한 DB가 아니라, source와 시점을 표시한 checked-in recorded evidence packet이며 static fallback으로 분리합니다."
+- **화면 동작:** fresh 공개 Receipt의 receipt hash와 explorer 링크를 먼저 보여준다. 그 뒤 `/partner`의 `recorded/static` label, snapshot source file과 source timestamp를 짚고 `/demo` 또는 `/` fallback 탭으로 마친다.
+- **증거 큐:** public Receipt URL/hash와 deposit explorer transaction은 같은 fresh run이어야 한다. partner surface는 별도 recorded packet으로서 snapshot source/freshness와 이를 제공한 deployed source commit이 제출 evidence에 기록되어야 하며 fresh run 일치를 암시하지 않는다.
 - **fallback 큐:** Receipt URL이 다른 브라우저 context에서 열리지 않거나 링크가 서로 다르면 녹화를 중단하고 submission을 no-go로 둔다.
 
 ## 반드시 말하거나 화면에 남길 제한

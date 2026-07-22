@@ -19,7 +19,7 @@ Codex가 준비와 검증을 수행해도 다음 단계는 해당 권한을 가�
 | 게이트 | 실행 전 필요한 기록 |
 | --- | --- |
 | Git push | 정확한 source commit, 대상 remote/branch, 승인자 |
-| 호스트 패키지 설치 | Node/pnpm, Nginx, `sqlite3`, certbot 또는 선택한 인증서 도구, 설치 승인자 |
+| 호스트 패키지 설치 | CI-compatible Node `22.16.0`, pnpm `10.32.1`, Nginx, `sqlite3`, certbot 또는 선택한 인증서 도구, 설치 승인자 |
 | Lightsail 변경 | 인스턴스/리전/플랜, 비용 책임자, release owner, rollback owner |
 | DNS | 호스트명, static IP, DNS owner |
 | HTTPS/certificate | 인증서 방식, 갱신 책임자, 승인자 |
@@ -76,7 +76,7 @@ Codex가 준비와 검증을 수행해도 다음 단계는 해당 권한을 가�
 
 ## 런타임 파일 계약
 
-`/etc/giwa/giwa-live.runtime`에는 이름과 실제 값만 호스트에서 배치한다. 이 문서, Git, 로그, smoke 출력, 제출 증거에는 값을 기록하지 않는다. `requireLiveServerEnv`와 `.env.example`에 따라 스테이징 runtime file에 허용되는 이름은 다음과 같다.
+`/etc/giwa/giwa-live.runtime`에는 이름과 실제 값만 호스트에서 배치한다. 이 문서, Git, 로그, smoke 출력, 제출 증거에는 값을 기록하지 않는다. `requireLiveServerEnv`와 `.env.example`에 따른 스테이징 runtime file의 정확한 필수 이름은 다음과 같다.
 
 | 이름 | 경계 |
 | --- | --- |
@@ -91,6 +91,10 @@ Codex가 준비와 검증을 수행해도 다음 단계는 해당 권한을 가�
 | `GIWA_LIVE_FAUCET_HELP_URL` | HTTPS recovery URL |
 | `GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS` | positive integer hours |
 | `GIWA_LIVE_DB_PATH` | `/var/lib/giwa` 아래 absolute path |
+
+위 표의 11개가 `requireLiveServerEnv`가 스테이징에서 요구하는 정확한 필수 집합이다. `GIWA_LIVE_PARTNER_TENANT_ID`는 선택 항목이며 코드 기본값은 `tenant_default`다. GASOK 배포 정책은 final freeze 전에 이 선택 항목을 명시적으로 설정하고, 실제 값 대신 `explicitly-set` 결정만 evidence에 기록하는 것이다. 누락되어 기본값에 의존하면 runtime은 시작할 수 있어도 submission freeze는 no-go다.
+
+`GIWA_LIVE_MOCK_MODE`는 필수나 선택 항목이 아니다. 스테이징에서는 `GIWA_LIVE_MOCK_MODE=1`을 금지하고 runtime file에 이름 자체를 넣지 않는다. mock mode는 local API contract rehearsal에만 사용한다.
 
 다음 reserved keys는 runtime file에 넣지 않는다. `giwa-live.service`의 `ExecStart`가 이를 강제하여 runtime file override를 막는다.
 
@@ -134,6 +138,17 @@ expiresOn=<YYYY-MM-DD>
 
 승인된 push와 host package 설치가 완료된 뒤에만 다음 순서를 사용한다.
 
+CI와 같은 toolchain을 먼저 확인한다.
+
+```bash
+test "$(node --version)" = "v22.16.0"
+test "$(/usr/bin/node --version)" = "v22.16.0"
+test "$(pnpm --version)" = "10.32.1"
+if command -v corepack >/dev/null 2>&1; then corepack --version; fi
+```
+
+corepack을 사용하는 경우 그 버전을 release evidence에 기록하고, 활성 pnpm이 `10.32.1`인지 다시 확인한다. package install, corepack activation 또는 version 변경은 별도 host approval 뒤에만 수행한다. `/usr/bin/node`가 정확히 `v22.16.0`을 제공하지 않으면 배포를 중지하고 `giwa-static.service`와 `giwa-live.service`의 고정 `ExecStart` 경로/버전을 source에서 조정한 뒤 전체 검증을 다시 수행한다. generic Ubuntu Node만으로는 충분하지 않다.
+
 ```text
 checkout exact source commit into /opt/giwa/releases/<source-commit>
 pnpm install --frozen-lockfile
@@ -165,9 +180,34 @@ SQLite WAL 상태에서도 파일 복사 대신 versioned script의 `sqlite3 .ba
 1. 네 unit 파일을 exact release에서 `/etc/systemd/system`의 candidate로 복사하고 이전 파일을 보존한다.
 2. `/etc/giwa/giwa-live.runtime`의 owner/mode와 변수 이름만 검토한다. 값은 출력하지 않는다.
 3. `/opt/giwa/current`를 새 immutable release로 전환한다.
-4. `systemctl daemon-reload` 후 static을 먼저 시작한다.
-5. live를 시작하고 `/readyz`가 green인지 확인한다. schema가 호환되지 않으면 즉시 live를 중지한다.
-6. loopback smoke를 실행한다.
+4. host service mutation 승인 아래 `systemctl daemon-reload`를 실행한다.
+5. static을 먼저 `restart`하고 Active/MainPID/release cwd를 확인한다. 실패하면 기존 static fallback 복구로 전환한다.
+6. static 검증 뒤에만 live를 `restart`하고 같은 검증을 수행한다. schema가 호환되지 않거나 `/readyz`가 green이 아니면 live를 즉시 중지하고 검증된 static은 유지한다.
+7. 두 process가 정확한 새 release를 실행한다는 증거를 기록한 뒤에만 loopback smoke를 실행한다.
+
+`systemctl start`는 이미 실행 중인 old process를 교체하지 않으므로 release 전환에 사용하지 않는다. 다음 명령은 approval-gated host checkpoint이며 `GIWA_STAGE_COMMIT`은 사전에 검증한 exact 40-character commit이다.
+
+```bash
+set -euo pipefail
+current_release="$(readlink -f /opt/giwa/current)"
+expected_release="$(readlink -f "/opt/giwa/releases/$GIWA_STAGE_COMMIT")"
+test "$current_release" = "$expected_release"
+
+sudo systemctl daemon-reload
+sudo systemctl restart giwa-static.service
+test "$(sudo systemctl is-active giwa-static.service)" = "active"
+static_pid="$(sudo systemctl show --property MainPID --value giwa-static.service)"
+test "$static_pid" -gt 0
+test "$(sudo readlink -f "/proc/$static_pid/cwd")" = "$current_release"
+
+sudo systemctl restart giwa-live.service
+test "$(sudo systemctl is-active giwa-live.service)" = "active"
+live_pid="$(sudo systemctl show --property MainPID --value giwa-live.service)"
+test "$live_pid" -gt 0
+test "$(sudo readlink -f "/proc/$live_pid/cwd")" = "$current_release"
+```
+
+evidence에는 exact source commit, `current_release`, `expected_release`, `static_pid`, `live_pid`, 두 Active 상태와 두 `/proc/<MainPID>/cwd` 확인 결과를 기록한다. runtime values나 process environment는 기록하지 않는다. backup timer의 enable/start는 이 release process 검증과 분리한다.
 
 Exact local smoke command:
 
@@ -182,18 +222,50 @@ sudo -u giwa /opt/giwa/current/ops/lightsail/scripts/smoke-local.sh
 renderer는 output을 `/etc/nginx/sites-available` 또는 `/etc/nginx/conf.d` 아래의 허용된 새 파일에만 생성하며 기존 파일을 덮어쓰지 않는다. lowercase short commit으로 아직 존재하지 않는 candidate 이름을 만든다.
 
 ```bash
+set -euo pipefail
+candidate_id="${GIWA_STAGE_COMMIT:0:12}-$(date -u +%Y%m%d%H%M%S)"
+candidate="/etc/nginx/sites-available/giwa-staging.candidate-${candidate_id}.conf"
+enabled_link="/etc/nginx/sites-enabled/giwa-staging.conf"
+temporary_link="/etc/nginx/sites-enabled/.giwa-staging-${candidate_id}.tmp"
+restore_link="/etc/nginx/sites-enabled/.giwa-staging-restore-${candidate_id}.tmp"
+
+test ! -e "$candidate"
+test ! -e "$temporary_link" && test ! -L "$temporary_link"
+test ! -e "$restore_link" && test ! -L "$restore_link"
+if [ -e "$enabled_link" ] && [ ! -L "$enabled_link" ]; then exit 1; fi
+previous_target="$(readlink "$enabled_link" 2>/dev/null || true)"
+
 sudo env GIWA_STAGE_HOST="$GIWA_STAGE_HOST" \
   node /opt/giwa/current/ops/lightsail/render-nginx-config.mjs \
-  "/etc/nginx/sites-available/giwa-staging.candidate-${GIWA_STAGE_COMMIT:0:12}.conf"
+  "$candidate"
+
+sudo ln -s "$candidate" "$temporary_link"
+sudo mv -Tf "$temporary_link" "$enabled_link"
+tested_target="$(readlink "$enabled_link")"
+test "$tested_target" = "$candidate"
+
+set +e
+nginx_test_output="$(sudo nginx -t 2>&1)"
+nginx_test_status=$?
+set -e
+
+if [ "$nginx_test_status" -ne 0 ]; then
+  if [ -n "$previous_target" ]; then
+    sudo ln -s "$previous_target" "$restore_link"
+    sudo mv -Tf "$restore_link" "$enabled_link"
+  else
+    sudo rm -- "$enabled_link"
+  fi
+  sudo nginx -t
+  printf '%s\n' "$nginx_test_output"
+  exit "$nginx_test_status"
+fi
+
+printf '%s\n' "$nginx_test_output"
+sudo systemctl reload nginx
 ```
 
-candidate 내용을 값 노출 없이 검토한 다음, 현재 active link를 보존하고 candidate를 `sites-enabled/giwa-staging.conf`의 시험 대상으로 연결한다. 실행 중인 Nginx는 아직 reload하지 않는다. 그 상태에서 checkpoint를 통과해야 한다.
-
-```bash
-sudo nginx -t
-```
-
-실패하면 candidate link를 제거하고 이전 link를 복원한다. 성공한 경우에만 candidate를 현재 Nginx config로 설치한 뒤 reload하고 HTTP smoke를 실행한다. 순서는 항상 `render candidate -> nginx -t -> install/activate -> reload`다. renderer output 제한을 우회하려고 임의의 temp directory에 쓰지 않는다.
+candidate render, enabled link의 atomic replace, `nginx -t`, 실패 시 이전 link의 atomic restore와 재검증, 성공 시 reload까지가 하나의 approval-gated host change다. 성공한 `nginx -t` 뒤에는 config/link/file을 더 변경하지 않고 그 exact tested link state를 `systemctl reload nginx`로 읽힌다. candidate path, `previous_target`, `tested_target`, `nginx_test_status`, `nginx_test_output`을 evidence에 기록한다. renderer output 제한을 우회하려고 임의의 temp directory에 쓰지 않는다.
 
 Nginx 소유권은 다음과 같다.
 
@@ -227,9 +299,9 @@ rollback은 testnet transaction을 되돌리지 못한다. 실패한 live run은
 1. `giwa-live.service`를 중지해 새 write와 verification을 막는다.
 2. `giwa-static.service`는 건강하면 유지하여 `/`, `/demo`, `/partner`와 `/user*` fallback을 제공한다.
 3. `/opt/giwa/current`를 보존해 둔 이전 immutable release로 되돌린다.
-4. 이전 systemd unit candidate를 복원하고 `systemctl daemon-reload`를 실행한다.
-5. 이전 Nginx candidate/link를 복원하고 `nginx -t` 성공 후에만 reload한다.
-6. static/local/public smoke를 다시 실행한다. live schema compatibility가 확인된 경우에만 live를 시작한다.
+4. 이전 systemd unit candidate를 복원하고 `systemctl daemon-reload` 뒤 static을 먼저 `restart`한다. Active/MainPID와 이전 release cwd를 확인한 뒤에만 live를 `restart`한다.
+5. 이전 Nginx target으로 temporary symlink를 만들고 enabled link를 원자적으로 교체한다. 그 exact link state에서 `nginx -t`가 성공한 경우에만 더 변경하지 않고 reload한다.
+6. static/local/public smoke를 다시 실행한다. live schema compatibility와 exact process cwd가 확인된 경우에만 live를 유지한다.
 7. DB restore는 자동으로 하지 않는다. active writes 중지, backup `quick_check`, 이전/현재 schema compatibility assessment, restore owner의 명시적 승인이 모두 있을 때만 별도 절차로 수행한다.
 8. bounded 로그, source commit, failure category, smoke 결과와 owner 결정을 보존한다. runtime values와 run capability는 evidence에서 제외한다.
 
@@ -237,6 +309,6 @@ live가 내려간 동안 `/user*`는 기록된 static evidence로 fallback하고
 
 ## release evidence와 종료 조건
 
-go를 기록하려면 exact source commit, authority category, backup filename, schema gate, unit 상태, Nginx candidate와 `nginx -t`, DNS/HTTPS 결과, 일곱-route smoke, rollback rehearsal, public transaction/Receipt, release owner와 rollback owner가 모두 실제 값으로 있어야 한다.
+go를 기록하려면 exact source commit, resolved `/opt/giwa/current`, static/live MainPID와 exact release cwd, authority category, backup filename, schema gate, unit 상태, Nginx candidate/previous/tested target과 `nginx -t` 결과, DNS/HTTPS 결과, 일곱-route smoke, rollback rehearsal, public transaction/Receipt, release owner와 rollback owner가 모두 실제 값으로 있어야 한다.
 
 현재 상태는 배포 전이며 외부 공개 URL이나 staging transaction을 생성했다고 주장하지 않는다. 제출 증거 freeze는 `giwa-gasok-submission-checklist.md`의 모든 항목이 실제 값으로 채워진 뒤에만 가능하다.

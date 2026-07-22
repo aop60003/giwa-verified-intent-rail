@@ -45,13 +45,24 @@ Approved public route ownership:
 
 SQLite storage and the in-memory rate limiter are intentionally one-instance GASOK testnet-staging choices, not horizontal-scaling claims.
 
-## Final Demo Pack
+## Current GASOK Final Demo Gate
 
-Open these first:
+Use only these current documents for Task 15 and evaluator routing:
 
 - [Current GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md)
 - [Current GASOK demo script](docs/implementation/giwa-gasok-demo-script.md)
 - [Current GASOK submission checklist](docs/implementation/giwa-gasok-submission-checklist.md)
+
+The staging-origin gate is `NO-GO` until Task 15 records an actual public HTTPS `/user` URL, matched Receipt URL/hash, deposit explorer transaction, recorded/static partner packet with source/freshness label, exact source commit, and final verification evidence. Do not route an evaluator to a localhost URL or a retained hash from an older rehearsal.
+
+After the gate passes, the current demo order is the actual public `/user` origin, the fresh matched Receipt and its deposit explorer transaction, then the separately labeled recorded/static `/partner` and static fallback. The checked-in partner packet is not assumed to be the fresh staging run.
+
+## Historical Sprint 12 Recorded Demo Pack — Not Current GASOK Submission
+
+The links, localhost commands, hashes, and snapshots below preserve earlier local-review evidence only. They are not current Task 15 inputs, evaluator routes, or proof of a public staging deployment.
+
+Historical first-read documents:
+
 - [External blocker monitoring and staging handoff](docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md)
 - [Partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
 - [Historical local demo script](docs/implementation/giwa-mvp-demo-script.md)

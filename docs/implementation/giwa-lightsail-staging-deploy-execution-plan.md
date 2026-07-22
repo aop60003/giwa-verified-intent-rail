@@ -16,7 +16,7 @@ Before execution begins, the release owner must record:
 | --- | --- | --- |
 | AWS/Lightsail account and billing | account owner, billing readiness, budget owner, spend stop condition | absent |
 | Region and plan | selected region, Ubuntu plan, disk size, resize trigger | absent |
-| Host packages | approval for Node/pnpm, Nginx, `sqlite3`, and the selected certificate tool | absent |
+| Host packages | approval for CI-compatible Node `22.16.0`, pnpm `10.32.1`, Nginx, `sqlite3`, and the selected certificate tool | absent |
 | Domain and HTTPS | hostname, DNS owner, HTTPS method, renewal owner | absent |
 | Runtime injection | approved server-only injection method, variable names reviewed, values excluded from docs | absent |
 | Backup destination | destination category, retention owner, restore owner, drill gate | absent |
@@ -62,7 +62,7 @@ Do not paste credential values into chat, docs, logs, shell history, or public e
 Future operator actions:
 
 ```text
-install approved Node runtime
+install approved Node 22.16.0 and pnpm 10.32.1 runtime
 create non-root giwa service user
 create /opt/giwa/releases
 create /opt/giwa/current as an active-release symlink only after build success
@@ -71,7 +71,7 @@ create /etc/giwa
 set restrictive ownership and permissions
 ```
 
-Stop if runtime source is not approved.
+Stop if runtime source is not approved. Before install/build/service activation, `node --version` and `/usr/bin/node --version` must both equal `v22.16.0`, and `pnpm --version` must equal `10.32.1`. Record `corepack --version` if corepack supplies pnpm. Package install, corepack activation, or version change requires host approval. If `/usr/bin/node` is not the pinned version, stop and reconcile the versioned unit `ExecStart` path/version before deployment.
 
 ### 4. Fetch Source Or Artifact
 
@@ -90,6 +90,9 @@ The current state has no protected artifact metadata.
 Future operator actions inside `/opt/giwa/releases/<exact-source-commit>`:
 
 ```text
+verify node --version = v22.16.0
+verify /usr/bin/node --version = v22.16.0
+verify pnpm --version = 10.32.1
 pnpm install --frozen-lockfile only if approved for the host
 pnpm build
 node --check ops/lightsail/render-nginx-config.mjs
@@ -122,14 +125,14 @@ install ops/lightsail/systemd/giwa-live.service as giwa-live.service
 install ops/lightsail/systemd/giwa-backup.service as giwa-backup.service
 install ops/lightsail/systemd/giwa-backup.timer as giwa-backup.timer
 systemctl daemon-reload
-systemctl start giwa-static.service
-systemctl status giwa-static.service
-systemctl start giwa-live.service only after runtime readiness passes
-systemctl status giwa-live.service
+systemctl restart giwa-static.service
+verify giwa-static Active/MainPID and /proc/<MainPID>/cwd resolve to /opt/giwa/current and the exact release
+systemctl restart giwa-live.service only after static process verification
+verify giwa-live Active/MainPID and /proc/<MainPID>/cwd resolve to /opt/giwa/current and the exact release
 systemctl enable --now giwa-backup.timer
 ```
 
-Both services must bind to localhost.
+`systemctl start` is not a release switch because an old running process may remain unchanged. Static is restarted and verified first so it remains the fallback if live restart/readiness fails. Both services must bind to localhost. Before smoke, evidence records exact source commit, resolved `/opt/giwa/current`, resolved exact release path, both MainPIDs, both Active states, and both process cwd checks. Service restart and host mutation remain approval-gated.
 
 Before release activation, run the exact backup service command if an active DB exists:
 
@@ -144,16 +147,19 @@ The versioned backup script uses SQLite `.backup` and `PRAGMA quick_check`. SQLi
 Future operator actions:
 
 ```text
-render a new allowed candidate with ops/lightsail/render-nginx-config.mjs
-test the candidate activation with nginx -t before reload
-install/activate only after nginx -t passes
+render a NEW unique allowed sites-available candidate with ops/lightsail/render-nginx-config.mjs
+capture the previous sites-enabled/giwa-staging.conf symlink target
+create a temporary symlink to the candidate and atomically replace the enabled link
+run nginx -t against that exact enabled-link state
+on failure, atomically restore the previous target and verify it with nginx -t
+on success, make no further config/link/file mutation and systemctl reload nginx
 route /, /demo, and /partner to static 127.0.0.1:4176
 route /user* to live 127.0.0.1:4177 with static fallback on live upstream failure
 route /api/*, /healthz, and /readyz to live 127.0.0.1:4177
 return bounded 503 JSON for API/health/readiness upstream failure
 ```
 
-The renderer output must be a new `giwa-staging.conf` or `giwa-staging.candidate-<id>.conf` inside `/etc/nginx/sites-available` or `/etc/nginx/conf.d`; it refuses arbitrary output paths and existing files. Stop if config test fails or route ownership differs from the approved split.
+The renderer output must be a new `giwa-staging.conf` or `giwa-staging.candidate-<id>.conf` inside `/etc/nginx/sites-available` or `/etc/nginx/conf.d`; it refuses arbitrary output paths and existing files. The current runbook contains the exact atomic-link commands. Record candidate path, previous target, tested enabled target, `nginx -t` output/status. Candidate/link mutation and reload require host approval. Stop if config test fails or route ownership differs from the approved split.
 
 ### 9. Enable HTTPS
 
@@ -202,7 +208,8 @@ If smoke fails:
 - stop live writes and `giwa-live.service`
 - keep `giwa-static.service` online so `/user*` can use the recorded static fallback
 - repoint `/opt/giwa/current` to the preserved prior immutable release
-- restore previous systemd unit and Nginx candidates; run `nginx -t` before reload
+- restore previous systemd units, run `daemon-reload`, restart static then live with Active/MainPID/cwd verification
+- atomically restore the previous Nginx enabled target, run `nginx -t` against that exact state, then reload without another mutation
 - expect `/api/*`, `/healthz`, and `/readyz` to return bounded `503` while live is unavailable
 - restore DB backup only after compatibility assessment, stopped writes, and explicit restore owner approval
 - preserve logs and evidence

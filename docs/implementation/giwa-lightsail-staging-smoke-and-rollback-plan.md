@@ -16,8 +16,9 @@ Before smoke can run in a later execution sprint:
 - Nginx config has passed syntax validation
 - static service is running on localhost
 - live service is running on localhost only if runtime readiness passed
+- static and live were restarted after release activation; each is Active with nonzero MainPID and `/proc/<MainPID>/cwd` resolves to the exact `/opt/giwa/current` release
 - backup or empty-state record exists
-- `/api/partner/runs` auth boundary is approved before that route is checked
+- public unauthenticated `/api/partner/runs` `401` boundary probe is required; the separate private authenticated probe runs only after explicit approval
 - git push, host package installation, DNS, HTTPS/certificate work, wallet actions, and any DB restore have their separate required approvals
 
 ## Route Smoke Matrix
@@ -34,7 +35,8 @@ Before smoke can run in a later execution sprint:
 | `/partner` | HTTP success from static, redacted partner proof surface renders | rollback static release if partner route fails |
 | `/healthz` | bounded live liveness result | live upstream failure returns bounded HTTP `503` JSON |
 | `/readyz` | redacted live readiness result | live upstream failure returns bounded HTTP `503` JSON; stop on raw runtime values |
-| `/api/partner/runs` | bounded JSON only with approved auth boundary | do not check before auth boundary approval; upstream failure returns bounded HTTP `503` JSON |
+| `/api/partner/runs` without partner header | HTTP `401` bounded `unauthorized` JSON | any public success is a blocker; upstream outage may instead return bounded HTTP `503` JSON |
+| `/api/partner/runs` with approved private auth | HTTP success with redacted tenant-scoped rows | separate approval-gated probe; never print auth material or response fields outside the approved evidence boundary |
 
 ## Smoke Commands For Later Approval
 
@@ -63,18 +65,22 @@ Invoke-WebRequest -UseBasicParsing https://<approved-staging-host>/demo
 Invoke-WebRequest -UseBasicParsing https://<approved-staging-host>/partner
 Invoke-WebRequest -UseBasicParsing https://<approved-staging-host>/healthz
 Invoke-WebRequest -UseBasicParsing https://<approved-staging-host>/readyz
-Invoke-WebRequest -UseBasicParsing https://<approved-staging-host>/api/partner/runs
+$partnerProbe = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck https://<approved-staging-host>/api/partner/runs
+if ($partnerProbe.StatusCode -ne 401) { throw 'partner boundary failed' }
 ```
+
+The private authenticated partner probe is separate and approval-gated. Load its value through an approved non-echoed shell/environment source, send it only as the `x-giwa-partner-token` header from an operator-controlled probe, and never print the header or value. Do not place the value in repository examples, command arguments, captured shell history, smoke output, or public evidence.
 
 Do not run wallet actions or GIWA chain-operation package commands as smoke checks.
 
-Before Nginx reload, render a new allowed candidate with `ops/lightsail/render-nginx-config.mjs`, put it through the approved candidate link flow, and run `sudo nginx -t`. Install/activate and reload only after syntax success. Certificate work begins only after DNS resolves to the Lightsail static IP; rerun `nginx -t` and public smoke after certificate activation.
+The Nginx checkpoint uses exactly one approval-gated link state: render a NEW unique allowed candidate, capture the previous enabled target, create a temporary candidate symlink and atomically replace the enabled link, then run `nginx -t` against that exact state. On failure, atomically restore the previous target and verify it with `nginx -t`. On success, make no further config/link/file mutation and run `systemctl reload nginx`. Record candidate path, previous target, tested enabled target, and test output/status. Certificate work begins only after DNS resolves to the Lightsail static IP; rerun this same checkpoint and public smoke after certificate activation.
 
 ## Smoke Pass Criteria
 
 Pass requires:
 
 - approved host responds on expected routes
+- exact source commit, resolved current release, static/live MainPIDs, Active states, and process cwd checks are recorded before route smoke
 - static fallback stays available
 - live route returns bounded output
 - `/user*` uses live in the healthy case and reaches recorded static fallback when live is deliberately stopped
@@ -109,10 +115,10 @@ Future operator actions:
 1. Stop new writes and giwa-live.service.
 2. Keep giwa-static.service online if static smoke still passes.
 3. Repoint /opt/giwa/current to the preserved previous immutable release.
-4. Restore previous systemd unit candidates and run systemctl daemon-reload.
-5. Restore the previous Nginx candidate/link and reload only after nginx -t passes.
+4. Restore previous systemd unit candidates, run systemctl daemon-reload, restart static first, and verify its Active/MainPID/prior-release cwd before restarting and verifying live.
+5. Atomically restore the previous Nginx enabled target, run nginx -t against that exact link state, then reload without another config/link/file mutation.
 6. Rerun static and /user* fallback smoke; expect bounded 503 JSON from API/health/readiness while live is stopped.
-7. Start the prior live release only after its schema compatibility and readiness pass.
+7. Keep the restarted prior live release only after its schema compatibility, exact process cwd, and readiness pass.
 8. Restore a DB backup only after writes are stopped, quick_check passes, old/new schema compatibility is assessed, and the restore owner explicitly approves.
 9. Preserve service logs, proxy logs, smoke output, source commit, owner decision, and blocker evidence without runtime values.
 10. Update blocker register and commercial readiness gate.
