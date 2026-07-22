@@ -56,6 +56,22 @@ const BLOCKED_CLAIM_PATTERN = new RegExp(
   ].join("|"),
   "i"
 );
+const VARIABLE_NAME_EVIDENCE_PATH = "docs/evidence/lightsail-staging-preflight-sprint52.json";
+const ALLOWED_SERVER_ONLY_NAMES = new Set([
+  "HOST",
+  "PORT",
+  "GIWA_LIVE_MODE",
+  "GIWA_LIVE_DB_PATH",
+  "GIWA_LIVE_ALLOWED_ORIGINS",
+  "GIWA_LIVE_PARTNER_TENANT_ID",
+  "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES",
+  "GIWA_SEPOLIA_RPC_URL",
+  "GIWA_EXPLORER_TX_URL_TEMPLATE",
+  "GIWA_EXPLORER_ADDRESS_URL_TEMPLATE",
+  "CAMPAIGN_SIGNER_PRIVATE_KEY",
+  "INTENT_SUBMITTER_PRIVATE_KEY",
+  "VERIFIER_PRIVATE_KEY"
+]);
 
 function lineOf(content: string, pattern: RegExp): number | null {
   const lines = content.split(/\r?\n/);
@@ -71,45 +87,67 @@ function isAllowedNegativeEvidenceFlag(path: string, key: string): boolean {
   return isPublicEvidencePath && (/^no[A-Z]/.test(key) || key.endsWith("NeverRequested"));
 }
 
-function isAllowedVariableNameEvidenceContract(path: string, value: Record<string, unknown>): boolean {
+function isAllowedVariableNameEvidenceContract(
+  path: string,
+  propertyPath: readonly (string | number)[],
+  value: Record<string, unknown>
+): boolean {
   const names = value.serverOnlyNames;
-  return (
-    path.startsWith("docs/evidence/") &&
-    path.endsWith(".json") &&
-    value.variableNamesOnly === true &&
-    value.valuesIncluded === false &&
-    Array.isArray(names) &&
-    names.length > 0 &&
-    names.every((name) => typeof name === "string" && /^[A-Z][A-Z0-9_]*$/u.test(name))
-  );
+  if (
+    path !== VARIABLE_NAME_EVIDENCE_PATH ||
+    propertyPath.length !== 1 ||
+    propertyPath[0] !== "envContract" ||
+    value.variableNamesOnly !== true ||
+    value.valuesIncluded !== false ||
+    !Array.isArray(names) ||
+    names.length !== ALLOWED_SERVER_ONLY_NAMES.size
+  ) {
+    return false;
+  }
+  const uniqueNames = new Set<string>();
+  for (const name of names) {
+    if (typeof name !== "string" || !ALLOWED_SERVER_ONLY_NAMES.has(name)) return false;
+    uniqueNames.add(name);
+  }
+  return uniqueNames.size === ALLOWED_SERVER_ONLY_NAMES.size;
 }
 
-function scanJsonKeys(path: string, value: unknown): boolean {
-  if (Array.isArray(value)) return value.some((item) => scanJsonKeys(path, item));
+function scanJsonKeys(path: string, value: unknown, propertyPath: readonly (string | number)[] = []): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item, index) => scanJsonKeys(path, item, [...propertyPath, index]));
+  }
   if (value !== null && typeof value === "object") {
     const record = value as Record<string, unknown>;
     if (
       Object.prototype.hasOwnProperty.call(record, "serverOnlyNames") &&
-      !isAllowedVariableNameEvidenceContract(path, record)
+      !isAllowedVariableNameEvidenceContract(path, propertyPath, record)
     ) {
       return true;
     }
     return Object.entries(record).some(
-      ([key, child]) => (BLOCKED_KEY_PATTERN.test(key) && !isAllowedNegativeEvidenceFlag(path, key)) || scanJsonKeys(path, child)
+      ([key, child]) =>
+        (BLOCKED_KEY_PATTERN.test(key) && !isAllowedNegativeEvidenceFlag(path, key)) ||
+        scanJsonKeys(path, child, [...propertyPath, key])
     );
   }
   return false;
 }
 
-function scanJsonStringValues(path: string, value: unknown): boolean {
+function scanJsonStringValues(
+  path: string,
+  value: unknown,
+  propertyPath: readonly (string | number)[] = []
+): boolean {
   if (typeof value === "string") return BLOCKED_KEY_PATTERN.test(value);
-  if (Array.isArray(value)) return value.some((item) => scanJsonStringValues(path, item));
+  if (Array.isArray(value)) {
+    return value.some((item, index) => scanJsonStringValues(path, item, [...propertyPath, index]));
+  }
   if (value !== null && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    const allowServerOnlyNames = isAllowedVariableNameEvidenceContract(path, record);
+    const allowServerOnlyNames = isAllowedVariableNameEvidenceContract(path, propertyPath, record);
     return Object.entries(record).some(([key, child]) => {
       if (key === "serverOnlyNames" && allowServerOnlyNames) return false;
-      return scanJsonStringValues(path, child);
+      return scanJsonStringValues(path, child, [...propertyPath, key]);
     });
   }
   return false;

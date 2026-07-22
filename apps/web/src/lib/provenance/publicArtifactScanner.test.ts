@@ -6,6 +6,25 @@ import { readScanTargetContent, scanPublicArtifactText, selectPublicArtifactScan
 
 const generatedAt = "2026-06-19T00:00:00.000Z";
 const workspaceRoot = resolve(process.cwd(), "../..");
+const documentedServerOnlyNames = [
+  "HOST",
+  "PORT",
+  "GIWA_LIVE_MODE",
+  "GIWA_LIVE_DB_PATH",
+  "GIWA_LIVE_ALLOWED_ORIGINS",
+  "GIWA_LIVE_PARTNER_TENANT_ID",
+  "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES",
+  "GIWA_SEPOLIA_RPC_URL",
+  "GIWA_EXPLORER_TX_URL_TEMPLATE",
+  "GIWA_EXPLORER_ADDRESS_URL_TEMPLATE",
+  "CAMPAIGN_SIGNER_PRIVATE_KEY",
+  "INTENT_SUBMITTER_PRIVATE_KEY",
+  "VERIFIER_PRIVATE_KEY"
+];
+
+function variableNameContract(serverOnlyNames: string[] = documentedServerOnlyNames): Record<string, unknown> {
+  return { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames };
+}
 
 describe("public artifact scanner", () => {
   it("blocks credential-like keys without printing synthetic canary values", () => {
@@ -109,18 +128,76 @@ describe("public artifact scanner", () => {
 
   it("allows environment variable names only in an explicit public evidence contract", () => {
     const result = scanPublicArtifactText({
-      path: "docs/evidence/lightsail-staging-preflight.json",
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
       content: JSON.stringify({
-        envContract: {
-          variableNamesOnly: true,
-          valuesIncluded: false,
-          serverOnlyNames: ["HOST", "CAMPAIGN_SIGNER_PRIVATE_KEY", "VERIFIER_PRIVATE_KEY"]
-        }
+        envContract: variableNameContract()
       })
     });
 
     expect(result.decision).toBe("pass");
     expect(result.findings).toEqual([]);
+  });
+
+  it("blocks a variable-name contract in another public evidence file", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/another-preflight.json",
+      content: JSON.stringify({ envContract: variableNameContract() })
+    });
+
+    expect(result.decision).toBe("blocked");
+  });
+
+  it("blocks a variable-name contract outside the root envContract property", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({ nested: { envContract: variableNameContract() } })
+    });
+
+    expect(result.decision).toBe("blocked");
+  });
+
+  it.each(["PASSWORD", "COOKIE", "PRIVATE_KEY_LITERAL"])(
+    "blocks unexpected uppercase token %s inside the evidence exception",
+    (unexpectedName) => {
+      const result = scanPublicArtifactText({
+        path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+        content: JSON.stringify({
+          envContract: variableNameContract([...documentedServerOnlyNames, unexpectedName])
+        })
+      });
+
+      expect(result.decision).toBe("blocked");
+    }
+  );
+
+  it.each([
+    { serverOnlyNames: documentedServerOnlyNames.slice(1) },
+    {
+      serverOnlyNames: [...documentedServerOnlyNames.slice(0, -1), documentedServerOnlyNames[0] ?? "HOST"]
+    }
+  ])("blocks incomplete or duplicate copies of the documented name set", ({ serverOnlyNames }) => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({ envContract: variableNameContract(serverOnlyNames) })
+    });
+
+    expect(result.decision).toBe("blocked");
+  });
+
+  it("continues scanning sibling fields beside the exact name set", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({
+        envContract: { ...variableNameContract(), note: "PASSWORD=synthetic" }
+      })
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: "credential-like-key", matchClass: "credential-marker" })
+      ])
+    );
   });
 
   it("blocks malformed server-only name contracts even when their entries are not sensitive", () => {
