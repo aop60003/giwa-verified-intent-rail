@@ -21,15 +21,23 @@ describe("staging HTTP smoke script", () => {
       expect(source, path).toContain(JSON.stringify([path, status, marker]));
     }
 
+    const runCheckStart = source.indexOf("async function runCheck");
+    const runCheckEnd = source.indexOf("async function main", runCheckStart);
+    const runCheckSource = source.slice(runCheckStart, runCheckEnd);
     expect(source).toContain("const REQUEST_TIMEOUT_MS = 8000;");
-    expect(source).toContain("new AbortController()");
-    expect(source).toMatch(/setTimeout\([\s\S]{0,200}REQUEST_TIMEOUT_MS\)/u);
-    const requestTryIndex = source.indexOf("  try {", source.indexOf("async function runCheck"));
-    const bodyReadIndex = source.indexOf("await response.text()", requestTryIndex);
-    const finallyIndex = source.indexOf("  } finally {", bodyReadIndex);
-    const timeoutCleanupIndex = source.indexOf("clearTimeout(timeout)", finallyIndex);
+    expect(runCheckSource).toContain("const controller = new AbortController();");
+    expect(runCheckSource).toContain(
+      "const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);"
+    );
+    expect(runCheckSource).toMatch(/fetch\(new URL\(path, baseUrl\), \{[\s\S]{0,200}signal: controller\.signal/u);
+    const requestTryIndex = runCheckSource.indexOf("  try {");
+    const fetchIndex = runCheckSource.indexOf("await fetch(", requestTryIndex);
+    const bodyReadIndex = runCheckSource.indexOf("await response.text()", fetchIndex);
+    const finallyIndex = runCheckSource.indexOf("  } finally {", bodyReadIndex);
+    const timeoutCleanupIndex = runCheckSource.indexOf("clearTimeout(timeout)", finallyIndex);
     expect(requestTryIndex).toBeGreaterThan(-1);
-    expect(bodyReadIndex).toBeGreaterThan(requestTryIndex);
+    expect(fetchIndex).toBeGreaterThan(requestTryIndex);
+    expect(bodyReadIndex).toBeGreaterThan(fetchIndex);
     expect(finallyIndex).toBeGreaterThan(bodyReadIndex);
     expect(timeoutCleanupIndex).toBeGreaterThan(finallyIndex);
     expect(source).toContain('redirect: "manual"');
@@ -48,6 +56,25 @@ describe("staging HTTP smoke script", () => {
     expect(source).not.toMatch(/console\.(?:log|error)\([^\n]*(?:GIWA_SMOKE_BASE_URL|process\.env|baseUrl|body|headers|error)/iu);
     expect(source).toMatch(/catch \{[\s\S]{0,250}writeResult\(path, "000", false\)/u);
     expect(source).toMatch(/if \(!passed\) \{[\s\S]{0,120}process\.exitCode = 1;[\s\S]{0,80}return;/u);
+  });
+
+  it("accepts only a root origin and never normalizes away URL metadata", () => {
+    const source = readFileSync(SCRIPT_PATH, "utf8");
+    const parseStart = source.indexOf("function parseBaseUrl");
+    const parseEnd = source.indexOf("function boundedStatus", parseStart);
+    const parseSource = source.slice(parseStart, parseEnd);
+
+    expect(parseSource).toMatch(
+      /if \(parsed\.pathname !== "\/" \|\| parsed\.search !== "" \|\| parsed\.hash !== ""\)\s*throw/u
+    );
+    expect(parseSource).not.toContain("new URL(parsed.origin)");
+    expect(parseSource).toContain("return parsed;");
+    expect(parseSource).not.toContain("parsed.port");
+
+    const mainSource = source.slice(source.indexOf("async function main"));
+    expect(mainSource).toMatch(
+      /try \{\s*baseUrl = parseBaseUrl\(process\.env\.GIWA_SMOKE_BASE_URL\);\s*\} catch \{\s*writeResult\("\/", "000", false\);\s*process\.exitCode = 1;\s*return;/u
+    );
   });
 
   it("registers the exact package command", () => {

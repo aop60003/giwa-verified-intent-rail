@@ -21,8 +21,9 @@ function parseBaseUrl(rawValue) {
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("invalid base URL");
   if (parsed.username !== "" || parsed.password !== "") throw new Error("invalid base URL");
+  if (parsed.pathname !== "/" || parsed.search !== "" || parsed.hash !== "") throw new Error("invalid base URL");
 
-  return new URL(parsed.origin);
+  return parsed;
 }
 
 function boundedStatus(value) {
