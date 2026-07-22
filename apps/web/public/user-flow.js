@@ -530,11 +530,18 @@ function captureContext() {
   };
 }
 
-function contextIsCurrent(context) {
+function isGenerationCurrent(context, currentGeneration = contextGeneration) {
   return (
     context !== null &&
     typeof context === "object" &&
-    context.generation === contextGeneration &&
+    Number.isSafeInteger(context.generation) &&
+    context.generation === currentGeneration
+  );
+}
+
+function contextIsCurrent(context) {
+  return (
+    isGenerationCurrent(context) &&
     context.account === walletState.account &&
     context.chainId === walletState.chainId &&
     context.runId === (runState?.runId ?? null) &&
@@ -1363,8 +1370,13 @@ async function onPrimaryAction() {
     else if (action === "verify") await verifyAutomatically(context);
     else if (action === "open_receipt") location.assign(`/user/receipt/${runState.receiptHash}`);
   } catch (error) {
-    if (error instanceof Error && error.message === "context_changed") return;
-    if (action === "connect") notice = publicNotice("wallet");
+    const actionCommittedWalletContext =
+      isGenerationCurrent(context) &&
+      (context.account !== walletState.account || context.chainId !== walletState.chainId);
+    if (error instanceof Error && error.message === "context_changed" && !isGenerationCurrent(context)) return;
+    if (action === "connect") {
+      notice = actionCommittedWalletContext ? publicNotice("readiness") : publicNotice("wallet");
+    }
     else if (action === "switch_chain") notice = publicNotice("network");
     else if (action === "open_faucet") notice = publicNotice("readiness");
     else if (action === "mint") notice = publicNotice("mint");
@@ -1373,7 +1385,7 @@ async function onPrimaryAction() {
     else if (action === "deposit") notice = publicNotice("deposit");
     else notice = publicNotice("verify");
   } finally {
-    if (contextIsCurrent(context)) {
+    if (isGenerationCurrent(context)) {
       inFlight = false;
       render();
     }

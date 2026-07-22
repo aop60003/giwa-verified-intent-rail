@@ -129,7 +129,29 @@ describe("evaluator public boundary", () => {
     expect(verify).toContain("const localRun = requireContextRun(context)");
     expect(verify).toContain("await waitWithContext(VERIFY_RETRY_DELAY_MS, context)");
     expect(verify).not.toMatch(/runState\s*=\s*\{\s*\.\.\.runState,\s*\.\.\.body/gu);
-    expect(source).toContain("if (contextIsCurrent(context))");
+    expect(source).toContain("if (isGenerationCurrent(context))");
+  });
+
+  it("releases the action lock when connect commits wallet context before readiness fails", () => {
+    const source = readWebFile("public/user-flow.js");
+    const isGenerationCurrent = standaloneFunction<
+      (context: { generation: number } | null, currentGeneration: number) => boolean
+    >(source, "isGenerationCurrent");
+    const action = functionSource(source, "onPrimaryAction", "receiptStateFromRun");
+    const accounts = functionSource(source, "handleAccountsChanged", "handleChainChanged");
+    const chain = functionSource(source, "handleChainChanged", "render");
+
+    expect(isGenerationCurrent({ generation: 7 }, 7)).toBe(true);
+    expect(isGenerationCurrent({ generation: 7 }, 8)).toBe(false);
+    expect(action).toContain("const actionCommittedWalletContext =");
+    expect(action).toContain('actionCommittedWalletContext ? publicNotice("readiness")');
+    expect(action).toContain('error.message === "context_changed" && !isGenerationCurrent(context)');
+    expect(action).toContain("if (isGenerationCurrent(context))");
+    expect(action.indexOf("inFlight = false")).toBeLessThan(action.lastIndexOf("render()"));
+    for (const listener of [accounts, chain]) {
+      expect(listener).toContain("const stale = beginContextChange()");
+      expect(listener.indexOf("render()")).toBeLessThan(listener.indexOf("await invalidateCapturedRun"));
+    }
   });
 
   it("merges Task 5 responses without erasing local run identity or evidence state", () => {
