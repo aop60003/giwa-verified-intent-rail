@@ -127,7 +127,7 @@ function classifyHosted(key: string, value: string | undefined): RedactedEnvKey 
   }
   if (key === "GIWA_LIVE_ALLOWED_ORIGINS") {
     const origins = trimmed.split(",").map((entry) => entry.trim());
-    const valid = origins.length > 0 && origins.every((origin) => isHttpOrigin(origin));
+    const valid = origins.length > 0 && origins.every((origin) => isHttpsOrigin(origin));
     return { state: valid ? "set" : "invalid", format: "csv", length: trimmed.length };
   }
   if (key === "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES") {
@@ -143,7 +143,11 @@ function classifyHosted(key: string, value: string | undefined): RedactedEnvKey 
     return { state: isHttpsUrl(trimmed) ? "set" : "invalid", format: "url", length: trimmed.length };
   }
   if (key === "GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS") {
-    return { state: isPositiveInteger(trimmed) ? "set" : "invalid", format: "integer", length: trimmed.length };
+    return {
+      state: isValidRetentionHours(trimmed) ? "set" : "invalid",
+      format: "integer",
+      length: trimmed.length
+    };
   }
   return { state: "set", format: "unknown", length: trimmed.length };
 }
@@ -176,9 +180,14 @@ function isNonnegativeDecimal(value: string): boolean {
   return /^(?:0|[1-9][0-9]*)$/u.test(value);
 }
 
-function isPositiveInteger(value: string): boolean {
+function isValidRetentionHours(value: string): boolean {
   if (!/^[1-9][0-9]*$/u.test(value)) return false;
-  return Number.isSafeInteger(Number(value));
+  const hours = Number(value);
+  if (!Number.isSafeInteger(hours)) return false;
+  const retentionMs = hours * 3_600_000;
+  if (!Number.isSafeInteger(retentionMs)) return false;
+  const cutoffMs = Date.now() - retentionMs;
+  return Number.isFinite(cutoffMs) && !Number.isNaN(new Date(cutoffMs).getTime());
 }
 
 export function buildRedactedHostedEnvReadiness(env: EnvMap): RedactedLiveEnvReadiness {

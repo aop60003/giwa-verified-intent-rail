@@ -64,10 +64,15 @@ function requireHttpsUrl(value: string, field: string): string {
 
 function explorerBaseUrl(template: string): string {
   const trimmed = template.trim();
-  if (trimmed.split("{txHash}").length !== 2) {
-    throw new Error("txExplorerTemplate must contain {txHash} exactly once");
+  const placeholder = "{txHash}";
+  if (trimmed.split(placeholder).length !== 2 || !trimmed.endsWith(placeholder)) {
+    throw new Error("txExplorerTemplate must end with one transaction placeholder");
   }
-  return requireHttpsUrl(trimmed.replace("{txHash}", ""), "txExplorerTemplate");
+  const parsed = new URL(requireHttpsUrl(trimmed, "txExplorerTemplate"));
+  if (parsed.search.length > 0 || parsed.hash.length > 0 || !parsed.pathname.endsWith("%7BtxHash%7D")) {
+    throw new Error("txExplorerTemplate must end its pathname with one transaction placeholder");
+  }
+  return trimmed.slice(0, -placeholder.length);
 }
 
 export function buildLivePublicConfig(input: LivePublicConfigInput): LivePublicConfig {

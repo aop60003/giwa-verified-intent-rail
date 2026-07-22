@@ -60,4 +60,29 @@ describe("live public configuration", () => {
       "txExplorerTemplate"
     );
   });
+
+  it("accepts only a terminal transaction-hash pathname placeholder without URL metadata", () => {
+    const invalidTemplates = [
+      "https://example.invalid/tx/{txHash}?api_key=SECRET",
+      "https://example.invalid/tx/?api_key=SECRET{txHash}",
+      "https://example.invalid/tx/{txHash}#SECRET",
+      "https://example.invalid/tx/{txHash}/details",
+      "https://example.invalid/tx/{txHash}.json",
+      "https://example.invalid/tx/{txHash}/{txHash}",
+      "https://example.invalid/tx/"
+    ];
+
+    for (const txExplorerTemplate of invalidTemplates) {
+      let thrown: unknown;
+      try {
+        buildLivePublicConfig({ ...canonicalInput, txExplorerTemplate });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown, txExplorerTemplate).toBeInstanceOf(Error);
+      expect(String(thrown)).toContain("txExplorerTemplate");
+      expect(String(thrown)).not.toContain("SECRET");
+      expect(String(thrown)).not.toContain(txExplorerTemplate);
+    }
+  });
 });

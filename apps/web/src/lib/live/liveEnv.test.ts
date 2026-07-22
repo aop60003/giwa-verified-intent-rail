@@ -127,6 +127,17 @@ describe("live env readiness", () => {
     expect(duplicate.invalid).toContain("GIWA_LIVE_ALLOWED_ORIGINS");
   });
 
+  it("rejects every non-HTTPS allowed origin in hosted mode", () => {
+    const readiness = buildRedactedHostedEnvReadiness({
+      ...validHostedEnv,
+      GIWA_LIVE_ALLOWED_ORIGINS: "https://app.example,http://partner.example"
+    });
+
+    expect(readiness.ok).toBe(false);
+    expect(readiness.invalid).toContain("GIWA_LIVE_ALLOWED_ORIGINS");
+    expect(JSON.stringify(readiness)).not.toContain("partner.example");
+  });
+
   it("preserves local hosted-gate behavior without requiring hosted-only values", () => {
     expect(buildRedactedHostedEnvReadiness({})).toEqual({
       ok: true,
@@ -149,5 +160,29 @@ describe("live env readiness", () => {
     });
     expect(serverEnv).not.toHaveProperty("intentSubmitterPrivateKey");
     expect(serverEnv).not.toHaveProperty("verifierPrivateKey");
+  });
+
+  it("accepts usable retention hours and rejects values outside safe millisecond and Date ranges", () => {
+    const normal = buildRedactedHostedEnvReadiness(validHostedEnv);
+    const overflowValue = String(Number.MAX_SAFE_INTEGER);
+    const overflow = buildRedactedHostedEnvReadiness({
+      ...validHostedEnv,
+      GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS: overflowValue
+    });
+    const maxDateTimeMs = 8_640_000_000_000_000;
+    const dateOverflowValue = String(Math.floor((Date.now() + maxDateTimeMs) / 3_600_000) + 1);
+    const dateOverflow = buildRedactedHostedEnvReadiness({
+      ...validHostedEnv,
+      GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS: dateOverflowValue
+    });
+
+    expect(normal.keys.GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS).toMatchObject({ state: "set" });
+    expect(requireLiveServerEnv({ ...validEnv, ...validHostedEnv }).incompleteRunRetentionHours).toBe(24);
+    expect(overflow.ok).toBe(false);
+    expect(overflow.invalid).toContain("GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS");
+    expect(JSON.stringify(overflow)).not.toContain(overflowValue);
+    expect(dateOverflow.ok).toBe(false);
+    expect(dateOverflow.invalid).toContain("GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS");
+    expect(JSON.stringify(dateOverflow)).not.toContain(dateOverflowValue);
   });
 });
