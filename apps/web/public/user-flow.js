@@ -659,6 +659,11 @@ function verificationDecision(body) {
   return "timeout";
 }
 
+function matchedReceiptOutcome(value) {
+  const receiptHash = typeof value === "string" && /^0x[a-fA-F0-9]{64}$/u.test(value) ? value.toLowerCase() : null;
+  return { receiptHash, navigate: receiptHash !== null };
+}
+
 async function verifyAutomatically() {
   if (!runState?.runId || !runState.depositTxHash) throw new Error("verification_missing");
   for (let attempt = 1; attempt <= VERIFY_MAX_ATTEMPTS; attempt += 1) {
@@ -675,10 +680,17 @@ async function verifyAutomatically() {
     const decision = verificationDecision(body);
     runState = { ...runState, ...body, status: decision === "timeout" ? "verifying" : decision };
     writeSessionRun(runState);
-    if (decision === "matched" && typeof runState.receiptHash === "string") {
-      storeReceiptProjection("verified");
-      notice = "Manifest matched. 공개 Receipt가 준비되었습니다.";
-      location.assign(`/user/receipt/${runState.receiptHash}`);
+    if (decision === "matched") {
+      const outcome = matchedReceiptOutcome(runState.receiptHash);
+      runState = { ...runState, status: "matched", receiptHash: outcome.receiptHash };
+      writeSessionRun(runState);
+      if (outcome.navigate) {
+        storeReceiptProjection("verified");
+        notice = "Manifest matched. 공개 Receipt가 준비되었습니다.";
+        location.assign(`/user/receipt/${outcome.receiptHash}`);
+      } else {
+        notice = "Manifest matched 결과를 받았지만 공개 Receipt를 열 수 없습니다. 같은 버튼으로 검증만 다시 시도해 주세요.";
+      }
       return;
     }
     if (decision === "mismatched" || decision === "failed") {

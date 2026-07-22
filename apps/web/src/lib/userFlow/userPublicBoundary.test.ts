@@ -16,6 +16,22 @@ function functionSource(source: string, name: string, nextName: string): string 
   return source.slice(start, end);
 }
 
+function standaloneFunction<T extends (...args: never[]) => unknown>(source: string, name: string): T {
+  const start = source.indexOf(`function ${name}`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const bodyStart = source.indexOf("{", start);
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    if (source[index] === "}") depth -= 1;
+    if (depth === 0) {
+      const declaration = source.slice(start, index + 1);
+      return Function(`"use strict"; return (${declaration});`)() as T;
+    }
+  }
+  throw new Error(`unterminated function ${name}`);
+}
+
 describe("evaluator public boundary", () => {
   it("renders exactly one primary action and no separate transaction buttons", () => {
     const source = readWebFile("public/user-flow.js");
@@ -116,11 +132,35 @@ describe("evaluator public boundary", () => {
     expect(deposit.indexOf("submitEvidence()")).toBeLessThan(deposit.indexOf("verifyAutomatically()"));
     expect(verification).toContain("await sleep(VERIFY_RETRY_DELAY_MS)");
     expect(verification).toContain('decision === "mismatched" || decision === "failed"');
-    expect(verification).toContain("location.assign(`/user/receipt/${runState.receiptHash}`)");
+    expect(verification).toContain("location.assign(`/user/receipt/${outcome.receiptHash}`)");
     expect(action).toContain("if (inFlight) return");
     expect(action).toContain("try {");
     expect(action).toContain("finally {");
     expect(action).toContain("inFlight = false");
+  });
+
+  it("stops a matched verification without retrying when its Receipt hash is unusable", () => {
+    const source = readWebFile("public/user-flow.js");
+    const outcome = standaloneFunction<(value: unknown) => { receiptHash: string | null; navigate: boolean }>(
+      source,
+      "matchedReceiptOutcome"
+    );
+    const verification = functionSource(source, "verifyAutomatically", "depositFromManifest");
+    const matchedStart = verification.indexOf('if (decision === "matched")');
+    const mismatchStart = verification.indexOf('if (decision === "mismatched" || decision === "failed")');
+    const matchedBranch = verification.slice(matchedStart, mismatchStart);
+
+    expect(outcome(null)).toEqual({ receiptHash: null, navigate: false });
+    expect(outcome("not-a-receipt")).toEqual({ receiptHash: null, navigate: false });
+    expect(outcome(`0x${"a".repeat(64)}`)).toEqual({ receiptHash: `0x${"a".repeat(64)}`, navigate: true });
+    expect(matchedStart).toBeGreaterThanOrEqual(0);
+    expect(matchedBranch).toContain('runState = { ...runState, status: "matched", receiptHash: outcome.receiptHash }');
+    expect(matchedBranch).toContain("writeSessionRun(runState)");
+    expect(matchedBranch).toContain("if (outcome.navigate)");
+    expect(matchedBranch).toContain("location.assign(`/user/receipt/${outcome.receiptHash}`)");
+    expect(matchedBranch).toContain("Receipt를 열 수 없습니다");
+    expect(matchedBranch.trimEnd()).toMatch(/return;\s*\}$/u);
+    expect(matchedBranch).not.toContain("sleep(");
   });
 
   it("invalidates capability-bound stale runs on wallet context changes", () => {
