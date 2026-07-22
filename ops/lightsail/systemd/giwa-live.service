@@ -13,7 +13,7 @@ Environment=PORT=4177
 Environment=GIWA_LIVE_MODE=staging-testnet
 Environment=GIWA_SKIP_PUBLIC_EXPORT=1
 EnvironmentFile=/etc/giwa/giwa-live.runtime
-ExecStart=/usr/bin/node --experimental-strip-types apps/web/scripts/serve-live.mjs
+ExecStart=/usr/bin/env -- HOST=127.0.0.1 PORT=4177 GIWA_LIVE_MODE=staging-testnet GIWA_SKIP_PUBLIC_EXPORT=1 /usr/bin/node --experimental-strip-types apps/web/scripts/serve-live.mjs
 Restart=on-failure
 RestartSec=5s
 KillSignal=SIGTERM

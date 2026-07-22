@@ -42,8 +42,9 @@ describe("Lightsail systemd assets", () => {
     expect(liveUnit).toContain("Environment=GIWA_LIVE_MODE=staging-testnet");
     expect(liveUnit).toContain("EnvironmentFile=/etc/giwa/giwa-live.runtime");
     expect(liveUnit).toContain(
-      "ExecStart=/usr/bin/node --experimental-strip-types apps/web/scripts/serve-live.mjs"
+      "ExecStart=/usr/bin/env -- HOST=127.0.0.1 PORT=4177 GIWA_LIVE_MODE=staging-testnet GIWA_SKIP_PUBLIC_EXPORT=1 /usr/bin/node --experimental-strip-types apps/web/scripts/serve-live.mjs"
     );
+    expect(occurrences(liveUnit, "ExecStart=")).toBe(1);
     expect(liveUnit).toContain("ReadWritePaths=/var/lib/giwa");
     expect(liveUnit).toContain("KillSignal=SIGTERM");
     expect(liveUnit).toContain("TimeoutStopSec=15s");
@@ -119,48 +120,90 @@ describe("Lightsail Nginx assets", () => {
     expect(renderer).toMatch(/tokenCount\s*!==\s*1/u);
     expect(renderer).toMatch(/__\[A-Z0-9_\]\+__/u);
     expect(renderer).toContain("isIP(host)");
-    expect(renderer).toContain("writeFileSync(outputPath, rendered");
+    expect(renderer).toContain('"/etc/nginx/sites-available"');
+    expect(renderer).toContain('"/etc/nginx/conf.d"');
+    expect(renderer).toContain("!isAbsolute(rawValue)");
+    expect(renderer).toContain("OUTPUT_FILENAME.test(outputFilename)");
+    expect(renderer).toContain("lstatSync(outputParent)");
+    expect(renderer).toContain("outputParentStats.isDirectory()");
+    expect(renderer).toContain("outputParentStats.isSymbolicLink()");
+    expect(renderer).toContain("lstatIfExists(outputPath)");
+    expect(renderer).toContain('openSync(candidateTempPath, "wx", 0o640)');
+    expect(renderer).toContain("writeFileSync(fileDescriptor, rendered");
+    expect(renderer).toContain("fsyncSync(fileDescriptor)");
+    expect(renderer).toContain("closeSync(fileDescriptor)");
+    expect(renderer).toContain("renameSync(tempPath, outputPath)");
+    expect(renderer).toContain("unlinkSync(tempPath)");
+    expect(renderer).not.toContain("writeFileSync(outputPath");
+    expect(renderer).not.toContain("unlinkSync(outputPath");
     expect(renderer).not.toMatch(/console\.(?:log|error)\([^\n]*(?:host|rendered|template|process\.env)/iu);
 
     const tempDirectory = mkdtempSync(join(tmpdir(), "giwa-nginx-render-"));
     try {
-      const outputPath = join(tempDirectory, "staging.conf");
-      const valid = spawnSync("node", [`${OPS_ROOT}/render-nginx-config.mjs`, outputPath], {
+      const disallowedOutputPath = join(tempDirectory, "giwa-staging.conf");
+      const rejectedOutput = spawnSync("node", [`${OPS_ROOT}/render-nginx-config.mjs`, disallowedOutputPath], {
         encoding: "utf8",
         env: { ...process.env, GIWA_STAGE_HOST: "Stage.Example.COM" }
       });
-      expect(valid.status).toBe(0);
-      expect(valid.stdout).toBe("");
-      expect(valid.stderr).toBe("");
-      const rendered = readFileSync(outputPath, "utf8");
-      expect(rendered).toContain("server_name stage.example.com;");
-      expect(rendered).not.toMatch(/__[A-Z0-9_]+__/u);
-
-      for (const invalidHost of [
-        "https://stage.example.com",
-        "stage.example.com:443",
-        "stage.example.com/path",
-        "user@stage.example.com",
-        "*.example.com",
-        "stage_name.example.com",
-        "stage.example.com.",
-        "127.0.0.1"
-      ]) {
-        const rejected = spawnSync(
-          "node",
-          [`${OPS_ROOT}/render-nginx-config.mjs`, join(tempDirectory, "rejected.conf")],
-          {
-            encoding: "utf8",
-            env: { ...process.env, GIWA_STAGE_HOST: invalidHost }
-          }
-        );
-        expect(rejected.status, invalidHost).not.toBe(0);
-        expect(rejected.stdout, invalidHost).toBe("");
-        expect(rejected.stderr, invalidHost).not.toContain(invalidHost);
-        expect(rejected.stderr.length, invalidHost).toBeLessThan(100);
-      }
+      expect(rejectedOutput.status).toBe(1);
+      expect(rejectedOutput.stdout).toBe("");
+      expect(rejectedOutput.stderr).toBe("nginx renderer failed\n");
+      expect(() => readFileSync(disallowedOutputPath, "utf8")).toThrow();
     } finally {
       rmSync(tempDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects numeric shortcuts and accepts normalized DNS and punycode labels", () => {
+    const renderer = readOps("render-nginx-config.mjs");
+    const validator = [
+      `import { normalizeStageHostname } from "${OPS_ROOT}/render-nginx-config.mjs";`,
+      "try {",
+      "  const normalized = normalizeStageHostname(process.env.GIWA_STAGE_HOST);",
+      "  if (process.env.EXPECTED_HOST !== undefined && normalized !== process.env.EXPECTED_HOST) process.exitCode = 2;",
+      "} catch {",
+      "  process.exitCode = 1;",
+      "}"
+    ].join("\n");
+
+    expect(renderer).toContain("export function normalizeStageHostname");
+    expect(renderer).toContain("/[a-z]/u.test(finalLabel)");
+
+    for (const [host, expected] of [
+      ["Stage.Example.COM", "stage.example.com"],
+      ["stage.xn--p1ai", "stage.xn--p1ai"]
+    ] as const) {
+      const accepted = spawnSync("node", ["--input-type=module", "--eval", validator], {
+        encoding: "utf8",
+        env: { ...process.env, GIWA_STAGE_HOST: host, EXPECTED_HOST: expected }
+      });
+      expect(accepted.status, host).toBe(0);
+      expect(accepted.stdout, host).toBe("");
+      expect(accepted.stderr, host).toBe("");
+    }
+
+    for (const invalidHost of [
+      "127.0.0.1",
+      "127.1",
+      "0177.1",
+      "0x7f.1",
+      "123.456",
+      "localhost",
+      "https://stage.example.com",
+      "stage.example.com:443",
+      "stage.example.com/path",
+      "user@stage.example.com",
+      "*.example.com",
+      "stage_name.example.com",
+      "stage.example.com."
+    ]) {
+      const rejected = spawnSync("node", ["--input-type=module", "--eval", validator], {
+        encoding: "utf8",
+        env: { ...process.env, GIWA_STAGE_HOST: invalidHost }
+      });
+      expect(rejected.status, invalidHost).toBe(1);
+      expect(rejected.stdout, invalidHost).toBe("");
+      expect(rejected.stderr, invalidHost).not.toContain(invalidHost);
     }
   });
 });
