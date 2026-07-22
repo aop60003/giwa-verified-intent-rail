@@ -3,6 +3,7 @@ const GIWA_CHAIN_ID = 91342;
 const GIWA_CHAIN_HEX = "0x164ce";
 const GIWA_EXPLORER_TX_BASE = "https://sepolia-explorer.giwa.io/tx/";
 const USER_RUN_KEY = "giwa:userRunState";
+const USER_WALLET_TX_KEY = "giwa:userWalletTxState";
 const USER_RECEIPTS_KEY = "giwa:userReceipts";
 const BALANCE_OF_SELECTOR = "0x70a08231";
 const ALLOWANCE_SELECTOR = "0xdd62ed3e";
@@ -14,6 +15,7 @@ const VERIFY_MAX_ATTEMPTS = 24;
 const RECEIPT_POLL_DELAY_MS = 2_000;
 const RECEIPT_POLL_MAX_ATTEMPTS = 60;
 const API_TIMEOUT_MS = 15_000;
+const PROVIDER_TIMEOUT_MS = 15_000;
 const MAX_UINT256 = (1n << 256n) - 1n;
 
 const addChainRequest = {
@@ -24,29 +26,297 @@ const addChainRequest = {
   blockExplorerUrls: ["https://sepolia-explorer.giwa.io"]
 };
 
+const restoredSession = readSessionRun();
 let walletState = { status: "disconnected", account: null, chainId: null };
-let runState = readSessionRun();
+let runState = restoredSession.run;
+let walletTxState = readWalletTxState();
 let publicConfig = null;
 let assetState = { next: "gas_required", approveRequired: true, gasWei: null, tokenBalance: null, allowance: null };
 let inFlight = false;
+let contextGeneration = 0;
+const activeRequestControllers = new Set();
+const contextChangeListeners = new Set();
 let notice = "지갑을 연결해 GIWA Sepolia 테스트넷 액션을 시작하세요.";
+
+function projectSessionRun(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const address = (input) =>
+    typeof input === "string" && /^0x[a-fA-F0-9]{40}$/u.test(input) ? input.toLowerCase() : null;
+  const bytes32 = (input) =>
+    typeof input === "string" && /^0x[a-fA-F0-9]{64}$/u.test(input) ? input.toLowerCase() : null;
+  const optionalBytes32 = (input) => (input === null || input === undefined ? null : bytes32(input));
+  const positiveDecimal = (input) => typeof input === "string" && /^[1-9][0-9]*$/u.test(input);
+  const statuses = new Set([
+    "manifestIssued",
+    "approveSubmitted",
+    "depositSubmitted",
+    "standardRpcReceiptFound",
+    "verifierChecking",
+    "verifying",
+    "matched",
+    "pending",
+    "notMatched",
+    "mismatched",
+    "failed",
+    "timeout"
+  ]);
+  const preview = value.manifestPreview;
+  const runId = typeof value.runId === "string" && /^[A-Za-z0-9_-]{1,128}$/u.test(value.runId) ? value.runId : null;
+  const capability =
+    typeof value.runCapability === "string" && /^[A-Za-z0-9_-]{43}$/u.test(value.runCapability)
+      ? value.runCapability
+      : null;
+  const wallet = address(value.wallet);
+  const intentHash = bytes32(value.intentHash);
+  const expiryUnix = value.expiryUnix;
+  if (
+    runId === null ||
+    capability === null ||
+    wallet === null ||
+    intentHash === null ||
+    !statuses.has(value.status) ||
+    !Number.isSafeInteger(expiryUnix) ||
+    expiryUnix <= 0 ||
+    expiryUnix > 4_102_444_800 ||
+    preview === null ||
+    typeof preview !== "object" ||
+    Array.isArray(preview)
+  ) {
+    return null;
+  }
+  const target = address(preview.target);
+  const asset = address(preview.asset);
+  const spender = address(preview.spender);
+  const previewIntentHash = bytes32(preview.intentHash);
+  if (
+    target === null ||
+    asset === null ||
+    spender === null ||
+    preview.selector !== "0x47e7ef24" ||
+    !positiveDecimal(preview.amountBaseUnits) ||
+    !positiveDecimal(preview.maxAllowanceBaseUnits) ||
+    previewIntentHash !== intentHash ||
+    preview.expiryUnix !== expiryUnix
+  ) {
+    return null;
+  }
+  const approveTxHash = optionalBytes32(value.approveTxHash);
+  const pendingApproveTxHash = optionalBytes32(value.pendingApproveTxHash);
+  const depositTxHash = optionalBytes32(value.depositTxHash);
+  const receiptHash = optionalBytes32(value.receiptHash);
+  if (
+    (value.approveTxHash != null && approveTxHash === null) ||
+    (value.pendingApproveTxHash != null && pendingApproveTxHash === null) ||
+    (value.depositTxHash != null && depositTxHash === null) ||
+    (value.receiptHash != null && receiptHash === null) ||
+    (approveTxHash !== null && pendingApproveTxHash !== null) ||
+    typeof value.evidenceSubmitted !== "boolean" ||
+    (value.evidenceSubmitted && depositTxHash === null)
+  ) {
+    return null;
+  }
+  return {
+    runId,
+    runCapability: capability,
+    wallet,
+    status: value.status,
+    intentHash,
+    expiryUnix,
+    manifestPreview: {
+      target,
+      selector: "0x47e7ef24",
+      asset,
+      amountBaseUnits: preview.amountBaseUnits,
+      spender,
+      maxAllowanceBaseUnits: preview.maxAllowanceBaseUnits,
+      expiryUnix,
+      intentHash
+    },
+    approveTxHash,
+    pendingApproveTxHash,
+    depositTxHash,
+    receiptHash,
+    evidenceSubmitted: value.evidenceSubmitted
+  };
+}
+
+function projectInvalidationIdentity(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  if (typeof value.runId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/u.test(value.runId)) return null;
+  if (typeof value.runCapability !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(value.runCapability)) return null;
+  return { runId: value.runId, runCapability: value.runCapability };
+}
+
+function runMatchesContext(run, account, config) {
+  if (run === null || typeof run !== "object" || config === null || typeof config !== "object") return false;
+  if (typeof account !== "string" || !/^0x[a-fA-F0-9]{40}$/u.test(account)) return false;
+  const preview = run.manifestPreview;
+  const contracts = config.contracts;
+  return (
+    config.chainId === 91342 &&
+    preview !== null &&
+    typeof preview === "object" &&
+    contracts !== null &&
+    typeof contracts === "object" &&
+    run.wallet === account.toLowerCase() &&
+    preview.target === String(contracts.mockVault).toLowerCase() &&
+    preview.spender === String(contracts.mockVault).toLowerCase() &&
+    preview.asset === String(contracts.mockToken).toLowerCase() &&
+    preview.amountBaseUnits === config.demoAmountBaseUnits &&
+    preview.maxAllowanceBaseUnits === config.demoAmountBaseUnits &&
+    preview.selector === "0x47e7ef24" &&
+    preview.intentHash === run.intentHash &&
+    preview.expiryUnix === run.expiryUnix
+  );
+}
+
+function projectIssuedRun(value, expectedContext) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const candidate = projectSessionRun({
+    runId: value.runId,
+    runCapability: value.runCapability,
+    wallet: value.wallet,
+    status: value.status,
+    intentHash: value.intentHash,
+    expiryUnix: value.expiryUnix,
+    manifestPreview: value.manifestPreview,
+    approveTxHash: null,
+    pendingApproveTxHash: null,
+    depositTxHash: null,
+    receiptHash: null,
+    evidenceSubmitted: false
+  });
+  if (candidate === null || candidate.status !== "manifestIssued") return null;
+  return runMatchesContext(candidate, expectedContext.account, expectedContext.config) ? candidate : null;
+}
+
+function mergeRunResponse(current, response) {
+  const base = projectSessionRun(current);
+  if (base === null || response === null || typeof response !== "object" || Array.isArray(response)) return null;
+  const same = (field, expected, normalize = (value) => value) =>
+    response[field] === undefined || normalize(response[field]) === expected;
+  const normalizeWallet = (value) =>
+    typeof value === "string" && /^0x[a-fA-F0-9]{40}$/u.test(value) ? value.toLowerCase() : null;
+  const normalizeHash = (value) =>
+    typeof value === "string" && /^0x[a-fA-F0-9]{64}$/u.test(value) ? value.toLowerCase() : null;
+  if (
+    !same("runId", base.runId) ||
+    !same("wallet", base.wallet, normalizeWallet) ||
+    !same("intentHash", base.intentHash, normalizeHash)
+  ) {
+    return null;
+  }
+  const statuses = new Set([
+    "manifestIssued",
+    "approveSubmitted",
+    "depositSubmitted",
+    "standardRpcReceiptFound",
+    "verifierChecking",
+    "verifying",
+    "matched",
+    "pending",
+    "notMatched",
+    "mismatched",
+    "failed",
+    "timeout"
+  ]);
+  const status = response.status === undefined ? base.status : response.status;
+  if (!statuses.has(status)) return null;
+  const mergeTxHash = (field, localValue) => {
+    if (response[field] === undefined || response[field] === null) return localValue;
+    const projected = normalizeHash(response[field]);
+    if (projected === null || (localValue !== null && localValue !== projected)) return undefined;
+    return projected;
+  };
+  const approveTxHash = mergeTxHash("approveTxHash", base.approveTxHash);
+  const depositTxHash = mergeTxHash("depositTxHash", base.depositTxHash);
+  if (approveTxHash === undefined || depositTxHash === undefined) return null;
+  const receiptHash =
+    response.receiptHash === undefined || response.receiptHash === null
+      ? base.receiptHash
+      : normalizeHash(response.receiptHash);
+  if (response.receiptHash != null && receiptHash === null) return null;
+  return projectSessionRun({
+    runId: base.runId,
+    runCapability: base.runCapability,
+    wallet: base.wallet,
+    status,
+    intentHash: base.intentHash,
+    expiryUnix: base.expiryUnix,
+    manifestPreview: base.manifestPreview,
+    approveTxHash,
+    pendingApproveTxHash: base.pendingApproveTxHash,
+    depositTxHash,
+    receiptHash,
+    evidenceSubmitted: base.evidenceSubmitted
+  });
+}
 
 function readSessionRun() {
   try {
     const value = sessionStorage.getItem(USER_RUN_KEY);
     const parsed = value === null ? null : JSON.parse(value);
-    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    if (parsed === null) return { run: null, invalidation: null };
+    const run = projectSessionRun(parsed);
+    if (run !== null) return { run, invalidation: null };
+    sessionStorage.removeItem(USER_RUN_KEY);
+    return { run: null, invalidation: projectInvalidationIdentity(parsed) };
   } catch {
-    return null;
+    try {
+      sessionStorage.removeItem(USER_RUN_KEY);
+    } catch {
+      // The bounded UI notice is installed after global initialization.
+    }
+    return { run: null, invalidation: null };
   }
 }
 
 function writeSessionRun(value) {
   try {
     if (value === null) sessionStorage.removeItem(USER_RUN_KEY);
-    else sessionStorage.setItem(USER_RUN_KEY, JSON.stringify(value));
+    else {
+      const projected = projectSessionRun(value);
+      if (projected === null) throw new Error("invalid_run_state");
+      sessionStorage.setItem(USER_RUN_KEY, JSON.stringify(projected));
+    }
   } catch {
     notice = "현재 탭의 진행 상태를 저장할 수 없습니다. 페이지를 닫지 말고 계속해 주세요.";
+  }
+}
+
+function readWalletTxState() {
+  try {
+    const value = sessionStorage.getItem(USER_WALLET_TX_KEY);
+    const parsed = value === null ? null : JSON.parse(value);
+    if (parsed === null) return null;
+    if (
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      typeof parsed.pendingMintTxHash !== "string" ||
+      !/^0x[a-fA-F0-9]{64}$/u.test(parsed.pendingMintTxHash) ||
+      typeof parsed.pendingMintWallet !== "string" ||
+      !/^0x[a-fA-F0-9]{40}$/u.test(parsed.pendingMintWallet) ||
+      parsed.pendingMintChainId !== 91342
+    ) {
+      sessionStorage.removeItem(USER_WALLET_TX_KEY);
+      return null;
+    }
+    return {
+      pendingMintTxHash: parsed.pendingMintTxHash.toLowerCase(),
+      pendingMintWallet: parsed.pendingMintWallet.toLowerCase(),
+      pendingMintChainId: 91342
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeWalletTxState(value) {
+  try {
+    if (value === null) sessionStorage.removeItem(USER_WALLET_TX_KEY);
+    else sessionStorage.setItem(USER_WALLET_TX_KEY, JSON.stringify(value));
+  } catch {
+    notice = "현재 탭의 Mock Token 준비 상태를 저장할 수 없습니다.";
   }
 }
 
@@ -89,10 +359,6 @@ function field(label, value) {
 function shortHash(value) {
   if (typeof value !== "string" || value.length <= 18) return String(value ?? "확인 중");
   return `${value.slice(0, 10)}...${value.slice(-5)}`;
-}
-
-function sleep(milliseconds) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
 function explorerTxUrl(value, baseUrl = GIWA_EXPLORER_TX_BASE) {
@@ -207,31 +473,190 @@ function requirePublicConfig(body) {
   };
 }
 
-async function apiFetch(path, options = {}) {
+async function apiFetchJson(path, options = {}) {
   const controller = new AbortController();
+  activeRequestControllers.add(controller);
   const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    return await fetch(path, { ...options, signal: controller.signal });
+    const response = await fetch(path, { ...options, signal: controller.signal });
+    const body = await response.json();
+    return { response, body };
+  } catch {
+    throw new Error("request_unavailable");
   } finally {
     window.clearTimeout(timeoutId);
+    activeRequestControllers.delete(controller);
   }
 }
 
-function participantHeaders() {
-  const value = runState?.runCapability;
+async function apiFetchJsonWithContext(context, path, options = {}) {
+  try {
+    const result = await apiFetchJson(path, options);
+    assertContext(context);
+    return result;
+  } catch (error) {
+    assertContext(context);
+    throw error;
+  }
+}
+
+function participantHeaders(localRun) {
+  const value = localRun?.runCapability;
   return typeof value === "string"
     ? { "content-type": "application/json", "x-giwa-run-capability": value }
     : { "content-type": "application/json" };
 }
 
-function participantFetch(path, options = {}) {
+function participantFetch(localRun, path, options = {}, context = null) {
   if (!/^\/api\/runs\/[^/]+(?:\/(?:evidence|verify|invalidate))?$/u.test(path)) {
     throw new Error("invalid_participant_path");
   }
-  if (typeof runState?.runCapability !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(runState.runCapability)) {
+  const identity = projectInvalidationIdentity(localRun);
+  const pathRunId = path.split("/")[3];
+  if (identity === null || pathRunId !== identity.runId) {
     throw new Error("run_capability_unavailable");
   }
-  return apiFetch(path, { ...options, headers: participantHeaders() });
+  const request = { ...options, headers: participantHeaders(identity) };
+  return context === null ? apiFetchJson(path, request) : apiFetchJsonWithContext(context, path, request);
+}
+
+function captureContext() {
+  return {
+    generation: contextGeneration,
+    account: walletState.account,
+    chainId: walletState.chainId,
+    runId: runState?.runId ?? null,
+    runCapability: runState?.runCapability ?? null
+  };
+}
+
+function contextIsCurrent(context) {
+  return (
+    context !== null &&
+    typeof context === "object" &&
+    context.generation === contextGeneration &&
+    context.account === walletState.account &&
+    context.chainId === walletState.chainId &&
+    context.runId === (runState?.runId ?? null) &&
+    context.runCapability === (runState?.runCapability ?? null)
+  );
+}
+
+function assertContext(context) {
+  if (!contextIsCurrent(context)) throw new Error("context_changed");
+}
+
+function requireContextRun(context) {
+  assertContext(context);
+  const projected = projectSessionRun(runState);
+  if (
+    projected === null ||
+    projected.runId !== context.runId ||
+    projected.runCapability !== context.runCapability
+  ) {
+    throw new Error("context_changed");
+  }
+  return projected;
+}
+
+function waitWithContext(milliseconds, context) {
+  assertContext(context);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      contextChangeListeners.delete(onContextChange);
+      callback(value);
+    };
+    const onContextChange = () => finish(reject, new Error("context_changed"));
+    const timeoutId = window.setTimeout(() => {
+      try {
+        assertContext(context);
+        finish(resolve);
+      } catch (error) {
+        finish(reject, error);
+      }
+    }, milliseconds);
+    contextChangeListeners.add(onContextChange);
+  });
+}
+
+function providerRequestWithContext(currentProvider, request, context) {
+  assertContext(context);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      contextChangeListeners.delete(onContextChange);
+      callback(value);
+    };
+    const onContextChange = () => finish(reject, new Error("context_changed"));
+    contextChangeListeners.add(onContextChange);
+    Promise.resolve()
+      .then(() => currentProvider.request(request))
+      .then(
+        (value) => {
+          try {
+            assertContext(context);
+            finish(resolve, value);
+          } catch (error) {
+            finish(reject, error);
+          }
+        },
+        (error) => finish(reject, error)
+      );
+  });
+}
+
+function providerRequestWithTimeout(currentProvider, request, context) {
+  assertContext(context);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      contextChangeListeners.delete(onContextChange);
+      callback(value);
+    };
+    const onContextChange = () => finish(reject, new Error("context_changed"));
+    const timeoutId = window.setTimeout(
+      () => finish(reject, new Error("provider_request_timeout")),
+      PROVIDER_TIMEOUT_MS
+    );
+    contextChangeListeners.add(onContextChange);
+    Promise.resolve()
+      .then(() => currentProvider.request(request))
+      .then(
+        (value) => {
+          try {
+            assertContext(context);
+            finish(resolve, value);
+          } catch (error) {
+            finish(reject, error);
+          }
+        },
+        (error) => finish(reject, error)
+      );
+  });
+}
+
+function beginContextChange() {
+  const stale = projectInvalidationIdentity(runState);
+  contextGeneration += 1;
+  for (const controller of activeRequestControllers) controller.abort();
+  activeRequestControllers.clear();
+  for (const listener of [...contextChangeListeners]) listener();
+  runState = null;
+  walletTxState = null;
+  assetState = { next: "gas_required", approveRequired: true, gasWei: null, tokenBalance: null, allowance: null };
+  inFlight = false;
+  writeSessionRun(null);
+  writeWalletTxState(null);
+  return stale;
 }
 
 function publicNotice(kind) {
@@ -256,8 +681,10 @@ function nextPrimaryAction() {
   if (walletState.account === null) return "connect";
   if (walletState.chainId !== GIWA_CHAIN_ID) return "switch_chain";
   if (assetState.next === "gas_required") return "open_faucet";
+  if (walletTxState?.pendingMintTxHash) return "mint";
   if (assetState.next === "mint_required") return "mint";
   if (!runState?.manifestPreview) return "issue_manifest";
+  if (runState.pendingApproveTxHash) return "approve";
   if (assetState.next === "approval_required" && !runState.approveTxHash) return "approve";
   if (!runState.depositTxHash) return "deposit";
   if (runState.status === "matched" && runState.receiptHash) return "open_receipt";
@@ -416,7 +843,7 @@ function renderIntentPanel() {
     field("Spender", preview.spender),
     field("Max allowance", preview.maxAllowanceBaseUnits),
     field("Expiry", preview.expiryUnix ?? runState.expiryUnix),
-    field("Wallet", preview.wallet ?? walletState.account),
+    field("Wallet", runState.wallet),
     field("Intent hash", preview.intentHash),
     view("details", { className: "panel user-technical-details" }, [
       view("summary", { text: "Technical details" }),
@@ -469,37 +896,51 @@ function renderActionPage() {
 }
 
 async function connectWallet(currentProvider) {
-  const accounts = await currentProvider.request({ method: "eth_requestAccounts" });
+  const context = captureContext();
+  const accounts = await providerRequestWithContext(currentProvider, { method: "eth_requestAccounts" }, context);
   if (!Array.isArray(accounts) || accounts.length === 0) throw new Error("invalid_accounts");
   const account = normalizeAccount(accounts[0]);
-  const chainId = parseChainId(await currentProvider.request({ method: "eth_chainId" }));
-  if (runState?.manifestPreview?.wallet && normalizeAccount(runState.manifestPreview.wallet) !== account) {
-    await invalidateRun("account_changed");
-  }
+  const chainId = parseChainId(
+    await providerRequestWithTimeout(currentProvider, { method: "eth_chainId" }, context)
+  );
+  assertContext(context);
   walletState = { status: chainId === GIWA_CHAIN_ID ? "connected" : "wrongChain", account, chainId };
-  if (chainId === GIWA_CHAIN_ID) await inspectWalletAssets();
+  if (chainId === GIWA_CHAIN_ID) await inspectWalletAssets(captureContext());
 }
 
 async function switchToGiwa(currentProvider) {
+  const context = captureContext();
   try {
-    await currentProvider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: GIWA_CHAIN_HEX }] });
+    await providerRequestWithContext(
+      currentProvider,
+      { method: "wallet_switchEthereumChain", params: [{ chainId: GIWA_CHAIN_HEX }] },
+      context
+    );
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === 4902) {
-      await currentProvider.request({ method: "wallet_addEthereumChain", params: [addChainRequest] });
+      await providerRequestWithContext(
+        currentProvider,
+        { method: "wallet_addEthereumChain", params: [addChainRequest] },
+        context
+      );
     } else {
       throw error;
     }
   }
-  const chainId = parseChainId(await currentProvider.request({ method: "eth_chainId" }));
+  const chainId = parseChainId(
+    await providerRequestWithTimeout(currentProvider, { method: "eth_chainId" }, context)
+  );
+  assertContext(context);
   walletState = { ...walletState, status: chainId === GIWA_CHAIN_ID ? "connected" : "wrongChain", chainId };
   if (chainId !== GIWA_CHAIN_ID) throw new Error("wrong_chain");
-  await inspectWalletAssets();
+  await inspectWalletAssets(captureContext());
 }
 
-async function loadPublicConfig() {
-  const response = await apiFetch("/api/public/config");
+async function loadPublicConfig(context) {
+  const { response, body } = await apiFetchJsonWithContext(context, "/api/public/config");
+  assertContext(context);
   if (!response.ok) throw new Error("public_config_unavailable");
-  publicConfig = requirePublicConfig(await response.json());
+  publicConfig = requirePublicConfig(body);
   return publicConfig;
 }
 
@@ -513,17 +954,46 @@ function evaluateAssetState(gasWei, tokenBalance, allowance, config) {
   return { next: "deposit_ready", approveRequired: false, gasWei, tokenBalance, allowance };
 }
 
-async function inspectWalletAssets() {
+async function inspectWalletAssets(context) {
+  assertContext(context);
   const currentProvider = provider();
   if (currentProvider === null || walletState.account === null || walletState.chainId !== GIWA_CHAIN_ID) {
     throw new Error("wallet_not_ready");
   }
-  const config = publicConfig ?? (await loadPublicConfig());
+  const config = publicConfig ?? (await loadPublicConfig(context));
+  assertContext(context);
+  if (runState !== null && !runMatchesContext(runState, walletState.account, config)) {
+    const stale = beginContextChange();
+    notice = publicNotice("context");
+    render();
+    await invalidateCapturedRun(stale, "restored_context_mismatch");
+    throw new Error("context_changed");
+  }
+  if (
+    walletTxState !== null &&
+    (walletTxState.pendingMintWallet !== walletState.account || walletTxState.pendingMintChainId !== walletState.chainId)
+  ) {
+    walletTxState = null;
+    writeWalletTxState(null);
+  }
   const balanceData = `${BALANCE_OF_SELECTOR}${encodeAddressWord(walletState.account)}`;
   const allowanceData = `${ALLOWANCE_SELECTOR}${encodeAddressWord(walletState.account)}${encodeAddressWord(config.contracts.mockVault)}`;
-  const gasRaw = await currentProvider.request({ method: "eth_getBalance", params: [walletState.account, "latest"] });
-  const tokenRaw = await currentProvider.request({ method: "eth_call", params: [{ to: publicConfig.contracts.mockToken, data: balanceData }, "latest"] });
-  const allowanceRaw = await currentProvider.request({ method: "eth_call", params: [{ to: publicConfig.contracts.mockToken, data: allowanceData }, "latest"] });
+  const gasRaw = await providerRequestWithTimeout(
+    currentProvider,
+    { method: "eth_getBalance", params: [walletState.account, "latest"] },
+    context
+  );
+  const tokenRaw = await providerRequestWithTimeout(
+    currentProvider,
+    { method: "eth_call", params: [{ to: publicConfig.contracts.mockToken, data: balanceData }, "latest"] },
+    context
+  );
+  const allowanceRaw = await providerRequestWithTimeout(
+    currentProvider,
+    { method: "eth_call", params: [{ to: publicConfig.contracts.mockToken, data: allowanceData }, "latest"] },
+    context
+  );
+  assertContext(context);
   assetState = evaluateAssetState(parseRpcQuantity(gasRaw), parseAbiUint256(tokenRaw), parseAbiUint256(allowanceRaw), config);
   return assetState;
 }
@@ -541,10 +1011,15 @@ function depositCalldata(preview) {
   return `${DEPOSIT_SELECTOR}${encodeAddressWord(preview.asset)}${encodeUint256Word(preview.amountBaseUnits, true)}`;
 }
 
-async function sendWalletTransaction(request) {
+async function sendWalletTransaction(request, context) {
   const currentProvider = provider();
   if (currentProvider === null) throw new Error("wallet_missing");
-  const hash = await currentProvider.request({ method: "eth_sendTransaction", params: [request] });
+  const hash = await providerRequestWithContext(
+    currentProvider,
+    { method: "eth_sendTransaction", params: [request] },
+    context
+  );
+  assertContext(context);
   if (typeof hash !== "string" || !/^0x[a-fA-F0-9]{64}$/u.test(hash)) throw new Error("invalid_hash");
   return hash.toLowerCase();
 }
@@ -561,95 +1036,179 @@ function parseTransactionReceipt(value, requestedHash) {
   throw new Error("invalid_receipt_status");
 }
 
-async function waitForSuccessfulTransactionReceipt(transactionHash) {
+async function waitForSuccessfulTransactionReceipt(transactionHash, context) {
   const currentProvider = provider();
   if (currentProvider === null) throw new Error("wallet_missing");
   for (let attempt = 0; attempt < RECEIPT_POLL_MAX_ATTEMPTS; attempt += 1) {
-    const raw = await currentProvider.request({ method: "eth_getTransactionReceipt", params: [transactionHash] });
+    assertContext(context);
+    const raw = await providerRequestWithTimeout(
+      currentProvider,
+      { method: "eth_getTransactionReceipt", params: [transactionHash] },
+      context
+    );
+    assertContext(context);
     const status = parseTransactionReceipt(raw, transactionHash);
     if (status === "success") return;
     if (status === "reverted") throw new Error("transaction_reverted");
-    if (attempt + 1 < RECEIPT_POLL_MAX_ATTEMPTS) await sleep(RECEIPT_POLL_DELAY_MS);
+    if (attempt + 1 < RECEIPT_POLL_MAX_ATTEMPTS) await waitWithContext(RECEIPT_POLL_DELAY_MS, context);
   }
   throw new Error("transaction_receipt_timeout");
 }
 
-async function prepareMockToken() {
+async function prepareMockToken(context) {
+  assertContext(context);
   if (walletState.account === null || publicConfig === null) throw new Error("wallet_not_ready");
-  const transactionHash = await sendWalletTransaction({
-    from: walletState.account,
-    to: publicConfig.contracts.mockToken,
-    data: mintCalldata(walletState.account, publicConfig.demoAmountBaseUnits),
-    value: "0x0"
-  });
-  await waitForSuccessfulTransactionReceipt(transactionHash);
-  await inspectWalletAssets();
+  let transactionHash = walletTxState?.pendingMintTxHash ?? null;
+  if (transactionHash === null) {
+    transactionHash = await sendWalletTransaction(
+      {
+        from: walletState.account,
+        to: publicConfig.contracts.mockToken,
+        data: mintCalldata(walletState.account, publicConfig.demoAmountBaseUnits),
+        value: "0x0"
+      },
+      context
+    );
+    assertContext(context);
+    walletTxState = {
+      pendingMintTxHash: transactionHash,
+      pendingMintWallet: walletState.account,
+      pendingMintChainId: walletState.chainId
+    };
+    writeWalletTxState(walletTxState);
+  }
+  try {
+    await waitForSuccessfulTransactionReceipt(transactionHash, context);
+  } catch (error) {
+    if (error instanceof Error && error.message === "transaction_reverted" && contextIsCurrent(context)) {
+      walletTxState = null;
+      writeWalletTxState(null);
+    }
+    throw error;
+  }
+  assertContext(context);
+  walletTxState = null;
+  writeWalletTxState(null);
+  await inspectWalletAssets(context);
   if (assetState.next === "mint_required") throw new Error("mint_balance_unchanged");
   notice = "Mock Token 준비를 확인했습니다. 다음 단계에서 Manifest를 검토하세요.";
 }
 
 async function issueManifest() {
+  const context = captureContext();
   if (walletState.account === null || walletState.chainId !== GIWA_CHAIN_ID) throw new Error("wallet_not_ready");
   if (assetState.next !== "approval_required" && assetState.next !== "deposit_ready") throw new Error("assets_not_ready");
-  const response = await apiFetch("/api/runs", {
+  const expectedContext = { account: context.account, config: publicConfig };
+  const { response, body } = await apiFetchJsonWithContext(context, "/api/runs", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      wallet: walletState.account,
-      chainId: walletState.chainId,
+      wallet: context.account,
+      chainId: context.chainId,
       campaignId: "gasok-demo",
       missionId: "first-mock-vault-deposit",
       referralCode: null
     })
   });
-  const body = await response.json();
-  if (!response.ok || typeof body?.runCapability !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(body.runCapability)) {
+  assertContext(context);
+  const issuedRun = response.ok ? projectIssuedRun(body, expectedContext) : null;
+  if (issuedRun === null) {
+    const invalidation = projectInvalidationIdentity(body);
+    writeSessionRun(null);
+    if (invalidation !== null) await invalidateCapturedRun(invalidation, "invalid_issue_response");
+    assertContext(context);
     throw new Error("manifest_issue_failed");
   }
-  runState = body;
+  assertContext(context);
+  runState = issuedRun;
   writeSessionRun(runState);
   notice = "Manifest가 준비되었습니다. 지갑, target, asset, 수량과 만료 시간을 검토하세요.";
 }
 
-async function approveExactAmount() {
+async function approveExactAmount(context) {
+  assertContext(context);
   if (!runState?.manifestPreview || walletState.account === null) throw new Error("manifest_missing");
-  await inspectWalletAssets();
-  if (assetState.next === "deposit_ready") {
-    runState = { ...runState, approveTxHash: null };
+  await inspectWalletAssets(context);
+  let localRun = requireContextRun(context);
+  let approveTxHash = runState.pendingApproveTxHash;
+  if (assetState.next === "deposit_ready" && approveTxHash === null) {
+    runState = projectSessionRun({ ...localRun, approveTxHash: null, pendingApproveTxHash: null });
+    if (runState === null) throw new Error("invalid_run_state");
     writeSessionRun(runState);
     notice = "기존 allowance가 충분해 별도 승인 없이 예치 단계로 이동합니다.";
     return;
   }
-  if (assetState.next !== "approval_required") throw new Error("approval_not_ready");
-  const preview = runState.manifestPreview;
-  const approveTxHash = await sendWalletTransaction({
-    from: walletState.account,
-    to: preview.asset,
-    data: approveCalldata(preview),
-    value: "0x0"
-  });
-  await waitForSuccessfulTransactionReceipt(approveTxHash);
-  await inspectWalletAssets();
+  if (approveTxHash === null && assetState.next !== "approval_required") throw new Error("approval_not_ready");
+  const preview = localRun.manifestPreview;
+  if (approveTxHash === null) {
+    approveTxHash = await sendWalletTransaction(
+      {
+        from: walletState.account,
+        to: preview.asset,
+        data: approveCalldata(preview),
+        value: "0x0"
+      },
+      context
+    );
+    localRun = requireContextRun(context);
+    runState = projectSessionRun({
+      ...localRun,
+      status: "approveSubmitted",
+      pendingApproveTxHash: approveTxHash
+    });
+    if (runState === null) throw new Error("invalid_run_state");
+    writeSessionRun(runState);
+  }
+  try {
+    await waitForSuccessfulTransactionReceipt(approveTxHash, context);
+  } catch (error) {
+    if (error instanceof Error && error.message === "transaction_reverted" && contextIsCurrent(context)) {
+      localRun = requireContextRun(context);
+      runState = projectSessionRun({ ...localRun, pendingApproveTxHash: null });
+      if (runState !== null) writeSessionRun(runState);
+    }
+    throw error;
+  }
+  await inspectWalletAssets(context);
   if (assetState.next !== "deposit_ready") throw new Error("allowance_not_updated");
-  runState = { ...runState, approveTxHash, status: "approveSubmitted" };
+  localRun = requireContextRun(context);
+  runState = projectSessionRun({
+    ...localRun,
+    approveTxHash,
+    pendingApproveTxHash: null,
+    status: "approveSubmitted"
+  });
+  if (runState === null) throw new Error("invalid_run_state");
   writeSessionRun(runState);
   notice = "정확한 데모 수량 승인을 확인했습니다. 다음 단계에서 Vault에 예치하세요.";
 }
 
-async function submitEvidence() {
-  if (!runState?.runId || !runState.depositTxHash) throw new Error("evidence_missing");
-  const response = await participantFetch(`/api/runs/${runState.runId}/evidence`, {
-    method: "POST",
-    body: JSON.stringify({
-      approveTxHash: runState.approveTxHash ?? null,
-      depositTxHash: runState.depositTxHash
-    })
-  });
-  const body = await response.json();
+async function ensureEvidenceSubmitted(context) {
+  let localRun = requireContextRun(context);
+  if (!localRun.depositTxHash) throw new Error("evidence_missing");
+  if (localRun.evidenceSubmitted) return localRun;
+  const { response, body } = await participantFetch(
+    localRun,
+    `/api/runs/${localRun.runId}/evidence`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        approveTxHash: localRun.approveTxHash ?? null,
+        depositTxHash: localRun.depositTxHash
+      })
+    },
+    context
+  );
+  assertContext(context);
   if (!response.ok) throw new Error("evidence_submit_failed");
-  runState = { ...runState, ...body, status: body.status ?? "depositSubmitted" };
+  localRun = requireContextRun(context);
+  const merged = mergeRunResponse(localRun, body);
+  if (merged === null) throw new Error("invalid_evidence_response");
+  runState = projectSessionRun({ ...merged, evidenceSubmitted: true });
+  if (runState === null) throw new Error("invalid_run_state");
   writeSessionRun(runState);
   storeReceiptProjection("pending");
+  return runState;
 }
 
 function verificationDecision(body) {
@@ -664,25 +1223,41 @@ function matchedReceiptOutcome(value) {
   return { receiptHash, navigate: receiptHash !== null };
 }
 
-async function verifyAutomatically() {
+async function verifyAutomatically(context) {
+  await ensureEvidenceSubmitted(context);
   if (!runState?.runId || !runState.depositTxHash) throw new Error("verification_missing");
   for (let attempt = 1; attempt <= VERIFY_MAX_ATTEMPTS; attempt += 1) {
-    runState = { ...runState, status: "verifying" };
+    const localRun = requireContextRun(context);
+    runState = projectSessionRun({ ...localRun, status: "verifying" });
+    if (runState === null) throw new Error("invalid_run_state");
     writeSessionRun(runState);
     notice = `Standard RPC 검증 중입니다. ${attempt}/${VERIFY_MAX_ATTEMPTS}`;
     render();
-    const response = await participantFetch(`/api/runs/${runState.runId}/verify`, {
-      method: "POST",
-      body: JSON.stringify({})
-    });
-    const body = await response.json();
+    const { response, body } = await participantFetch(
+      localRun,
+      `/api/runs/${localRun.runId}/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({})
+      },
+      context
+    );
+    assertContext(context);
     if (!response.ok) throw new Error("verification_request_failed");
     const decision = verificationDecision(body);
-    runState = { ...runState, ...body, status: decision === "timeout" ? "verifying" : decision };
+    const currentRun = requireContextRun(context);
+    const merged = mergeRunResponse(currentRun, body);
+    if (merged === null) throw new Error("invalid_verification_response");
+    runState = projectSessionRun({
+      ...merged,
+      status: decision === "timeout" ? "verifying" : decision
+    });
+    if (runState === null) throw new Error("invalid_run_state");
     writeSessionRun(runState);
     if (decision === "matched") {
       const outcome = matchedReceiptOutcome(runState.receiptHash);
-      runState = { ...runState, status: "matched", receiptHash: outcome.receiptHash };
+      runState = projectSessionRun({ ...runState, status: "matched", receiptHash: outcome.receiptHash });
+      if (runState === null) throw new Error("invalid_run_state");
       writeSessionRun(runState);
       if (outcome.navigate) {
         storeReceiptProjection("verified");
@@ -698,45 +1273,63 @@ async function verifyAutomatically() {
       notice = "검증 결과가 Manifest와 일치하지 않아 Receipt를 발급하지 않았습니다.";
       return;
     }
-    if (attempt < VERIFY_MAX_ATTEMPTS) await sleep(VERIFY_RETRY_DELAY_MS);
+    if (attempt < VERIFY_MAX_ATTEMPTS) await waitWithContext(VERIFY_RETRY_DELAY_MS, context);
   }
   notice = "자동 검증 대기 한도에 도달했습니다. 같은 버튼으로 Standard RPC 검증만 다시 시도할 수 있습니다.";
 }
 
-async function depositFromManifest() {
+async function depositFromManifest(context) {
+  assertContext(context);
   if (!runState?.manifestPreview || walletState.account === null) throw new Error("manifest_missing");
   if (isExpired()) throw new Error("manifest_expired");
-  await inspectWalletAssets();
+  await inspectWalletAssets(context);
+  let localRun = requireContextRun(context);
   if (assetState.next === "approval_required" && !runState.approveTxHash) throw new Error("approval_required");
   if (assetState.next !== "deposit_ready") throw new Error("deposit_not_ready");
-  const preview = runState.manifestPreview;
-  const depositTxHash = await sendWalletTransaction({
-    from: walletState.account,
-    to: preview.target,
-    data: depositCalldata(preview),
-    value: "0x0"
+  const preview = localRun.manifestPreview;
+  const depositTxHash = await sendWalletTransaction(
+    {
+      from: walletState.account,
+      to: preview.target,
+      data: depositCalldata(preview),
+      value: "0x0"
+    },
+    context
+  );
+  localRun = requireContextRun(context);
+  runState = projectSessionRun({
+    ...localRun,
+    depositTxHash,
+    status: "depositSubmitted",
+    evidenceSubmitted: false
   });
-  runState = { ...runState, depositTxHash, status: "depositSubmitted" };
+  if (runState === null) throw new Error("invalid_run_state");
   writeSessionRun(runState);
-  await submitEvidence();
-  await verifyAutomatically();
+  await ensureEvidenceSubmitted(context);
+  await verifyAutomatically(context);
 }
 
 async function onPrimaryAction() {
   if (inFlight) return;
   if (isExpired()) {
+    let expiryContext = captureContext();
     inFlight = true;
     render();
     try {
-      await invalidateRun("manifest_expired");
+      expiryContext = await invalidateRun("manifest_expired");
       notice = "Manifest가 만료되어 이전 액션을 폐기했습니다. 새 Manifest를 검토해 주세요.";
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== "context_changed") notice = publicNotice("recovery");
     } finally {
-      inFlight = false;
-      render();
+      if (contextIsCurrent(expiryContext)) {
+        inFlight = false;
+        render();
+      }
     }
     return;
   }
   const action = nextPrimaryAction();
+  let context = captureContext();
   const currentProvider = provider();
   if (currentProvider === null && action !== "open_receipt") {
     walletState = { status: "providerMissing", account: null, chainId: null };
@@ -748,20 +1341,29 @@ async function onPrimaryAction() {
   inFlight = true;
   render();
   try {
-    if (action === "connect") await connectWallet(currentProvider);
-    else if (action === "switch_chain") await switchToGiwa(currentProvider);
+    if (action === "connect") {
+      await connectWallet(currentProvider);
+      context = captureContext();
+    } else if (action === "switch_chain") {
+      await switchToGiwa(currentProvider);
+      context = captureContext();
+    }
     else if (action === "open_faucet") {
       if (publicConfig === null || !isSafeHttpsUrl(publicConfig.faucetHelpUrl)) throw new Error("faucet_unavailable");
       window.open(publicConfig.faucetHelpUrl, "_blank", "noopener,noreferrer");
       notice = publicNotice("faucet");
-      await inspectWalletAssets();
-    } else if (action === "mint") await prepareMockToken();
-    else if (action === "issue_manifest") await issueManifest();
-    else if (action === "approve") await approveExactAmount();
-    else if (action === "deposit") await depositFromManifest();
-    else if (action === "verify") await verifyAutomatically();
+      await inspectWalletAssets(context);
+    } else if (action === "mint") await prepareMockToken(context);
+    else if (action === "issue_manifest") {
+      await issueManifest();
+      context = captureContext();
+    }
+    else if (action === "approve") await approveExactAmount(context);
+    else if (action === "deposit") await depositFromManifest(context);
+    else if (action === "verify") await verifyAutomatically(context);
     else if (action === "open_receipt") location.assign(`/user/receipt/${runState.receiptHash}`);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "context_changed") return;
     if (action === "connect") notice = publicNotice("wallet");
     else if (action === "switch_chain") notice = publicNotice("network");
     else if (action === "open_faucet") notice = publicNotice("readiness");
@@ -771,8 +1373,10 @@ async function onPrimaryAction() {
     else if (action === "deposit") notice = publicNotice("deposit");
     else notice = publicNotice("verify");
   } finally {
-    inFlight = false;
-    render();
+    if (contextIsCurrent(context)) {
+      inFlight = false;
+      render();
+    }
   }
 }
 
@@ -859,8 +1463,9 @@ async function renderReceiptRoute() {
   let body = null;
   if (hash !== "") {
     try {
-      response = await apiFetch(`/api/receipts/${hash}`);
-      body = await response.json();
+      const result = await apiFetchJson(`/api/receipts/${hash}`);
+      response = result.response;
+      body = result.body;
     } catch {
       response = null;
       body = null;
@@ -930,7 +1535,7 @@ async function renderReceiptRoute() {
 function renderHelp() {
   const summary = [
     `Action: ${runState?.manifestPreview?.actionName ?? "Mock vault 테스트넷 액션"}`,
-    `Wallet: ${runState?.manifestPreview?.wallet ? shortHash(runState.manifestPreview.wallet) : "현재 탭에 없음"}`,
+    `Wallet: ${runState?.wallet ? shortHash(runState.wallet) : "현재 탭에 없음"}`,
     `Deposit transaction: ${runState?.depositTxHash ? shortHash(runState.depositTxHash) : "확인 중"}`,
     `Receipt: ${runState?.receiptHash ? shortHash(runState.receiptHash) : "검증 중"}`
   ].join("\n");
@@ -966,36 +1571,44 @@ function renderHelp() {
   });
 }
 
-async function invalidateRun(reason) {
-  const staleRun = runState;
+async function invalidateCapturedRun(staleRun, reason) {
+  const identity = projectInvalidationIdentity(staleRun);
+  if (identity === null) return;
   try {
-    if (staleRun?.runId) {
-      await participantFetch(`/api/runs/${staleRun.runId}/invalidate`, {
-        method: "POST",
-        body: JSON.stringify({ reason })
-      });
-    }
+    await participantFetch(identity, `/api/runs/${identity.runId}/invalidate`, {
+      method: "POST",
+      body: JSON.stringify({ reason })
+    });
   } catch {
-    notice = publicNotice("context");
-  } finally {
-    runState = null;
-    assetState = { next: "gas_required", approveRequired: true, gasWei: null, tokenBalance: null, allowance: null };
-    writeSessionRun(null);
+    // Session state is already cleared; invalidation is deliberately best effort.
   }
 }
 
+async function invalidateRun(reason) {
+  const staleRun = beginContextChange();
+  const context = captureContext();
+  await invalidateCapturedRun(staleRun, reason);
+  assertContext(context);
+  return context;
+}
+
 async function handleAccountsChanged(accounts) {
+  const stale = beginContextChange();
   try {
     const nextAccount = Array.isArray(accounts) && accounts[0] ? normalizeAccount(accounts[0]) : null;
-    if (runState !== null && nextAccount !== walletState.account) await invalidateRun("account_changed");
     walletState = {
       ...walletState,
       account: nextAccount,
       status: nextAccount === null ? "disconnected" : walletState.chainId === GIWA_CHAIN_ID ? "connected" : "wrongChain"
     };
-    if (nextAccount !== null && walletState.chainId === GIWA_CHAIN_ID) await inspectWalletAssets();
-  } catch {
-    await invalidateRun("account_listener_failed");
+    notice = publicNotice("context");
+    const context = captureContext();
+    render();
+    await invalidateCapturedRun(stale, "account_changed");
+    assertContext(context);
+    if (nextAccount !== null && walletState.chainId === GIWA_CHAIN_ID) await inspectWalletAssets(context);
+  } catch (error) {
+    if (error instanceof Error && error.message === "context_changed") return;
     walletState = { status: "disconnected", account: null, chainId: walletState.chainId };
     notice = publicNotice("context");
   }
@@ -1003,17 +1616,22 @@ async function handleAccountsChanged(accounts) {
 }
 
 async function handleChainChanged(chainIdHex) {
+  const stale = beginContextChange();
   try {
     const nextChainId = parseChainId(chainIdHex);
-    if (runState !== null && nextChainId !== walletState.chainId) await invalidateRun("chain_changed");
     walletState = {
       ...walletState,
       chainId: nextChainId,
       status: walletState.account === null ? "disconnected" : nextChainId === GIWA_CHAIN_ID ? "connected" : "wrongChain"
     };
-    if (walletState.account !== null && nextChainId === GIWA_CHAIN_ID) await inspectWalletAssets();
-  } catch {
-    await invalidateRun("chain_listener_failed");
+    notice = publicNotice("context");
+    const context = captureContext();
+    render();
+    await invalidateCapturedRun(stale, "chain_changed");
+    assertContext(context);
+    if (walletState.account !== null && nextChainId === GIWA_CHAIN_ID) await inspectWalletAssets(context);
+  } catch (error) {
+    if (error instanceof Error && error.message === "context_changed") return;
     walletState = { ...walletState, status: walletState.account === null ? "disconnected" : "wrongChain", chainId: null };
     notice = publicNotice("context");
   }
@@ -1032,6 +1650,10 @@ const currentProvider = provider();
 if (currentProvider?.on) {
   currentProvider.on("accountsChanged", (accounts) => void handleAccountsChanged(accounts));
   currentProvider.on("chainChanged", (chainIdHex) => void handleChainChanged(chainIdHex));
+}
+
+if (restoredSession.invalidation !== null) {
+  void invalidateCapturedRun(restoredSession.invalidation, "invalid_session");
 }
 
 render();

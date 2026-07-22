@@ -32,7 +32,174 @@ function standaloneFunction<T extends (...args: never[]) => unknown>(source: str
   throw new Error(`unterminated function ${name}`);
 }
 
+function standaloneFunctions<T extends Record<string, (...args: never[]) => unknown>>(source: string, names: string[]): T {
+  const declarations = names.map((name) => {
+    const fn = standaloneFunction(source, name);
+    return String(fn);
+  });
+  return Function(`"use strict"; ${declarations.join("\n")}; return { ${names.join(", ")} };`)() as T;
+}
+
+const strictRunFixture = {
+  runId: "run_1",
+  runCapability: "A".repeat(43),
+  wallet: "0x1111111111111111111111111111111111111111",
+  status: "manifestIssued",
+  intentHash: `0x${"a".repeat(64)}`,
+  expiryUnix: 1_800_003_600,
+  manifestPreview: {
+    target: "0x2222222222222222222222222222222222222222",
+    selector: "0x47e7ef24",
+    asset: "0x3333333333333333333333333333333333333333",
+    amountBaseUnits: "1000000000000000000",
+    spender: "0x2222222222222222222222222222222222222222",
+    maxAllowanceBaseUnits: "1000000000000000000",
+    expiryUnix: 1_800_003_600,
+    intentHash: `0x${"a".repeat(64)}`
+  },
+  approveTxHash: `0x${"b".repeat(64)}`,
+  pendingApproveTxHash: null,
+  depositTxHash: `0x${"c".repeat(64)}`,
+  receiptHash: null,
+  evidenceSubmitted: true
+};
+
+const strictConfigFixture = {
+  chainId: 91342,
+  demoAmountBaseUnits: "1000000000000000000",
+  contracts: {
+    mockToken: "0x3333333333333333333333333333333333333333",
+    mockVault: "0x2222222222222222222222222222222222222222"
+  }
+};
+
 describe("evaluator public boundary", () => {
+  it("projects only strict session runs and rejects restored wallet or config mismatches", () => {
+    const source = readWebFile("public/user-flow.js");
+    const functions = standaloneFunctions<{
+      projectSessionRun: (value: unknown) => Record<string, unknown> | null;
+      runMatchesContext: (run: unknown, account: string, config: unknown) => boolean;
+    }>(source, ["projectSessionRun", "runMatchesContext"]);
+    const projected = functions.projectSessionRun({ ...strictRunFixture, arbitraryServerField: "discard-me" });
+
+    expect(projected).not.toBeNull();
+    expect(projected).not.toHaveProperty("arbitraryServerField");
+    expect(projected?.manifestPreview).not.toHaveProperty("wallet");
+    expect(functions.projectSessionRun({ ...strictRunFixture, runCapability: "short" })).toBeNull();
+    expect(functions.projectSessionRun({ ...strictRunFixture, pendingApproveTxHash: "bad" })).toBeNull();
+    expect(
+      functions.projectSessionRun({
+        ...strictRunFixture,
+        manifestPreview: { ...strictRunFixture.manifestPreview, selector: "0xdeadbeef" }
+      })
+    ).toBeNull();
+    expect(functions.runMatchesContext(projected, strictRunFixture.wallet, strictConfigFixture)).toBe(true);
+    expect(functions.runMatchesContext(projected, "0x9999999999999999999999999999999999999999", strictConfigFixture)).toBe(false);
+    expect(
+      functions.runMatchesContext(projected, strictRunFixture.wallet, {
+        ...strictConfigFixture,
+        contracts: { ...strictConfigFixture.contracts, mockVault: "0x9999999999999999999999999999999999999999" }
+      })
+    ).toBe(false);
+    expect(source).toContain("projectSessionRun(parsed)");
+    expect(source).toContain("projectIssuedRun(body, expectedContext)");
+    expect(source.indexOf("projectIssuedRun(body, expectedContext)")).toBeLessThan(source.indexOf("runState = issuedRun"));
+    expect(source).toContain("runState.wallet");
+    expect(source).not.toContain("manifestPreview?.wallet");
+  });
+
+  it("cancels stale async work before listener invalidation can race it", () => {
+    const source = readWebFile("public/user-flow.js");
+    const accounts = functionSource(source, "handleAccountsChanged", "handleChainChanged");
+    const chain = functionSource(source, "handleChainChanged", "render");
+    const verify = functionSource(source, "verifyAutomatically", "depositFromManifest");
+    const issue = functionSource(source, "issueManifest", "approveExactAmount");
+
+    expect(source).toContain("let contextGeneration = 0");
+    expect(source).toContain("const activeRequestControllers = new Set()");
+    expect(accounts).toContain("const stale = beginContextChange()");
+    expect(chain).toContain("const stale = beginContextChange()");
+    for (const listener of [accounts, chain]) {
+      expect(listener.indexOf("beginContextChange()")).toBeLessThan(listener.indexOf("await invalidateCapturedRun"));
+    }
+    expect(source).toContain("controller.abort()");
+    expect(issue).toContain("const context = captureContext()");
+    expect(issue).toContain("assertContext(context)");
+    expect(issue.indexOf("assertContext(context)")).toBeLessThan(issue.indexOf("runState = issuedRun"));
+    expect(verify).toContain("const localRun = requireContextRun(context)");
+    expect(verify).toContain("await waitWithContext(VERIFY_RETRY_DELAY_MS, context)");
+    expect(verify).not.toMatch(/runState\s*=\s*\{\s*\.\.\.runState,\s*\.\.\.body/gu);
+    expect(source).toContain("if (contextIsCurrent(context))");
+  });
+
+  it("merges Task 5 responses without erasing local run identity or evidence state", () => {
+    const source = readWebFile("public/user-flow.js");
+    const { projectSessionRun, mergeRunResponse } = standaloneFunctions<{
+      projectSessionRun: (value: unknown) => Record<string, unknown> | null;
+      mergeRunResponse: (current: Record<string, unknown>, response: unknown) => Record<string, unknown> | null;
+    }>(source, ["projectSessionRun", "mergeRunResponse"]);
+    const current = projectSessionRun(strictRunFixture);
+    expect(current).not.toBeNull();
+
+    const timeout = mergeRunResponse(current ?? {}, {
+      runId: strictRunFixture.runId,
+      wallet: strictRunFixture.wallet,
+      intentHash: strictRunFixture.intentHash,
+      status: "timeout",
+      manifestPreview: null,
+      approveTxHash: null,
+      depositTxHash: null,
+      receiptHash: null,
+      ignored: "server-field"
+    });
+    expect(timeout).toMatchObject({
+      runCapability: strictRunFixture.runCapability,
+      manifestPreview: strictRunFixture.manifestPreview,
+      approveTxHash: strictRunFixture.approveTxHash,
+      depositTxHash: strictRunFixture.depositTxHash,
+      evidenceSubmitted: true,
+      status: "timeout"
+    });
+    expect(timeout).not.toHaveProperty("ignored");
+    expect(mergeRunResponse(current ?? {}, { runId: "another-run", status: "timeout" })).toBeNull();
+
+    const evidence = functionSource(source, "ensureEvidenceSubmitted", "verifyAutomatically");
+    const verify = functionSource(source, "verifyAutomatically", "depositFromManifest");
+    const deposit = functionSource(source, "depositFromManifest", "onPrimaryAction");
+    expect(deposit).toContain("evidenceSubmitted: false");
+    expect(deposit.indexOf("writeSessionRun(runState)")).toBeLessThan(deposit.indexOf("ensureEvidenceSubmitted(context)"));
+    expect(evidence).toContain("evidenceSubmitted: true");
+    expect(verify.indexOf("ensureEvidenceSubmitted(context)")).toBeLessThan(verify.indexOf("/verify"));
+  });
+
+  it("bounds response bodies and reuses persisted pending wallet transactions", () => {
+    const source = readWebFile("public/user-flow.js");
+    const api = functionSource(source, "apiFetchJson", "participantHeaders");
+    const receipt = functionSource(source, "waitForSuccessfulTransactionReceipt", "prepareMockToken");
+    const mint = functionSource(source, "prepareMockToken", "issueManifest");
+    const approve = functionSource(source, "approveExactAmount", "ensureEvidenceSubmitted");
+    const nextAction = functionSource(source, "nextPrimaryAction", "primaryLabel");
+    const send = functionSource(source, "sendWalletTransaction", "parseTransactionReceipt");
+    const receiptProjection = functionSource(source, "storeReceiptProjection", "renderReceiptCard");
+    const support = functionSource(source, "renderHelp", "invalidateCapturedRun");
+
+    expect(api).toContain("const body = await response.json()");
+    expect(api.indexOf("const body = await response.json()")).toBeLessThan(api.indexOf("window.clearTimeout(timeoutId)"));
+    expect(source.match(/\.json\(\)/gu)).toHaveLength(1);
+    expect(source).not.toContain("function apiFetch(");
+    expect(receipt).toContain("providerRequestWithTimeout(");
+    expect(receipt).toContain("assertContext(context)");
+    expect(mint.indexOf("walletTxState?.pendingMintTxHash")).toBeLessThan(mint.indexOf("sendWalletTransaction"));
+    expect(mint.indexOf("writeWalletTxState(walletTxState)")).toBeLessThan(mint.indexOf("waitForSuccessfulTransactionReceipt"));
+    expect(approve.indexOf("runState.pendingApproveTxHash")).toBeLessThan(approve.indexOf("sendWalletTransaction"));
+    expect(approve.indexOf("writeSessionRun(runState)")).toBeLessThan(approve.indexOf("waitForSuccessfulTransactionReceipt"));
+    expect(nextAction).toContain('if (runState.pendingApproveTxHash) return "approve"');
+    expect(nextAction.indexOf("runState.pendingApproveTxHash")).toBeLessThan(nextAction.indexOf('assetState.next === "approval_required"'));
+    expect(send).toContain("providerRequestWithContext(");
+    expect(send).not.toContain("providerRequestWithTimeout(");
+    expect(receiptProjection).not.toMatch(/pendingMintTxHash|pendingApproveTxHash/u);
+    expect(support).not.toMatch(/pendingMintTxHash|pendingApproveTxHash/u);
+  });
   it("renders exactly one primary action and no separate transaction buttons", () => {
     const source = readWebFile("public/user-flow.js");
 
@@ -65,9 +232,9 @@ describe("evaluator public boundary", () => {
     expect(participantHeaders).toContain('"content-type": "application/json"');
     expect(participantHeaders).toContain('"x-giwa-run-capability": value');
     expect(participantFetch).toContain('/^\\/api\\/runs\\/[^/]+(?:\\/(?:evidence|verify|invalidate))?$/u');
-    expect(source).toContain('apiFetch("/api/public/config")');
-    expect(source).toContain('apiFetch("/api/runs",');
-    expect(source).toContain("apiFetch(`/api/receipts/${hash}`)");
+    expect(source).toContain('apiFetchJsonWithContext(context, "/api/public/config")');
+    expect(source).toContain('apiFetchJsonWithContext(context, "/api/runs",');
+    expect(source).toContain("apiFetchJson(`/api/receipts/${hash}`)");
     expect(source).not.toContain('participantFetch("/api/public/config"');
     expect(source).not.toContain('participantFetch("/api/runs"');
     expect(source).not.toContain("participantFetch(`/api/receipts/");
@@ -107,15 +274,15 @@ describe("evaluator public boundary", () => {
   it("binds mint, exact approval, and deposit to validated wallet state and Manifest fields", () => {
     const source = readWebFile("public/user-flow.js");
     const mint = functionSource(source, "prepareMockToken", "issueManifest");
-    const approve = functionSource(source, "approveExactAmount", "submitEvidence");
+    const approve = functionSource(source, "approveExactAmount", "ensureEvidenceSubmitted");
     const deposit = functionSource(source, "depositFromManifest", "onPrimaryAction");
 
     expect(mint).toContain("to: publicConfig.contracts.mockToken");
-    expect(mint.indexOf("waitForSuccessfulTransactionReceipt(transactionHash)")).toBeLessThan(mint.indexOf("inspectWalletAssets()"));
-    expect(approve).toContain('if (assetState.next === "deposit_ready")');
+    expect(mint.indexOf("waitForSuccessfulTransactionReceipt(transactionHash, context)")).toBeLessThan(mint.indexOf("inspectWalletAssets(context)"));
+    expect(approve).toContain('if (assetState.next === "deposit_ready" && approveTxHash === null)');
     expect(approve).toContain("approveTxHash: null");
     expect(approve).toContain("to: preview.asset");
-    expect(approve.indexOf("waitForSuccessfulTransactionReceipt(approveTxHash)")).toBeLessThan(approve.lastIndexOf("inspectWalletAssets()"));
+    expect(approve.indexOf("waitForSuccessfulTransactionReceipt(approveTxHash, context)")).toBeLessThan(approve.lastIndexOf("inspectWalletAssets(context)"));
     expect(deposit).toContain("to: preview.target");
     expect(deposit).toContain("data: depositCalldata(preview)");
   });
@@ -128,9 +295,9 @@ describe("evaluator public boundary", () => {
 
     expect(source).toContain("const VERIFY_RETRY_DELAY_MS = 8_000");
     expect(source).toContain("const VERIFY_MAX_ATTEMPTS = 24");
-    expect(deposit.indexOf("writeSessionRun(runState)")).toBeLessThan(deposit.indexOf("submitEvidence()"));
-    expect(deposit.indexOf("submitEvidence()")).toBeLessThan(deposit.indexOf("verifyAutomatically()"));
-    expect(verification).toContain("await sleep(VERIFY_RETRY_DELAY_MS)");
+    expect(deposit.indexOf("writeSessionRun(runState)")).toBeLessThan(deposit.indexOf("ensureEvidenceSubmitted(context)"));
+    expect(deposit.indexOf("ensureEvidenceSubmitted(context)")).toBeLessThan(deposit.indexOf("verifyAutomatically(context)"));
+    expect(verification).toContain("await waitWithContext(VERIFY_RETRY_DELAY_MS, context)");
     expect(verification).toContain('decision === "mismatched" || decision === "failed"');
     expect(verification).toContain("location.assign(`/user/receipt/${outcome.receiptHash}`)");
     expect(action).toContain("if (inFlight) return");
@@ -154,7 +321,7 @@ describe("evaluator public boundary", () => {
     expect(outcome("not-a-receipt")).toEqual({ receiptHash: null, navigate: false });
     expect(outcome(`0x${"a".repeat(64)}`)).toEqual({ receiptHash: `0x${"a".repeat(64)}`, navigate: true });
     expect(matchedStart).toBeGreaterThanOrEqual(0);
-    expect(matchedBranch).toContain('runState = { ...runState, status: "matched", receiptHash: outcome.receiptHash }');
+    expect(matchedBranch).toContain('projectSessionRun({ ...runState, status: "matched", receiptHash: outcome.receiptHash })');
     expect(matchedBranch).toContain("writeSessionRun(runState)");
     expect(matchedBranch).toContain("if (outcome.navigate)");
     expect(matchedBranch).toContain("location.assign(`/user/receipt/${outcome.receiptHash}`)");
@@ -165,23 +332,25 @@ describe("evaluator public boundary", () => {
 
   it("invalidates capability-bound stale runs on wallet context changes", () => {
     const source = readWebFile("public/user-flow.js");
+    const captured = functionSource(source, "invalidateCapturedRun", "invalidateRun");
     const invalidate = functionSource(source, "invalidateRun", "handleAccountsChanged");
 
-    expect(invalidate).toContain("participantFetch(`/api/runs/${staleRun.runId}/invalidate`");
-    expect(invalidate).toContain("runState = null");
-    expect(invalidate).toContain('assetState = { next: "gas_required"');
-    expect(invalidate).toContain("writeSessionRun(null)");
+    expect(captured).toContain("participantFetch(identity, `/api/runs/${identity.runId}/invalidate`");
+    expect(invalidate).toContain("const staleRun = beginContextChange()");
+    expect(source).toContain("runState = null");
+    expect(source).toContain('assetState = { next: "gas_required"');
+    expect(source).toContain("writeSessionRun(null)");
     expect(source).toContain('currentProvider.on("accountsChanged"');
     expect(source).toContain('currentProvider.on("chainChanged"');
-    expect(source).toContain('await invalidateRun("account_listener_failed")');
-    expect(source).toContain('await invalidateRun("chain_listener_failed")');
+    expect(source).toContain('await invalidateCapturedRun(stale, "account_changed")');
+    expect(source).toContain('await invalidateCapturedRun(stale, "chain_changed")');
   });
 
   it("reads public Receipt payload and normalized verification fields without session gating", () => {
     const source = readWebFile("public/user-flow.js");
     const receiptRoute = functionSource(source, "renderReceiptRoute", "renderHelp");
 
-    expect(receiptRoute).toContain('response = await apiFetch(`/api/receipts/${hash}`)');
+    expect(receiptRoute).toContain('const result = await apiFetchJson(`/api/receipts/${hash}`)');
     expect(receiptRoute).not.toContain("shouldReadReceiptApi");
     expect(receiptRoute).toContain('response.ok && body?.receiptHash === hash && body?.payload?.status === "matched"');
     for (const field of ["wallet", "target", "asset", "amountBaseUnits", "depositTxHash", "depositBlockNumber", "depositBlockHash", "issuedAt", "safetyNotice"]) {
