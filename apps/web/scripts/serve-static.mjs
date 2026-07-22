@@ -14,7 +14,7 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
-exportFlowData();
+if (process.env.GIWA_SKIP_PUBLIC_EXPORT !== "1") exportFlowData();
 
 const staticDemoStatusPayload = {
   ok: true,
