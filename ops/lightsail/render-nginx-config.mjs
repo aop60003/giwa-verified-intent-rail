@@ -2,10 +2,11 @@ import { randomBytes } from "node:crypto";
 import {
   closeSync,
   fsyncSync,
+  linkSync,
   lstatSync,
   openSync,
   readFileSync,
-  renameSync,
+  realpathSync,
   unlinkSync,
   writeFileSync
 } from "node:fs";
@@ -47,7 +48,33 @@ export function normalizeStageHostname(rawValue) {
   ) {
     throw new Error("invalid-host");
   }
+
+  let canonicalHost;
+  try {
+    canonicalHost = new URL(`http://${host}/`).hostname;
+  } catch (_error) {
+    throw new Error("invalid-host");
+  }
+  if (isIP(canonicalHost) !== 0) {
+    throw new Error("invalid-host");
+  }
   return host;
+}
+
+export function isMainModuleInvocation(invokedPath, modulePath) {
+  if (
+    typeof invokedPath !== "string" ||
+    invokedPath.length === 0 ||
+    typeof modulePath !== "string" ||
+    modulePath.length === 0
+  ) {
+    return false;
+  }
+  try {
+    return realpathSync(invokedPath) === realpathSync(modulePath);
+  } catch (_error) {
+    return false;
+  }
 }
 
 function lstatIfExists(path) {
@@ -96,6 +123,10 @@ function requireOutputPath(rawValue) {
   return { outputPath, outputParent };
 }
 
+export function publishNoReplace(tempPath, outputPath) {
+  linkSync(tempPath, outputPath);
+}
+
 function writeNewOutput({ outputPath, outputParent }, rendered) {
   let fileDescriptor;
   let tempPath;
@@ -114,7 +145,8 @@ function writeNewOutput({ outputPath, outputParent }, rendered) {
     if (lstatIfExists(outputPath) !== undefined) {
       throw new Error("output-exists");
     }
-    renameSync(tempPath, outputPath);
+    publishNoReplace(tempPath, outputPath);
+    unlinkSync(tempPath);
     tempPath = undefined;
   } finally {
     if (fileDescriptor !== undefined) {
@@ -150,7 +182,7 @@ function render() {
   writeNewOutput(output, rendered);
 }
 
-if (process.argv[1] === scriptPath) {
+if (isMainModuleInvocation(process.argv[1], scriptPath)) {
   try {
     render();
   } catch (_error) {

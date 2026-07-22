@@ -132,7 +132,8 @@ describe("Lightsail Nginx assets", () => {
     expect(renderer).toContain("writeFileSync(fileDescriptor, rendered");
     expect(renderer).toContain("fsyncSync(fileDescriptor)");
     expect(renderer).toContain("closeSync(fileDescriptor)");
-    expect(renderer).toContain("renameSync(tempPath, outputPath)");
+    expect(renderer).toContain("linkSync(tempPath, outputPath)");
+    expect(renderer).not.toContain("renameSync");
     expect(renderer).toContain("unlinkSync(tempPath)");
     expect(renderer).not.toContain("writeFileSync(outputPath");
     expect(renderer).not.toContain("unlinkSync(outputPath");
@@ -168,6 +169,8 @@ describe("Lightsail Nginx assets", () => {
 
     expect(renderer).toContain("export function normalizeStageHostname");
     expect(renderer).toContain("/[a-z]/u.test(finalLabel)");
+    expect(renderer).toContain('new URL(`http://${host}/`).hostname');
+    expect(renderer).toContain("isIP(canonicalHost)");
 
     for (const [host, expected] of [
       ["Stage.Example.COM", "stage.example.com"],
@@ -187,6 +190,9 @@ describe("Lightsail Nginx assets", () => {
       "127.1",
       "0177.1",
       "0x7f.1",
+      "127.0.0.0x1",
+      "127.0.0.0X1",
+      "127.0.0.0x0001",
       "123.456",
       "localhost",
       "https://stage.example.com",
@@ -204,6 +210,112 @@ describe("Lightsail Nginx assets", () => {
       expect(rejected.status, invalidHost).toBe(1);
       expect(rejected.stdout, invalidHost).toBe("");
       expect(rejected.stderr, invalidHost).not.toContain(invalidHost);
+    }
+  });
+
+  it("recognizes direct execution through the immutable current-path link", () => {
+    const renderer = readOps("render-nginx-config.mjs");
+    expect(renderer).toContain("export function isMainModuleInvocation");
+    expect(renderer).toContain("realpathSync(invokedPath)");
+    expect(renderer).toContain("realpathSync(modulePath)");
+    expect(renderer).toContain("isMainModuleInvocation(process.argv[1], scriptPath)");
+
+    const tempDirectory = mkdtempSync(join(tmpdir(), "giwa-render-entry-"));
+    try {
+      const linkDirectory = join(tempDirectory, "current");
+      const createLink = spawnSync(
+        "node",
+        [
+          "--input-type=module",
+          "--eval",
+          [
+            'import { symlinkSync } from "node:fs";',
+            'import { resolve } from "node:path";',
+            "symlinkSync(resolve(process.env.TARGET_DIRECTORY), process.env.LINK_DIRECTORY, process.platform === 'win32' ? 'junction' : 'dir');"
+          ].join("\n")
+        ],
+        {
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            TARGET_DIRECTORY: OPS_ROOT,
+            LINK_DIRECTORY: linkDirectory
+          }
+        }
+      );
+      expect(createLink.status).toBe(0);
+      expect(createLink.stdout).toBe("");
+      expect(createLink.stderr).toBe("");
+
+      const linkedScript = join(linkDirectory, "render-nginx-config.mjs");
+      const helper = [
+        `import { isMainModuleInvocation } from "${OPS_ROOT}/render-nginx-config.mjs";`,
+        "if (!isMainModuleInvocation(process.env.INVOKED_SCRIPT, process.env.MODULE_SCRIPT)) process.exitCode = 1;",
+        "if (isMainModuleInvocation(process.env.MISSING_SCRIPT, process.env.MODULE_SCRIPT)) process.exitCode = 2;"
+      ].join("\n");
+      const helperCheck = spawnSync("node", ["--input-type=module", "--eval", helper], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          INVOKED_SCRIPT: linkedScript,
+          MODULE_SCRIPT: `${OPS_ROOT}/render-nginx-config.mjs`,
+          MISSING_SCRIPT: join(tempDirectory, "missing.mjs")
+        }
+      });
+      expect(helperCheck.status).toBe(0);
+      expect(helperCheck.stdout).toBe("");
+      expect(helperCheck.stderr).toBe("");
+
+      const disallowedOutputPath = join(tempDirectory, "giwa-staging.conf");
+      const linkedInvocation = spawnSync("node", [linkedScript, disallowedOutputPath], {
+        encoding: "utf8",
+        env: { ...process.env, GIWA_STAGE_HOST: "stage.example.com" }
+      });
+      expect(linkedInvocation.status).toBe(1);
+      expect(linkedInvocation.stdout).toBe("");
+      expect(linkedInvocation.stderr).toBe("nginx renderer failed\n");
+      expect(() => readFileSync(disallowedOutputPath, "utf8")).toThrow();
+    } finally {
+      rmSync(tempDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it("publishes complete output without replacing a competing target", () => {
+    const renderer = readOps("render-nginx-config.mjs");
+    expect(renderer).toContain("export function publishNoReplace");
+    expect(renderer).toContain("linkSync(tempPath, outputPath)");
+    expect(renderer).not.toContain("unlinkSync(outputPath)");
+
+    const tempDirectory = mkdtempSync(join(tmpdir(), "giwa-render-publish-"));
+    try {
+      const firstTemp = join(tempDirectory, "first.tmp");
+      const secondTemp = join(tempDirectory, "second.tmp");
+      const outputPath = join(tempDirectory, "giwa-staging.conf");
+      const check = [
+        'import { readFileSync, writeFileSync } from "node:fs";',
+        `import { publishNoReplace } from "${OPS_ROOT}/render-nginx-config.mjs";`,
+        'writeFileSync(process.env.FIRST_TEMP, "first-complete", "utf8");',
+        'writeFileSync(process.env.SECOND_TEMP, "second-complete", "utf8");',
+        "publishNoReplace(process.env.FIRST_TEMP, process.env.OUTPUT_PATH);",
+        "let rejected = false;",
+        "try { publishNoReplace(process.env.SECOND_TEMP, process.env.OUTPUT_PATH); } catch { rejected = true; }",
+        'if (!rejected || readFileSync(process.env.OUTPUT_PATH, "utf8") !== "first-complete") process.exitCode = 1;',
+        'if (readFileSync(process.env.SECOND_TEMP, "utf8") !== "second-complete") process.exitCode = 2;'
+      ].join("\n");
+      const published = spawnSync("node", ["--input-type=module", "--eval", check], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          FIRST_TEMP: firstTemp,
+          SECOND_TEMP: secondTemp,
+          OUTPUT_PATH: outputPath
+        }
+      });
+      expect(published.status).toBe(0);
+      expect(published.stdout).toBe("");
+      expect(published.stderr).toBe("");
+    } finally {
+      rmSync(tempDirectory, { recursive: true, force: true });
     }
   });
 });
