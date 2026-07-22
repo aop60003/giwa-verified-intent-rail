@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-06-26T06:12:24.288Z",
+  "generatedAt": "2026-07-22T23:08:04.331Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -24,8 +24,8 @@
         "path": "apps/web/package.json",
         "role": "package-metadata",
         "required": true,
-        "sha256": "beb812fb8e96ac3b74351500cf37256d7d8084bdd947152d46e51589ea995c70",
-        "bytes": 1300,
+        "sha256": "a9f438f1574fd92a8e9aee1d78b312b6cc4245ad43351e9f1f285e0afdce5338",
+        "bytes": 1355,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -186,8 +186,8 @@
         "path": "apps/web/public/styles.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "97f8cc7a41977c5afb09ee8f610075dda1b8704131a8abe22ed977478375a467",
-        "bytes": 9474,
+        "sha256": "8cc0863ebd83f8a2ef4004f05897f4430ce363483e0dd0e847bf2defd1c23eef",
+        "bytes": 10851,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -196,8 +196,8 @@
         "path": "apps/web/public/user-flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "baeaa76b82da156bf5c7a1ddef2bf8bd06183388d272c2d1346ecf60ff23bc5c",
-        "bytes": 29569,
+        "sha256": "c5b3648a723aa10b97792ede576269fc5cefdaebe371382249c0a801b256d86c",
+        "bytes": 68634,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -206,8 +206,8 @@
         "path": "apps/web/public/user.html",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "fa0c9a5ce22f718eedcdc250757b8870d39eaebebbe1d9cb461fc89c1b1bd4cc",
-        "bytes": 555,
+        "sha256": "b81a15ef16dfbc5394120821b7806ee3e4205e48c938d86622cd0459bde56950",
+        "bytes": 583,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -320,6 +320,36 @@
         "required": true,
         "sha256": "cef54b9ae1f41ba6037c6822a7383bda4d734b71ef95b26fe8fd92bec617d594",
         "bytes": 7142,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "3ca2de84f79e7f5359e6a667ab233e0ebf532b0ef4090c3c7457640a9afba368",
+        "bytes": 2604,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/lightsail-staging-plan-sprint51.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "c133a4a61c7b1b95a67a08a234516d33327ae81700417e058e74854f9ac82fdf",
+        "bytes": 2115,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/lightsail-staging-preflight-sprint52.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "1b327cfacb992fd5db9d1720fa109ccc11c4a17c7475e93c1f4f16dc8d5bb408",
+        "bytes": 5747,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -490,8 +520,8 @@
         "path": "docs/implementation/giwa-commercial-readiness-gate.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "4d92d363ac2148700ec71562f8b34865b5d26b5ad91c31658c5d66c7a75a9f9f",
-        "bytes": 24954,
+        "sha256": "36a7e04020c0fcd7b2dea4f3170b50309d96d34197e76e0e40b31cc04fb5399b",
+        "bytes": 29803,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -522,6 +552,36 @@
         "required": true,
         "sha256": "2b36ded7be17d79b879e56f6ec910185537c57e8eb4842d54f477ec5aff1e0e7",
         "bytes": 5109,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-gasok-demo-script.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "67430e78ef141e849cd79c11f7cc491e9aa2be072bfdc44ae9f10f74f88478fd",
+        "bytes": 7148,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-gasok-staging-runbook.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "774beadf56007d5c41b164b271c4e75fcb42348dc940499fb7bb25815197eae9",
+        "bytes": 20178,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-gasok-submission-checklist.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "5bc4ccf1839343499fd9dc737674d975c923aaa1aa3e738561276a6a93018b04",
+        "bytes": 7174,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -622,6 +682,96 @@
         "required": true,
         "sha256": "885f36d343a5520e723a55032dd3b43ac0b343f9fd810a0ba3d5c80d7189184c",
         "bytes": 4370,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-backup-restore-preflight.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "09d17e47897ad0235ce7a93838c75ec5487dcb46fa55a6229b2af84d0f991a54",
+        "bytes": 3276,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-cost-and-sizing.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "9d8e17242c186365417e9349c425e5ce6e46ff106b2e8133ab428af97527b8ad",
+        "bytes": 6133,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-deploy-runbook-draft.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "55ce836bb1b07d96a8a5e1440e889178ad7fdb6c24419c2f905948a542e65190",
+        "bytes": 8958,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-env-and-secret-injection-preflight.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "802474135415f1710911ecda0d38b24576b932473ba15c7b9b77ffbfc56b2809",
+        "bytes": 3363,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-staging-architecture.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "a19cb98e32bd9bba5727014e1600de677a7222bba5631b5ca3de86b6f996de41",
+        "bytes": 7779,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "0f30f396f9d3d522fb361603310fdbc68645cf093a7740e2abaa8d8299f4aab0",
+        "bytes": 11287,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-staging-preflight-checklist.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "ba3a11b72e26812a8357c4e50f4f2832e4a146e3cb0b2d4a78926104247d108f",
+        "bytes": 5115,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "d6bb8f415a6c8d9a9772041c7dff50ce2997a18635c1d4b323e39bb56f0e10b0",
+        "bytes": 9166,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-lightsail-systemd-and-nginx-draft.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "08ceaab97b194baebd5b441ce54ac58d7fee83b55bdeade316fceee0a88c609d",
+        "bytes": 4605,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -860,8 +1010,8 @@
         "path": "docs/implementation/giwa-staging-blocker-register.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "3fae9b0626f2298f7aa653c6c1057beb9a06c06f6a0ea580a9fb87a437d9dea4",
-        "bytes": 52502,
+        "sha256": "1fd135409a624c87ef1f77d69b380efd77c4cd7ea39ac15210f85a022403bf37",
+        "bytes": 60057,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1043,6 +1193,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "f29140637200356cc315afd2a050c377d022c40185a8be8d2879c7c53283c355",
+  "buildTreeSha256": "52c7ea38d4ab70d4eef6b27c9699f2d9e511c6c2f35d01887ace719bbbe7440f",
   "unmanifestedFilePolicy": "fail"
 }
