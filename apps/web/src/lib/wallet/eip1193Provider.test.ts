@@ -108,4 +108,81 @@ describe("EIP-1193 wallet adapter", () => {
       })
     ).rejects.toThrow("provider transaction hash must be bytes32 hex");
   });
+
+  it("reads the latest native balance as a bigint", async () => {
+    const provider = new MockProvider({ eth_getBalance: "0xde0b6b3a7640000" });
+    const wallet = createEip1193WalletAdapter(provider);
+
+    await expect(wallet.getBalance("0x1111111111111111111111111111111111111111")).resolves.toBe(
+      1_000_000_000_000_000_000n
+    );
+    expect(provider.requests[0]).toEqual({
+      method: "eth_getBalance",
+      params: ["0x1111111111111111111111111111111111111111", "latest"]
+    });
+  });
+
+  it("reads an ERC-20 call result as a bigint", async () => {
+    const provider = new MockProvider({
+      eth_call: `0x${BigInt(10).toString(16).padStart(64, "0")}`
+    });
+    const wallet = createEip1193WalletAdapter(provider);
+    const call = {
+      to: "0x2222222222222222222222222222222222222222" as const,
+      data: "0x70a082310000000000000000000000001111111111111111111111111111111111111111" as const
+    };
+
+    await expect(wallet.call(call)).resolves.toBe(10n);
+    expect(provider.requests[0]).toEqual({ method: "eth_call", params: [call, "latest"] });
+  });
+
+  it("distinguishes pending, successful, and reverted transaction receipts", async () => {
+    const transactionHash = `0x${"a".repeat(64)}` as const;
+
+    const pendingProvider = new MockProvider({ eth_getTransactionReceipt: null });
+    await expect(createEip1193WalletAdapter(pendingProvider).getTransactionReceipt(transactionHash)).resolves.toEqual({
+      status: "pending"
+    });
+    expect(pendingProvider.requests[0]).toEqual({
+      method: "eth_getTransactionReceipt",
+      params: [transactionHash]
+    });
+
+    const successReceipt = { transactionHash, status: "0x1", blockNumber: "0x2" };
+    await expect(
+      createEip1193WalletAdapter(new MockProvider({ eth_getTransactionReceipt: successReceipt })).getTransactionReceipt(
+        transactionHash
+      )
+    ).resolves.toEqual({ status: "success", receipt: successReceipt });
+
+    const revertedReceipt = { transactionHash, status: "0x0", blockNumber: "0x2" };
+    await expect(
+      createEip1193WalletAdapter(new MockProvider({ eth_getTransactionReceipt: revertedReceipt })).getTransactionReceipt(
+        transactionHash
+      )
+    ).resolves.toEqual({ status: "reverted", receipt: revertedReceipt });
+  });
+
+  it("rejects malformed read-call data and receipt statuses with bounded errors", async () => {
+    const account = "0x1111111111111111111111111111111111111111";
+    await expect(createEip1193WalletAdapter(new MockProvider({ eth_getBalance: "one" })).getBalance(account)).rejects.toThrow(
+      "provider balance must be 0x-prefixed hex"
+    );
+
+    await expect(
+      createEip1193WalletAdapter(new MockProvider({ eth_call: "0xnot-hex" })).call({
+        to: "0x2222222222222222222222222222222222222222",
+        data: "0x70a08231"
+      })
+    ).rejects.toThrow("provider call result must be 0x-prefixed hex");
+
+    const transactionHash = `0x${"a".repeat(64)}` as const;
+    for (const malformedReceipt of ["not-an-object", {}, { status: "0x2" }]) {
+      await expect(
+        createEip1193WalletAdapter(
+          new MockProvider({ eth_getTransactionReceipt: malformedReceipt })
+        ).getTransactionReceipt(transactionHash)
+      ).rejects.toThrow("provider receipt status must be 0x1 or 0x0");
+    }
+  });
 });
