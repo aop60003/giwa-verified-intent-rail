@@ -76,7 +76,7 @@ describe("public artifact scanner", () => {
     }
   });
 
-  it("allows a standard URL parser check that rejects credentialed URLs", () => {
+  it("keeps blocking credential property markers inside URL parser checks", () => {
     const result = scanPublicArtifactText({
       path: "apps/web/public/user-flow.js",
       content: [
@@ -85,8 +85,12 @@ describe("public artifact scanner", () => {
       ].join("\n")
     });
 
-    expect(result.decision).toBe("pass");
-    expect(result.findings).toEqual([]);
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({
+      ruleId: "credential-like-key",
+      matchClass: "credential-key-name",
+      decision: "blocked"
+    });
   });
 
   it("keeps blocking JavaScript credential variables, assignments, and markers", () => {
@@ -117,6 +121,54 @@ describe("public artifact scanner", () => {
 
     expect(result.decision).toBe("pass");
     expect(result.findings).toEqual([]);
+  });
+
+  it("blocks malformed server-only name contracts even when their entries are not sensitive", () => {
+    const unsafeCases = [
+      { path: "docs/evidence/preflight.json", value: { serverOnlyNames: ["HOST"] } },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { valuesIncluded: false, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: false, valuesIncluded: false, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: true, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames: ["host"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames: [] }
+      },
+      {
+        path: "apps/web/public/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames: ["HOST"] }
+      }
+    ];
+
+    for (const unsafeCase of unsafeCases) {
+      const result = scanPublicArtifactText({
+        path: unsafeCase.path,
+        content: JSON.stringify(unsafeCase.value)
+      });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({
+        ruleId: "credential-like-key",
+        matchClass: "credential-key-name",
+        decision: "blocked"
+      });
+    }
   });
 
   it("blocks evidence variable-name exceptions outside their exact safe context", () => {
@@ -163,7 +215,6 @@ describe("public artifact scanner", () => {
       expect(result.decision).toBe("blocked");
       expect(result.findings[0]).toMatchObject({
         ruleId: "credential-like-key",
-        matchClass: "credential-marker",
         decision: "blocked"
       });
     }

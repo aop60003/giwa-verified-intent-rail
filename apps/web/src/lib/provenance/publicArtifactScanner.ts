@@ -71,16 +71,6 @@ function isAllowedNegativeEvidenceFlag(path: string, key: string): boolean {
   return isPublicEvidencePath && (/^no[A-Z]/.test(key) || key.endsWith("NeverRequested"));
 }
 
-function scanJsonKeys(path: string, value: unknown): boolean {
-  if (Array.isArray(value)) return value.some((item) => scanJsonKeys(path, item));
-  if (value !== null && typeof value === "object") {
-    return Object.entries(value).some(
-      ([key, child]) => (BLOCKED_KEY_PATTERN.test(key) && !isAllowedNegativeEvidenceFlag(path, key)) || scanJsonKeys(path, child)
-    );
-  }
-  return false;
-}
-
 function isAllowedVariableNameEvidenceContract(path: string, value: Record<string, unknown>): boolean {
   const names = value.serverOnlyNames;
   return (
@@ -92,6 +82,23 @@ function isAllowedVariableNameEvidenceContract(path: string, value: Record<strin
     names.length > 0 &&
     names.every((name) => typeof name === "string" && /^[A-Z][A-Z0-9_]*$/u.test(name))
   );
+}
+
+function scanJsonKeys(path: string, value: unknown): boolean {
+  if (Array.isArray(value)) return value.some((item) => scanJsonKeys(path, item));
+  if (value !== null && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if (
+      Object.prototype.hasOwnProperty.call(record, "serverOnlyNames") &&
+      !isAllowedVariableNameEvidenceContract(path, record)
+    ) {
+      return true;
+    }
+    return Object.entries(record).some(
+      ([key, child]) => (BLOCKED_KEY_PATTERN.test(key) && !isAllowedNegativeEvidenceFlag(path, key)) || scanJsonKeys(path, child)
+    );
+  }
+  return false;
 }
 
 function scanJsonStringValues(path: string, value: unknown): boolean {
@@ -106,22 +113,6 @@ function scanJsonStringValues(path: string, value: unknown): boolean {
     });
   }
   return false;
-}
-
-function withoutEmptyUrlPasswordChecks(content: string): string {
-  const urlVariables = new Set<string>();
-  for (const match of content.matchAll(/\b(?:const|let)\s+([A-Za-z_]\w*)\s*=\s*new\s+URL\s*\(/gu)) {
-    const variable = match[1];
-    if (variable !== undefined) urlVariables.add(variable);
-  }
-  let result = content;
-  for (const variable of urlVariables) {
-    result = result.replace(
-      new RegExp(`\\b${variable}\\.password\\s*===\\s*(?:""|'')`, "gu"),
-      ""
-    );
-  }
-  return result;
 }
 
 export function scanPublicArtifactText(input: { path: string; content: string }): PublicArtifactScanResult {
@@ -184,13 +175,12 @@ export function scanPublicArtifactText(input: { path: string; content: string })
       });
     }
   } catch {
-    const credentialScanContent = withoutEmptyUrlPasswordChecks(input.content);
-    if (BLOCKED_KEY_PATTERN.test(credentialScanContent)) {
+    if (BLOCKED_KEY_PATTERN.test(input.content)) {
       findings.push({
         ruleId: "credential-like-key",
         severity: "block",
         path,
-        line: lineOf(credentialScanContent, BLOCKED_KEY_PATTERN),
+        line: lineOf(input.content, BLOCKED_KEY_PATTERN),
         matchClass: "credential-key-name",
         decision: "blocked",
         valuePrinted: false

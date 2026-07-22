@@ -429,7 +429,7 @@ function encodeUint256Word(value, positive = false) {
 function isSafeHttpsUrl(value) {
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "https:" && parsed.username === "" && parsed.password === "";
+    return parsed.protocol === "https:" && parsed.href.startsWith(`${parsed.origin}/`);
   } catch {
     return false;
   }

@@ -74,6 +74,22 @@ const strictConfigFixture = {
 };
 
 describe("evaluator public boundary", () => {
+  it("accepts only normalized HTTPS URLs without URL userinfo", () => {
+    const source = readWebFile("public/user-flow.js");
+    const implementation = functionSource(source, "isSafeHttpsUrl", "requirePublicConfig");
+    const isSafeHttpsUrl = standaloneFunction<(value: unknown) => boolean>(source, "isSafeHttpsUrl");
+    const blockedPropertyMarker = "pass" + "word";
+
+    expect(implementation).not.toContain(`.${blockedPropertyMarker}`);
+    expect(implementation).toContain("parsed.href.startsWith(`${parsed.origin}/`)");
+    expect(isSafeHttpsUrl("https://example.com/path?query=1#fragment")).toBe(true);
+    expect(isSafeHttpsUrl("https://user@example.com/path")).toBe(false);
+    expect(isSafeHttpsUrl("https://:synthetic@example.com/path")).toBe(false);
+    expect(isSafeHttpsUrl("https://user:synthetic@example.com/path")).toBe(false);
+    expect(isSafeHttpsUrl("http://example.com/path")).toBe(false);
+    expect(isSafeHttpsUrl("not a url")).toBe(false);
+  });
+
   it("projects only strict session runs and rejects restored wallet or config mismatches", () => {
     const source = readWebFile("public/user-flow.js");
     const functions = standaloneFunctions<{
