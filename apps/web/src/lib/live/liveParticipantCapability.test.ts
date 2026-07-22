@@ -21,8 +21,11 @@ describe("live participant run capability", () => {
 
   it("accepts only the matching bounded capability value", () => {
     const issued = issueLiveRunCapability(() => Buffer.alloc(32, 9));
+    const different = issueLiveRunCapability(() => Buffer.alloc(32, 10));
 
     expect(verifyLiveRunCapability(issued.value, issued.hash)).toBe(true);
+    expect(verifyLiveRunCapability(different.value, issued.hash)).toBe(false);
+    expect(verifyLiveRunCapability(issued.value, different.hash)).toBe(false);
     expect(verifyLiveRunCapability("bad", issued.hash)).toBe(false);
     expect(verifyLiveRunCapability(issued.value, "bad")).toBe(false);
   });
