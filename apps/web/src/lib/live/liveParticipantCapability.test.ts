@@ -10,9 +10,14 @@ declare const Buffer: {
 };
 
 describe("live participant run capability", () => {
-  it("issues a random browser value and stores only its sha256 hash", () => {
-    const issued = issueLiveRunCapability(() => Buffer.alloc(32, 7));
+  it("issues a 32-byte random browser value and stores only its sha256 hash", () => {
+    let requestedSize: number | undefined;
+    const issued = issueLiveRunCapability((size) => {
+      requestedSize = size;
+      return Buffer.alloc(size, 7);
+    });
 
+    expect(requestedSize).toBe(32);
     expect(issued.value).toMatch(/^[A-Za-z0-9_-]{43}$/u);
     expect(issued.hash).toMatch(/^[a-f0-9]{64}$/u);
     expect(issued.hash).toBe(hashLiveRunCapability(issued.value));
@@ -20,8 +25,8 @@ describe("live participant run capability", () => {
   });
 
   it("accepts only the matching bounded capability value", () => {
-    const issued = issueLiveRunCapability(() => Buffer.alloc(32, 9));
-    const different = issueLiveRunCapability(() => Buffer.alloc(32, 10));
+    const issued = issueLiveRunCapability((size) => Buffer.alloc(size, 9));
+    const different = issueLiveRunCapability((size) => Buffer.alloc(size, 10));
 
     expect(verifyLiveRunCapability(issued.value, issued.hash)).toBe(true);
     expect(verifyLiveRunCapability(different.value, issued.hash)).toBe(false);
