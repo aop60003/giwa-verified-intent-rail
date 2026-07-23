@@ -22,6 +22,104 @@ function shortHash(value) {
   return `${value.slice(0, 10)}...${value.slice(-6)}`;
 }
 
+function receiptHashFromPathname(pathname) {
+  const prefix = "/receipt/";
+  if (typeof pathname !== "string" || !pathname.startsWith(prefix)) return null;
+  try {
+    const segment = decodeURIComponent(pathname.slice(prefix.length));
+    return /^0x[a-fA-F0-9]{64}$/u.test(segment) ? segment.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
+function projectLiveReceiptModel(body, expectedHash) {
+  const hash = (value) => typeof value === "string" && /^0x[a-fA-F0-9]{64}$/u.test(value);
+  const address = (value) => typeof value === "string" && /^0x[a-fA-F0-9]{40}$/u.test(value);
+  const amount = (value) => typeof value === "string" && /^(?:0|[1-9][0-9]{0,77})$/u.test(value);
+  const safeInteger = (value) => Number.isSafeInteger(value) && value >= 0;
+  const safetyNotice = "Testnet-only. No real asset, no yield, no RWA claim.";
+  if (
+    body === null ||
+    typeof body !== "object" ||
+    Array.isArray(body) ||
+    !hash(expectedHash) ||
+    body.source !== "live" ||
+    !hash(body.receiptHash) ||
+    body.receiptHash.toLowerCase() !== expectedHash.toLowerCase() ||
+    !hash(body.intentHash) ||
+    !hash(body.verifierInputHash) ||
+    body.standardRpcReceiptStatus !== 1 ||
+    !safeInteger(body.depositBlockNumber) ||
+    !hash(body.depositBlockHash) ||
+    !safeInteger(body.confirmationDepth) ||
+    body.testnetNotice !== safetyNotice
+  ) {
+    return null;
+  }
+  const payload = body.payload;
+  if (
+    payload === null ||
+    typeof payload !== "object" ||
+    Array.isArray(payload) ||
+    payload.status !== "matched" ||
+    payload.chainId !== 91342 ||
+    payload.networkName !== "GIWA Sepolia" ||
+    payload.actionType !== "mockVaultDeposit" ||
+    !hash(payload.intentHash) ||
+    payload.intentHash.toLowerCase() !== body.intentHash.toLowerCase() ||
+    !address(payload.wallet) ||
+    !address(payload.target) ||
+    !address(payload.asset) ||
+    !address(payload.spender) ||
+    !amount(payload.amountBaseUnits) ||
+    !hash(payload.depositTxHash) ||
+    payload.depositBlockNumber !== body.depositBlockNumber ||
+    payload.depositBlockHash !== body.depositBlockHash ||
+    payload.safetyNotice !== safetyNotice
+  ) {
+    return null;
+  }
+  const receiptHash = body.receiptHash.toLowerCase();
+  const depositTxHash = payload.depositTxHash.toLowerCase();
+  return {
+    manifest: {
+      target: payload.target.toLowerCase(),
+      selector: "0x47e7ef24",
+      asset: payload.asset.toLowerCase(),
+      amountBaseUnits: payload.amountBaseUnits,
+      spender: payload.spender.toLowerCase(),
+      intentHash: body.intentHash.toLowerCase()
+    },
+    receipt: {
+      ready: true,
+      routeEnabled: true,
+      receiptHash,
+      decisionTxHash: null,
+      depositTxHash,
+      decisionExplorerUrl: null,
+      depositExplorerUrl: `https://sepolia-explorer.giwa.io/tx/${depositTxHash}`,
+      blockNumber: body.depositBlockNumber,
+      blockHash: body.depositBlockHash.toLowerCase(),
+      confirmationDepth: body.confirmationDepth,
+      verifierInputHash: body.verifierInputHash.toLowerCase(),
+      displayStatus: "Manifest matched",
+      safetyNotice
+    },
+    partnerConsole: { evidenceCards: { decodedLogSummary: [] } }
+  };
+}
+
+async function fetchLiveReceiptModel(routeHash, fetchImpl = fetch) {
+  try {
+    const response = await fetchImpl(`/api/receipts/${routeHash}`, { cache: "no-store" });
+    if (!response.ok) return null;
+    return projectLiveReceiptModel(await response.json(), routeHash);
+  } catch {
+    return null;
+  }
+}
+
 function field(label, value, href) {
   return el("div", { className: "field" }, [
     el("span", { className: "field-label", text: label }),
@@ -299,7 +397,9 @@ function renderReceiptRoute(model, routeAllowed, routeHash) {
         field("Decision tx", receipt.decisionTxHash, receipt.decisionExplorerUrl),
         field("Deposit tx", receipt.depositTxHash, receipt.depositExplorerUrl),
         field("Deposit block", receipt.blockNumber),
-        field("Deposit block hash", receipt.blockHash)
+        field("Deposit block hash", receipt.blockHash),
+        receipt.confirmationDepth === undefined ? el("span") : field("Confirmation depth", receipt.confirmationDepth),
+        receipt.verifierInputHash === undefined ? el("span") : field("Verifier input hash", receipt.verifierInputHash)
       ])
     ]),
     el("section", { className: "band" }, [
@@ -438,6 +538,16 @@ function render(model) {
 }
 
 async function main() {
+  const receiptRoute = location.pathname.startsWith("/receipt/");
+  const routeHash = receiptHashFromPathname(location.pathname);
+  if (receiptRoute && routeHash !== null) {
+    const liveModel = await fetchLiveReceiptModel(routeHash);
+    if (liveModel !== null) {
+      renderReceiptRoute(liveModel, true, routeHash);
+      return;
+    }
+  }
+
   try {
     const response = await fetch("/flow-data.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`flow-data ${response.status}`);
