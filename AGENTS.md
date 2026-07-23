@@ -1,245 +1,223 @@
 # AGENTS.md
 
-<!-- agent-template v0.2.0 · https://github.com/aop60003/agent -->
-
-This file defines how AI coding agents (Claude Code, Codex, Cursor, Copilot, etc.) should operate in this repository.
-It is a **project-wide guide** for the Looprail documentation workspace.
-
-> If repository code, tests, configs, or maintainer instructions conflict with this file, follow the **more specific source of truth**.
-
----
-
-## 1. Project Overview
-
-Documentation workspace for the GASOK MVP concept currently positioned as `GIWA Verified Intent Rail`.
-
----
-
-## 2. Tech Stack
-
-Documentation-only at the moment. PowerShell helper scripts are used for local Engram memory.
-
----
-
-## 3. Project Structure
-
-- `README.md` - repository entry point and current canonical document map
-- `03_giwa_verified_intent_rail_positioning.md` - canonical product positioning and MVP scope
-- `04_giwa_agent_permission_sandbox.md` - alternative GASOK idea candidate
-- `05_giwa_flashtrace_replay_studio.md` - alternative GASOK idea candidate
-- `06_giwa_builder_proofbook.md` - alternative GASOK idea candidate
-- `scripts/engram-local.ps1` - project-local Engram wrapper
-
----
-
-## 4. Non-Negotiable Constraints
-
-- Public-facing product name is `GIWA Verified Intent Rail`.
-- Treat `Loop Rail` and `GIWA Verified Activation Rail` as legacy/internal names unless explicitly discussing history.
-- Do not claim real RWA issuance, real yield, real funds, settlement, KYC service, phishing prevention, or security guarantees.
-- Do not describe Flashblocks preconfirmation as finality or settlement.
-- Keep MVP scope testnet-only unless the user explicitly changes direction.
-
----
-
-## 5. Commands
-
-### 5.1 Setup / Build
-No setup/build command exists yet. This repository is currently documentation-only.
-
-### 5.2 Testing
-No automated test suite exists yet. For documentation verification, run targeted scans such as:
-
-```powershell
-rg -n "TODO|FIXME|TBD" . -g "*.md"
-rg -n "instant finality|200ms confirmed|guarantee safety|perform KYC|real RWA|real yield" . -g "*.md"
-```
-
----
-
-## 6. Code Style
-
-- Follow surrounding code style — do not introduce new patterns
-- Pattern reference file: `03_giwa_verified_intent_rail_positioning.md`
-- Alternative idea reference files: `04_giwa_agent_permission_sandbox.md`, `05_giwa_flashtrace_replay_studio.md`, `06_giwa_builder_proofbook.md`
-
----
-
-## 7. Safety Boundaries (3-Tier)
-
-### ALWAYS (auto-execute)
-- Read files, search code (grep, glob)
-- Run type checks, linting, tests
-- Check surrounding code context
-
-### ASK FIRST (require user confirmation)
-- Install packages / add dependencies
-- Create/run DB migrations
-- Delete files/directories
-- Git push, branch merge
-- Run full builds (time-consuming)
-
-### NEVER (forbidden)
-- Commit .env, credentials, secrets
-- Use `--force` (without `--force-with-lease`), `--no-verify`, or `--no-gpg-sign` without explicit approval
-- Run `rm -rf`, `git reset --hard`, or other destructive commands
-- Modify production DB directly
-- Delete or skip tests without approval (legitimate removal when a feature is genuinely gone — flag the intent, don't silently remove)
-
----
-
-## 8. Working Rules
-
-### 8.1 Implementation
-- ALWAYS read the target file completely before editing
-- NEVER leave TODO, FIXME, stub, or placeholder code
-- NEVER use generic catch-all error handling (`catch { return null }`)
-- NEVER fabricate API versions, config values, or package names
-- NEVER rewrite entire files without cause — prefer surgical edits; if a full rewrite is genuinely simpler, state why
-- NEVER repeat a failed approach — investigate root cause first
-- NEVER self-evaluate as "done" — run tests and show output
-
-### 8.2 Robustness
-- ALWAYS handle failure cases — assume external services WILL fail
-- ALWAYS set timeouts on network/API calls unless the pattern is intentionally unbounded (e.g. streaming, long-poll)
-- ALWAYS clean up resources in finally blocks
-- ALWAYS validate inputs at system boundaries
-- NEVER suppress errors silently — log with context
-- NEVER hardcode config values — use env vars or config files
-
-### 8.3 Edit Safety
-- Re-read files before editing if significant time or many edits have passed
-- When renaming: grep all references, then bulk-rename
-- Before deleting files: verify no import/require references
-- For 5+ independent files: batch via parallel tool calls or subagents (if the agent supports them)
-
----
-
-## 9. Verification Standard (Evidence Required)
-
-A task is not complete just because code was written. Show evidence.
-
-### 9.1 Design — Consistent with existing architecture? No unnecessary complexity?
-### 9.2 Implementation — Build / lint / typecheck pass? Tests pass? No leftover TODO/FIXME?
-### 9.3 Integration — No regressions? Adjacent workflows still work?
-### 9.4 Evidence — Show test/build/lint output. If verification cannot be run, explain why explicitly.
-### 9.5 On Failure — If verification fails, do NOT mark the task done. Report what failed, what was tried, and whether a root cause is known, then request direction.
-
----
-
-## 10. Architecture Notes (Why, not What)
-
-- `03_giwa_verified_intent_rail_positioning.md` is the canonical external pitch source.
-- The MVP should be framed as one GIWA Sepolia flagship flow, not a dashboard-first or multi-template product.
-- ProofKPI is evidence/reporting for manifest-covered testnet actions, not a security, KYC, or RWA settlement layer.
-
----
-
-## 11. Git & Contribution Conventions
-
-Defaults (override any that do not match your team):
-- Branches: `feat/*`, `fix/*`, `chore/*`, `docs/*`
-- Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`)
-- PRs: at least 1 review, CI pass, linear history preferred
-
----
-
-## 12. Tooling
-
-### 12.1 Engram Memory
-
-Project-local rule for this folder: do not use bare `engram` commands here. Use `.\scripts\engram-local.ps1 ...` or `engram-advanced --db .\.engram\memory.db ...` so memory is stored only in `.\.engram\memory.db`.
-
-If `engram` is available (Unix: `command -v engram`; Windows: `Get-Command engram`), use it as a quiet cross-session memory loop. Check availability once per session or substantial task, remember that result, and skip quietly if unavailable; never make the task fail just because memory is missing. Use `engram-advanced` for `--db <path>`, `--json`, context transfer, and operations review when available.
-
-- **Recall first** when the task depends on prior session context, user/project history, previous decisions, deployment history, or phrases like "last time", "previous decision", or "what did we decide?"
-  - Simple recall: `.\scripts\engram-local.ps1 find "<query>"`
-  - Entity recall: `.\scripts\engram-local.ps1 who "<name>"`
-  - Goal-aware recall: `.\scripts\engram-local.ps1 context-search "<query>" --goal task_handoff`
-- **Save durable facts** after architectural/product/process decisions, completed investigations with reusable conclusions, release/deploy outcomes, unusual repo conventions, stable user preferences, important names/roles, and confirmed root causes that should survive this session.
-  - Free text: `.\scripts\engram-local.ps1 save "<durable fact or decision>"`
-  - Entity fact: `.\scripts\engram-local.ps1 remember "<entity>" "<fact>"`
-- **Before saving**, ask: "Will this still matter to a future agent in a month?" If not, keep it in the active thread or plan instead.
-- **Transfer work intentionally** when handing work to another agent or resuming a substantial session:
-  - `.\scripts\engram-local.ps1 context-transfer <source-session-id> <target-agent-id>`
-- **Review memory health only when useful** during long-running work, before major handoff/release, or when Engram behavior seems unreliable:
-  - `.\scripts\engram-local.ps1 status`
-  - `.\scripts\engram-local.ps1 operations-review`
-
-Do not store noisy or temporary data:
-
-- current task checklist items that already live in the active plan
-- raw command output, logs, stack traces, or secrets
-- speculation that has not been verified
-- obvious facts already encoded in source code or docs
-
-When saving, write one searchable atomic fact using this shape:
-`<Prefix>: <stable subject/entity> <durable conclusion>; <reason/symptom/fix when useful>.`
-
-Use these exact prefixes only: `Decision:`, `Convention:`, `Root cause:`, `User preference:`, `Release note:`.
-
-Include likely future search terms such as repo name, file name, service name, feature name, error symptom, config key, command, or tool name. Avoid vague pronouns like "this", "that", or "it"; repeat the stable subject instead.
-
-If `engram-ctx` hooks or MCP tools are installed, prefer their normal automatic indexing for large tool outputs. Use manual `.\scripts\engram-local.ps1 save` only for the distilled conclusion, not the full output.
-
-### 12.2 Skills
-
-Skills are placed in two locations (Claude Code + Codex compatible):
-- `.agents/skills/<name>/SKILL.md` — canonical (edit here)
-- `.claude/skills/<name>/SKILL.md` — Claude Code copy
-
-Superpowers skills from [obra/superpowers](https://github.com/obra/superpowers) + custom skills (`review`, `sprint`, `deploy`).
-Browse `.agents/skills/` for the full list and descriptions.
-
-To add a skill: create `.agents/skills/<name>/SKILL.md` with `name` + `description` frontmatter, copy to `.claude/skills/`.
-Project-specific product guidance currently lives in the root markdown documents.
-
-### 12.3 Long-Running Tasks
-
-For large features, use checkpoints. If context exceeds 70%, save state to `.claude/workspace/progress.md` and `/clear`.
-
----
-
-## 13. Operational Notes
-
-### 13.1 Secrets
-- NEVER log, commit, or echo secret values. Reference via env vars or a secret manager only.
-- No secrets are required for the current documentation workspace. If app development starts, keep local secrets in a git-ignored `.env` and document required variable names without values.
-- If a secret is accidentally committed: rotate immediately, then scrub history (`git filter-repo`).
-
-### 13.2 Dependencies (gate detail for §7 ASK FIRST)
-Before proposing a new dependency, verify: (a) license is compatible, (b) last release within ~12 months OR widely used, (c) no lighter alternative in the current stack. State these in the request.
-
-### 13.3 Communication
-- Match the user's working language (e.g. Korean ↔ English).
-- Short, concrete answers; skip preamble. State uncertainty when present.
-
-### 13.4 Onboarding (first actions in this repo)
-1. Read `AGENTS.md` (this file), then `README.md`.
-2. Scan `03_giwa_verified_intent_rail_positioning.md`.
-3. Run the documentation verification scans in section 5.2.
-
----
-
-## 14. Additional Context
-
-Large docs should be split and referenced. Claude Code: `@path/to/file.md` (on-demand load). Other agents: standard markdown links — readers open as needed.
-
-- `@03_giwa_verified_intent_rail_positioning.md` - canonical external positioning
-- `@04_giwa_agent_permission_sandbox.md` - alternative AI/Web3 permission candidate
-- `@05_giwa_flashtrace_replay_studio.md` - alternative Flashblocks debugging candidate
-- `@06_giwa_builder_proofbook.md` - alternative builder evidence candidate
-
----
-
-## 15. Agent Behavior Summary
-
-These 5 principles apply always — return to them especially when stuck:
-
-1. **Read first** — read before editing
-2. **Change as little as necessary** — only change what's needed
-3. **Follow existing patterns** — match the codebase
-4. **Verify with evidence** — prove it works
-5. **State uncertainty honestly** — say when you don't know
-
-> The goal is not "working code" but **safe, reviewable, repository-consistent changes**.
+<!-- agent-template v0.3.0 · https://github.com/aop60003/agent -->
+
+Project-wide defaults for AI coding agents. Keep the Project Profile current
+and the stable policy concise.
+
+Priority is: platform instructions, the user's current request, the nearest
+scoped `AGENTS.md`, then parent guides. Code, tests, and configuration describe
+current behavior; this guide describes intended policy. Investigate meaningful
+conflicts instead of assuming either source automatically wins.
+
+## Project Profile
+
+Change only this bounded block during normal project initialization. Record
+confirmed facts, not guesses.
+
+<!-- BEGIN PROJECT PROFILE -->
+
+- **State:** ACTIVE
+- **Product:** `GIWA Verified Intent Rail`, a GASOK MVP that demonstrates one
+  testnet-only verified-intent flow on GIWA Sepolia.
+- **Stack:** Node.js, pnpm 10 workspace, TypeScript 6, Vitest, viem, Hardhat 3,
+  a dependency-light static/live web application, and local SQLite runtime data.
+- **Structure:**
+  - `apps/web/` - static evaluator UI, live adapter, runtime scripts, and public
+    demo artifacts.
+  - `packages/protocol/` - intent, receipt, policy, and evidence domain logic.
+  - `packages/contracts/` - Solidity/Hardhat contracts, deployment scripts, and
+    chain fixtures.
+  - `docs/` - current design/implementation routing, runbooks, and evidence.
+  - `ops/lightsail/` - versioned staging service, Nginx, backup, and smoke assets.
+  - `scripts/engram-local.ps1` - project-local Engram wrapper.
+- **Commands:**
+  - Setup: `pnpm install --frozen-lockfile`
+  - Develop static: `pnpm --filter @giwa/web dev`
+  - Develop live: `pnpm --filter @giwa/web dev:live`
+  - Focused check: `pnpm --filter @giwa/web test`
+  - Type check: `pnpm typecheck`
+  - Test: `pnpm test`
+  - Build: `pnpm build`
+- **Project constraints:**
+  - Use `GIWA Verified Intent Rail` publicly. Treat `Loop Rail` and
+    `GIWA Verified Activation Rail` as legacy/internal names.
+  - Keep the MVP on testnet unless the user explicitly changes direction.
+  - Do not claim real RWA issuance, real yield or funds, settlement, KYC service,
+    phishing prevention, or security guarantees.
+  - Do not describe Flashblocks preconfirmation as finality or settlement.
+  - Public deployment, DNS/HTTPS, managed infrastructure, and wallet or chain
+    transactions require explicit user direction and the current runbook gates.
+  - Never expose `.env` contents or copy local runtime data into public evidence.
+- **Pattern references:**
+  - `03_giwa_verified_intent_rail_positioning.md` for external positioning and
+    MVP scope.
+  - `docs/superpowers/specs/2026-07-22-gasok-selection-staging-submission-design.md`
+    for the approved current staging/submission design.
+  - `docs/superpowers/plans/2026-07-22-gasok-selection-staging-submission-implementation.md`
+    for the current implementation sequence.
+  - `docs/implementation/giwa-gasok-staging-runbook.md` for approved staging
+    operations.
+- **Sources of truth / generated paths:**
+  - `README.md` is the current repository map and stop-condition summary.
+  - `docs/evidence/giwa-sepolia-mvp-evidence.json` and
+    `apps/web/src/generated/deployment.json` generate
+    `apps/web/public/flow-data.json` and `apps/web/public/partner-snapshot.json`.
+  - `apps/web/scripts/export-artifact-manifest.mjs` owns the local manifest,
+    command-evidence, provenance report, and SHA-256 sidecar in `docs/evidence/`.
+  - `apps/web/.data/` and `docs/evidence/local/` are ignored local-only runtime
+    paths and are not release evidence.
+- **Architecture decisions:**
+  - Present one flagship mock-vault deposit flow rather than a dashboard-first
+    or multi-template product.
+  - ProofKPI reports evidence for manifest-covered testnet actions; it is not a
+    security, identity, KYC, RWA issuance, or settlement layer.
+  - Static evaluator routes remain available independently of the live adapter;
+    the GASOK staging topology intentionally uses one SQLite-backed live instance.
+- **Git conventions:** Use Conventional Commits. Stage, commit, branch, push, or
+  open/merge a PR only with explicit user direction; never commit secrets or
+  ignored runtime evidence.
+
+<!-- END PROJECT PROFILE -->
+
+### Profile lifecycle
+
+- `SEED` is a starting point. Begin the requested project directly; do not run
+  a separate onboarding audit merely to fill the profile.
+- Populate confirmed fields incrementally. Unknown fields may remain undefined
+  and must not block useful work.
+- Change the state to `ACTIVE` when a concrete project and runnable stack exist.
+  Thereafter, update durable commands, structure, constraints, sources of truth,
+  and architecture decisions when they change.
+- Do not rewrite the stable policy below to record project facts.
+
+## Work Modes
+
+### Fast path
+
+For small, clear, low-risk work: inspect relevant context, make the smallest
+coherent change, run the narrowest useful verification, and report concisely.
+
+- Do not create a spec, plan file, worktree, checkpoint, or subagent workflow
+  unless the user asks or the deliberate-path triggers below genuinely apply.
+- Do not scan the whole repository, read every large file in full, or run every
+  check when targeted context and verification are sufficient.
+- Stop when the requested outcome is met. Do not fix unrelated discoveries
+  unless they block the task.
+
+### Deliberate path
+
+Use a short plan for ambiguous, cross-cutting, or materially risky work, such as
+public API changes, auth/security boundaries, persistent data migrations, broad
+architecture changes, production impact, or irreversible operations.
+
+- Resolve choices that materially change the result; make safe local assumptions
+  for details that do not.
+- Use skills only when the user names them or their applicability is concrete.
+  Skill availability alone must not expand scope or manufacture artifacts.
+- Use parallel work only for genuinely independent tasks when it reduces elapsed
+  time without adding coordination risk. No file-count threshold applies.
+
+## Autonomy and Safety
+
+### Proceed autonomously for local work
+
+- Read, search, edit, create, rename, and remove files in scope. Check references
+  before renames/removals and preserve unrelated user changes.
+- Add, remove, or update dependencies and lockfiles when needed. Prefer the
+  existing stack and standard library; confirm the exact package/version exists
+  and summarize why a new runtime dependency was justified.
+- Run formatters, linters, type checks, tests, builds, development tools, and
+  diagnostics. A useful full build does not require approval.
+- Generate artifacts from their source and create migrations. Run a migration
+  only against an explicitly local, disposable environment when its effect is
+  understood and non-destructive.
+- Investigate failures and fix causes within scope instead of repeating failed
+  commands or immediately handing the problem back to the user.
+
+Ask before adding a dependency only when it creates a material licensing,
+security, billing, private-registry, or platform commitment.
+
+### Require explicit user direction
+
+- Stage or commit; create tags, branches, or worktrees; push; open/merge a PR;
+  publish a package; or deploy.
+- Change remote services, cloud resources, accounts, billing, production systems,
+  or shared databases.
+- Run destructive or hard-to-reverse operations, including destructive data
+  migrations and history rewrites.
+- Access, rotate, reveal, or handle secret values beyond the established secure
+  mechanism, or expand into a materially different product/architecture choice.
+
+Implementing code does not imply permission for Git publication, deployment, or
+other external side effects.
+
+### Hard boundaries
+
+- Never expose, log, or commit credentials, tokens, private keys, or `.env`
+  contents. Refer to secret names, not values.
+- Never use destructive Git commands, bypass hooks/tests, or force-push unless
+  the user directs the exact operation. Prefer `--force-with-lease` when an
+  approved force-push is necessary.
+- Never modify production data directly or treat a local dry run as authorization
+  for a remote change.
+
+## Implementation Quality
+
+- Follow established patterns and public contracts. Avoid unrelated refactors,
+  speculative abstractions, and compatibility layers without a real consumer.
+- Read enough of each target and its callers/tests to understand the change; an
+  entire large file is not mandatory when focused context is sufficient.
+- Do not fabricate APIs, package names, versions, config keys, or command output.
+  Verify unstable facts from authoritative sources when they matter.
+- Validate boundaries touched by the change. Add failure handling, cleanup,
+  retries, and timeouts where the actual risk requires them, not everywhere.
+- Do not suppress errors silently. Preserve useful context without logging
+  secrets or merging distinct failures into an ambiguous fallback.
+- Use configuration for environment-dependent values and secrets. Ordinary
+  stable constants may remain in code when that is clearest.
+- Do not leave accidental stubs in a completed path. Intentional follow-up
+  markers are allowed only when requested or when the limitation is explicit
+  and delivered behavior remains complete.
+- Edit sources of truth, not generated output. Regenerate committed projections
+  with their owning command and include coupled changes.
+
+## Verification
+
+Match verification to the changed surface and risk:
+
+| Change | Minimum useful evidence |
+|---|---|
+| Docs/comments | Relevant format/link check or direct inspection |
+| Localized behavior | Focused test plus relevant type/lint check |
+| Shared/public interface | Focused tests plus affected integration/contract checks |
+| Dependency/config/build | Manifest-lock consistency and affected build/startup check |
+| Data/auth/security/cross-system | Regression tests plus risk-appropriate integration checks |
+
+- Start focused and widen only when the blast radius justifies it.
+- Before completion, inspect the final diff and run fresh commands that prove the
+  relevant claims.
+- Fix failures caused by the change. Identify unrelated or pre-existing failures
+  separately; do not claim completion with a caused failure unresolved.
+- If a required check cannot run, state what was not verified and why. Report
+  command names and concise outcomes rather than dumping large logs.
+
+## Scoped Guidance and Tools
+
+- Add a nested `AGENTS.md` only when a subtree has materially different rules.
+  Keep it short and do not duplicate root policy.
+- Put long procedures and durable background in linked docs; route to them only
+  when relevant. Keep root plus nested guidance comfortably within context limits.
+- Project skills may live in `.agents/skills/`, with `.claude/skills/` as the
+  Claude Code copy. Keep intentional custom changes synchronized when both exist.
+- If Engram is available, use it quietly for prior-session context and durable
+  decisions, conventions, root causes, preferences, or release outcomes. Never
+  store secrets, raw logs, speculation, or active checklists. Its absence must
+  not block work.
+
+## Communication
+
+- Match the user's language, lead with outcomes, and avoid narrating every command.
+- State material assumptions and uncertainty.
+- In the final handoff, summarize changed files, verification evidence, and any
+  unresolved risk or required next action.
