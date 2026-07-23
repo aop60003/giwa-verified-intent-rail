@@ -1,0 +1,80 @@
+{
+  "authority": "local-advisory",
+  "publicOriginCategory": "local-loopback-https",
+  "sourceCommit": "5f8de723e5cd06fae707a7fa015a4506a16d4721",
+  "chainId": 91342,
+  "publicAddresses": {
+    "wallet": "0xf3a729973559082260e742ebedf705271ad29476",
+    "target": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6",
+    "asset": "0x06a26a1182bd40ec38b38ee987a0a16cf572222f",
+    "spender": "0x94c7a4deb22318ff798cbe8340d7cc3365c405f6"
+  },
+  "transactionHashes": {
+    "approve": "0x562fdf0ac15467787398ba57b0eb2cd1c85b7d1ef14fe0600eeb24984ac386d6",
+    "deposit": "0xab6867336309e2b0fd64b261409d0c6050549587d31eabb59bc121f4970c9a68"
+  },
+  "receiptHash": "0xd71e0022e8d8911b4a870eaa6ecc3f4f63df0f91764759790b544d49fe2f2a2a",
+  "blockMetadata": {
+    "depositBlockNumber": 31443681,
+    "depositBlockHash": "0x224bd9ea3b143b00155f815acd863d8dc5fbbd8220208ea9077e731b9eb5660d",
+    "confirmationDepth": 7,
+    "standardRpcReceiptStatus": 1
+  },
+  "verifierInputHash": "0x107c2a89b0cec1dbb2edeb62e88bfc7c317fa43123793bc5f16384ce119ff4c7",
+  "smokeResults": {
+    "passed": 7,
+    "total": 7,
+    "routes": [
+      {
+        "path": "/",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "path": "/user",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "path": "/user/help",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "path": "/partner",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "path": "/healthz",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "path": "/readyz",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "path": "/api/public/config",
+        "status": 200,
+        "result": "pass"
+      }
+    ]
+  },
+  "screenshotPaths": {
+    "desktopUserReceipt": "docs/evidence/browser-smoke/gasok-local-desktop-user.png",
+    "mobilePublicReceipt": "docs/evidence/browser-smoke/gasok-local-mobile-receipt.png"
+  },
+  "timestamps": {
+    "runCreatedAt": "2026-07-23T06:38:02.417Z",
+    "transactionsSubmittedAt": "2026-07-23T06:39:56.872Z",
+    "receiptIssuedAt": "2026-07-23T06:40:05.000Z",
+    "runMatchedAt": "2026-07-23T06:40:05.393Z",
+    "desktopScreenshotRecordedAt": "2026-07-23T07:11:56.691Z",
+    "mobileScreenshotRecordedAt": "2026-07-23T07:11:56.415Z",
+    "smokeStartedAt": "2026-07-23T07:13:02.795Z",
+    "smokeFinishedAt": "2026-07-23T07:13:03.425Z"
+  },
+  "limitationNotice": "Testnet-only. No real asset, no yield, no RWA claim."
+}

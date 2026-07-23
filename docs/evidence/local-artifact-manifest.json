@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-22T23:08:04.331Z",
+  "generatedAt": "2026-07-23T07:14:06.357Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -126,8 +126,8 @@
         "path": "apps/web/public/flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "8717fd3b7923e8772601ae7ceafedb2aca2592843677e852bfa41e32fe756e8c",
-        "bytes": 20835,
+        "sha256": "d59cd3224c569f6b9387c22170dfec6b87a49520775d4d850bca3e47958fae7e",
+        "bytes": 24910,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -280,6 +280,16 @@
         "required": true,
         "sha256": "5c97aada4765d23964c3ba3fd038faf04859c931dc1f857b6a6f9f2ec6133dc3",
         "bytes": 4102,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/gasok-local-rehearsal-2026-07.json",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "c34abe57c03f0a7aef6016a1e509d4f823cc06567fb94d4e922c48ee67439e4e",
+        "bytes": 2497,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1177,6 +1187,18 @@
       "value": "0x710ca481e739ccb6e3b872031dc9125d259cd0879e63edecbe17ea3f7b5c1503"
     },
     {
+      "name": "receiptHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0xd71e0022e8d8911b4a870eaa6ecc3f4f63df0f91764759790b544d49fe2f2a2a"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "value": "0x107c2a89b0cec1dbb2edeb62e88bfc7c317fa43123793bc5f16384ce119ff4c7"
+    },
+    {
       "name": "verifierInputHash",
       "algorithm": "keccak256",
       "source": "public evidence",
@@ -1193,6 +1215,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "52c7ea38d4ab70d4eef6b27c9699f2d9e511c6c2f35d01887ace719bbbe7440f",
+  "buildTreeSha256": "ac9ef47f033a5b5bb79c7fb9791a8584a9bf3acf4c8598b2a63557fcbee3d7ab",
   "unmanifestedFilePolicy": "fail"
 }
