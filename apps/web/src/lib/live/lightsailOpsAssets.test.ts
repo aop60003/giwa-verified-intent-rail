@@ -330,8 +330,13 @@ describe("Lightsail host scripts", () => {
     const installer = readOps("scripts/install-isolated-node.sh");
     const installerIndexEntry = spawnSync(
       "git",
-      ["ls-files", "-s", "--", "ops/lightsail/scripts/install-isolated-node.sh"],
-      { cwd: "../..", encoding: "utf8" }
+      [
+        "ls-files",
+        "-s",
+        "--",
+        "../../ops/lightsail/scripts/install-isolated-node.sh"
+      ],
+      { encoding: "utf8", env: { ...process.env } }
     );
 
     expect(installer).toContain("#!/usr/bin/env bash");
