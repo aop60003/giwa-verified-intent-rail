@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-26T06:20:21.463Z",
+  "generatedAt": "2026-07-26T08:43:42.145Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -388,8 +388,8 @@
         "path": "docs/evidence/local/lightsail-access-operator-note.md",
         "role": "public-evidence",
         "required": true,
-        "sha256": "f7f0652c8d65883eb22c2fc348bebf41249c7159c68d393f7982b7a91faa4990",
-        "bytes": 5419,
+        "sha256": "eb5334c9cbc3f9e9324607a6e2e0307d32629f25ce98225ed5e1416f4cc7f874",
+        "bytes": 7391,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -590,8 +590,8 @@
         "path": "docs/implementation/giwa-gasok-staging-runbook.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "dc6f8ad2abbc6e9edcb41f197034e069309652185c75121452e8cb12ce71d359",
-        "bytes": 24556,
+        "sha256": "8c11b9b676a9fe3f08caed9f1ce62b7e387da2f20d6d831b9099b95969bbd514",
+        "bytes": 26014,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -760,8 +760,8 @@
         "path": "docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "0f30f396f9d3d522fb361603310fdbc68645cf093a7740e2abaa8d8299f4aab0",
-        "bytes": 11287,
+        "sha256": "5c4ef47bea32ee1180d861b39b8c97654b9ecdb333a6ed28680e5ed84f652384",
+        "bytes": 11420,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1225,6 +1225,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "ab03b3a35bd6bd46bad15669b913c5963735243ce9e0edee0e5d5846238a8cfb",
+  "buildTreeSha256": "b4b4f3bd7b2b0722e08439979775d1bad91ab483eb82ab9c6dd513ba3edb4c07",
   "unmanifestedFilePolicy": "fail"
 }
