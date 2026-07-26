@@ -328,8 +328,15 @@ describe("Lightsail Nginx assets", () => {
 describe("Lightsail host scripts", () => {
   it("installs one checksum-bound isolated Node runtime without replacing shared Node", () => {
     const installer = readOps("scripts/install-isolated-node.sh");
+    const installerIndexEntry = spawnSync(
+      "git",
+      ["ls-files", "-s", "--", "ops/lightsail/scripts/install-isolated-node.sh"],
+      { cwd: "../..", encoding: "utf8" }
+    );
 
     expect(installer).toContain("#!/usr/bin/env bash");
+    expect(installerIndexEntry.status).toBe(0);
+    expect(installerIndexEntry.stdout).toMatch(/^100755\s/u);
     expect(installer).toContain("set -euo pipefail");
     expect(installer).toContain('node_version="v22.16.0"');
     expect(installer).toContain('archive_name="node-v22.16.0-linux-x64.tar.xz"');
