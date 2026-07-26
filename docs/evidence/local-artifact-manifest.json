@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-23T07:14:06.357Z",
+  "generatedAt": "2026-07-26T06:20:21.463Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -385,6 +385,16 @@
         "schemaPath": null
       },
       {
+        "path": "docs/evidence/local/lightsail-access-operator-note.md",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "f7f0652c8d65883eb22c2fc348bebf41249c7159c68d393f7982b7a91faa4990",
+        "bytes": 5419,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
         "path": "docs/evidence/partner-customer-handoff-sprint41.json",
         "role": "public-evidence",
         "required": true,
@@ -580,8 +590,8 @@
         "path": "docs/implementation/giwa-gasok-staging-runbook.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "774beadf56007d5c41b164b271c4e75fcb42348dc940499fb7bb25815197eae9",
-        "bytes": 20178,
+        "sha256": "dc6f8ad2abbc6e9edcb41f197034e069309652185c75121452e8cb12ce71d359",
+        "bytes": 24556,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1215,6 +1225,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "ac9ef47f033a5b5bb79c7fb9791a8584a9bf3acf4c8598b2a63557fcbee3d7ab",
+  "buildTreeSha256": "ab03b3a35bd6bd46bad15669b913c5963735243ce9e0edee0e5d5846238a8cfb",
   "unmanifestedFilePolicy": "fail"
 }

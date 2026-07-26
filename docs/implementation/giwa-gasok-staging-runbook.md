@@ -29,6 +29,110 @@ Codex가 준비와 검증을 수행해도 다음 단계는 해당 권한을 가�
 
 승인이 없으면 해당 단계에서 멈춘다. 이 문서는 push, 패키지 설치, DNS, 인증서 발급, 지갑 서명 또는 DB restore 권한을 부여하지 않는다.
 
+## Windows PowerShell SSH 접속 인계
+
+2026-07-26 기준으로 사용자는 기존 Ubuntu Lightsail 호스트에 Windows
+PowerShell과 Lightsail PEM 키로 접근할 수 있다고 제공했다. 이는 접속
+수단이 있다는 확인일 뿐이며, Codex의 SSH 접속, 호스트 변경, 패키지 설치,
+파일 전송 또는 배포 승인이 아니다.
+
+정확한 IP와 로컬 키 경로는 공개 저장소에 기록하지 않는다. 운영자별 실제
+값은 gitignore된 `docs/evidence/local/lightsail-access-operator-note.md`에만
+보관하고, 추적되는 문서에서는 다음 형태를 사용한다.
+
+```powershell
+$keyPath = "<absolute-path-to-lightsail-pem>"
+$sshTarget = "ubuntu@<lightsail-static-ip>"
+
+if (-not (Test-Path -LiteralPath $keyPath -PathType Leaf)) {
+  throw "Lightsail PEM key not found."
+}
+
+ssh -i "$keyPath" -o IdentitiesOnly=yes $sshTarget
+```
+
+- PEM 파일의 내용은 읽거나 출력하거나 저장소에 복사하지 않는다.
+- 첫 접속 또는 host key 변경 시 Lightsail 콘솔 등 별도 신뢰 채널에서
+  fingerprint를 확인한다.
+- `StrictHostKeyChecking=no`를 사용하거나 host key 불일치를 자동으로
+  삭제·수락하지 않는다.
+- SSH 명령을 문서화했다는 사실을 접속 또는 변경 승인으로 해석하지 않는다.
+
+## Lightsail 다음 단계
+
+### 0. 로컬 source 상태 고정
+
+문서 변경을 포함한 최종 작업이 끝난 뒤 clean worktree에서 배포할 exact
+40-character commit을 새로 선택한다.
+
+```powershell
+git status --short
+git rev-parse HEAD
+git rev-list --left-right --count "origin/main...HEAD"
+```
+
+선택한 commit이 remote에 없으면 전송 방식도 별도로 승인한다.
+
+1. exact commit을 승인된 remote/branch로 push
+2. exact commit에서 immutable artifact를 만들고 승인된 SSH/SCP 채널로 전송
+
+두 방식 모두 외부 변경이며 자동 승인되지 않는다. dirty worktree, 불명확한
+commit, 또는 host에서 검증할 수 없는 artifact면 중지한다.
+
+### 1. 읽기 전용 SSH preflight
+
+사용자가 읽기 전용 점검을 명시적으로 지시한 뒤에만 SSH로 접속한다. 첫
+세션에서는 설치, 삭제, 업그레이드, 서비스 재시작, 파일 생성 또는 설정
+변경을 하지 않고 다음 상태만 확인한다.
+
+```bash
+whoami
+hostname
+df -h /
+df -i /
+sudo du -xhd1 /opt /var /home 2>/dev/null | sort -h
+readlink -f /opt/giwa/current 2>/dev/null || true
+systemctl is-active giwa-static.service 2>/dev/null || true
+systemctl is-active giwa-live.service 2>/dev/null || true
+node --version 2>/dev/null || true
+/usr/bin/node --version 2>/dev/null || true
+pnpm --version 2>/dev/null || true
+nginx -v 2>&1 || true
+sqlite3 --version 2>/dev/null || true
+```
+
+`env`, `printenv`, runtime file 출력, process environment 조회, PEM 출력은
+금지한다. 결과에는 host명, 용량 범주, 버전, 서비스 상태만 남기고 runtime
+값이나 인증 정보를 포함하지 않는다.
+
+### 2. 디스크와 rollback 여유 판정
+
+새 immutable release, 의존성·build 중 peak, SQLite backup 한 개, 기존
+rollback release를 동시에 보존할 수 있는지 계산한다. 고정 임계치를
+추측하지 말고 실제 artifact 크기와 host 결과로 필요한 용량을 기록한다.
+
+- 여유가 충분하면 source 전송 승인 단계로 이동한다.
+- 부족하면 배포를 시작하지 않는다.
+- 기존 release나 backup을 임의로 삭제하지 않는다.
+- 공간 확장·플랜 변경은 비용 승인 뒤에만 수행한다.
+- 정리로 해결하려면 삭제 대상의 절대 경로, 현재 symlink/서비스 참조 여부,
+  rollback 보존 여부를 먼저 확인하고 별도 파괴적 작업 승인을 받는다.
+
+### 3. 변경 승인 묶음 확정
+
+실행 전에 다음 항목을 각각 실제 값과 책임자로 채운다.
+
+1. exact source commit과 source 전송 방식
+2. protected CI evidence 또는 기간이 정해진 GASOK-only local-advisory 예외
+3. host package 설치·버전 변경 승인
+4. release owner와 rollback owner
+5. server-only runtime 값 전달·배치 담당자
+6. Nginx 변경, DNS, HTTPS/certificate 승인과 책임자
+7. 공개 smoke 뒤 fresh testnet wallet transaction 승인
+
+하나라도 비어 있으면 해당 변경 전에서 멈춘다. 모두 갖춰진 뒤에만 아래의
+순서가 고정된 rollout을 실행한다.
+
 ## 릴리스와 상태 레이아웃
 
 ```text
