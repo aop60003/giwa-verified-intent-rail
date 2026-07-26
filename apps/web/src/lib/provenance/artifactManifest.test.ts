@@ -36,6 +36,10 @@ const manifestEntries = [
   { path: "tsconfig.base.json", content: "{}\n" },
   { path: "docs/evidence/local-command-evidence-report.json", content: "excluded" },
   { path: "docs/evidence/local-provenance-verification.json", content: "excluded" },
+  {
+    path: "docs/evidence/local/lightsail-access-operator-note.md",
+    content: "private operator-only state"
+  },
   { path: "apps/web/.data/live.sqlite", content: "excluded" },
   { path: ".env.local", content: "excluded" },
   { path: "node_modules/example/index.js", content: "excluded" }
@@ -75,6 +79,7 @@ describe("local artifact manifest", () => {
     expect(serialized).not.toContain("node_modules");
     expect(serialized).not.toContain("local-command-evidence-report");
     expect(serialized).not.toContain("local-provenance-verification");
+    expect(serialized).not.toContain("docs/evidence/local/");
   });
 
   it("keeps provenance local-advisory and binds it to the manifest hash without self-reference", () => {

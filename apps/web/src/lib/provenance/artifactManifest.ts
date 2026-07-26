@@ -157,6 +157,7 @@ export function isExcludedArtifactPath(path: string): boolean {
   if (normalized === ".git" || normalized.startsWith(".git/")) return true;
   if (normalized === ".github" || normalized.startsWith(".github/")) return true;
   if (normalized === "apps/web/.data" || normalized.startsWith("apps/web/.data/")) return true;
+  if (normalized === "docs/evidence/local" || normalized.startsWith("docs/evidence/local/")) return true;
   if (normalized.startsWith("packages/contracts/cache/")) return true;
   if (normalized.startsWith("packages/contracts/artifacts/")) return true;
   if (normalized.startsWith("packages/contracts/typechain-types/")) return true;
