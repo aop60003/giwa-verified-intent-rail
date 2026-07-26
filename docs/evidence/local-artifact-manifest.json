@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-26T08:50:27.061Z",
+  "generatedAt": "2026-07-26T08:57:57.539Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -380,16 +380,6 @@
         "required": true,
         "sha256": "b30d7e0a59ee31eeff8c996b3552374cf22a0356428d55d651049422119286e6",
         "bytes": 3827,
-        "scanDecision": "pass-or-blocked",
-        "generatedBy": "checked-in-public-safe-input",
-        "schemaPath": null
-      },
-      {
-        "path": "docs/evidence/local/lightsail-access-operator-note.md",
-        "role": "public-evidence",
-        "required": true,
-        "sha256": "eb5334c9cbc3f9e9324607a6e2e0307d32629f25ce98225ed5e1416f4cc7f874",
-        "bytes": 7391,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1225,6 +1215,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "b4b4f3bd7b2b0722e08439979775d1bad91ab483eb82ab9c6dd513ba3edb4c07",
+  "buildTreeSha256": "033c8bfacdbdaf2f9cdc08b09c57111b514cd5fbcdf473fdc090b95c42a788d3",
   "unmanifestedFilePolicy": "fail"
 }
