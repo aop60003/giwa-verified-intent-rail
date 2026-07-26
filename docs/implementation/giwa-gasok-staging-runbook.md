@@ -138,6 +138,7 @@ rollback release를 동시에 보존할 수 있는지 계산한다. 고정 임�
 ```text
 /opt/giwa/releases/<40-character-source-commit>/  immutable release
 /opt/giwa/current                                active release symlink
+/opt/giwa/runtime/node-v22.16.0/                 root-owned isolated Node runtime
 /etc/giwa/giwa-live.runtime                      server-only runtime file
 /var/lib/giwa/giwa-live.sqlite                   active SQLite database
 /var/lib/giwa/backups/                           SQLite backup files
@@ -164,6 +165,7 @@ rollback release를 동시에 보존할 수 있는지 계산한다. 고정 임�
 | backup timer | `ops/lightsail/systemd/giwa-backup.timer` | `/etc/systemd/system/giwa-backup.timer` |
 | Nginx template | `ops/lightsail/nginx/giwa-staging.conf.template` | renderer input; 직접 설치하지 않음 |
 | Nginx renderer | `ops/lightsail/render-nginx-config.mjs` | `/opt/giwa/current` 아래에서 실행 |
+| isolated Node installer | `ops/lightsail/scripts/install-isolated-node.sh` | exact release에서 root로 실행 |
 | backup script | `ops/lightsail/scripts/backup-live-db.sh` | backup unit이 versioned path로 실행 |
 | local smoke | `ops/lightsail/scripts/smoke-local.sh` | host에서 release asset을 실행 |
 
@@ -176,7 +178,7 @@ rollback release를 동시에 보존할 수 있는지 계산한다. 고정 임�
 | `giwa-backup.service` | network bind 없음 | `/var/lib/giwa/backups` | `backup-live-db.sh`만 실행 |
 | `giwa-backup.timer` | 해당 없음 | 해당 없음 | daily, persistent, 최대 30분 randomized delay |
 
-두 Node 서비스 모두 unit이 `GIWA_SKIP_PUBLIC_EXPORT=1`을 강제한다. live service는 `node --experimental-strip-types apps/web/scripts/serve-live.mjs`를 실행한다.
+두 Node 서비스 모두 unit이 `GIWA_SKIP_PUBLIC_EXPORT=1`을 강제하고 `/opt/giwa/runtime/node-v22.16.0/bin/node`를 직접 실행한다. live service는 이 격리 바이너리로 `--experimental-strip-types apps/web/scripts/serve-live.mjs`를 실행한다.
 
 ## 런타임 파일 계약
 
@@ -242,24 +244,37 @@ expiresOn=<YYYY-MM-DD>
 
 승인된 push와 host package 설치가 완료된 뒤에만 다음 순서를 사용한다.
 
-CI와 같은 toolchain을 먼저 확인한다.
+공유 `/usr/bin/node`는 shared-host context일 뿐이다. 버전은 변경 전후에
+기록하지만 GIWA 배포가 바꾸거나 실행 경로로 사용하지 않는다. exact release의
+`ops/lightsail/scripts/install-isolated-node.sh`가 성공한 뒤에만 dependency
+설치를 시작한다.
 
 ```bash
-test "$(node --version)" = "v22.16.0"
-test "$(/usr/bin/node --version)" = "v22.16.0"
-test "$(pnpm --version)" = "10.32.1"
-if command -v corepack >/dev/null 2>&1; then corepack --version; fi
+sudo bash "/opt/giwa/releases/$GIWA_STAGE_COMMIT/ops/lightsail/scripts/install-isolated-node.sh"
+
+isolated_node="/opt/giwa/runtime/node-v22.16.0/bin/node"
+test "$("$isolated_node" --version)" = "v22.16.0"
+test "$(PATH="$(dirname "$isolated_node"):$PATH" pnpm --version)" = "10.32.1"
+/usr/bin/node --version
 ```
 
-corepack을 사용하는 경우 그 버전을 release evidence에 기록하고, 활성 pnpm이 `10.32.1`인지 다시 확인한다. package install, corepack activation 또는 version 변경은 별도 host approval 뒤에만 수행한다. `/usr/bin/node`가 정확히 `v22.16.0`을 제공하지 않으면 배포를 중지하고 `giwa-static.service`와 `giwa-live.service`의 고정 `ExecStart` 경로/버전을 source에서 조정한 뒤 전체 검증을 다시 수행한다. generic Ubuntu Node만으로는 충분하지 않다.
+corepack을 사용하는 경우 그 버전을 release evidence에 기록하고, 격리 Node가
+PATH 앞에 놓인 상태의 pnpm이 `10.32.1`인지 다시 확인한다. package install,
+corepack activation 또는 version 변경은 별도 host approval 뒤에만 수행한다.
 
-```text
-checkout exact source commit into /opt/giwa/releases/<source-commit>
-pnpm install --frozen-lockfile
-pnpm build
-node --check ops/lightsail/render-nginx-config.mjs
-bash -n ops/lightsail/scripts/backup-live-db.sh
-bash -n ops/lightsail/scripts/smoke-local.sh
+```bash
+isolated_bin="/opt/giwa/runtime/node-v22.16.0/bin"
+sudo -u giwa -H env \
+  PATH="$isolated_bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+  bash -c 'cd "$1" && test "$(node --version)" = "v22.16.0" && test "$(pnpm --version)" = "10.32.1" && pnpm install --frozen-lockfile && pnpm build' \
+  _ "/opt/giwa/releases/$GIWA_STAGE_COMMIT"
+
+sudo -u giwa -H env \
+  PATH="$isolated_bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+  node --check "/opt/giwa/releases/$GIWA_STAGE_COMMIT/ops/lightsail/render-nginx-config.mjs"
+bash -n "/opt/giwa/releases/$GIWA_STAGE_COMMIT/ops/lightsail/scripts/install-isolated-node.sh"
+bash -n "/opt/giwa/releases/$GIWA_STAGE_COMMIT/ops/lightsail/scripts/backup-live-db.sh"
+bash -n "/opt/giwa/releases/$GIWA_STAGE_COMMIT/ops/lightsail/scripts/smoke-local.sh"
 ```
 
 build 성공 전에는 `/opt/giwa/current`를 바꾸지 않는다. artifact가 exact commit과 일치하는지 기록하고 릴리스 디렉터리를 immutable로 취급한다.
@@ -280,6 +295,10 @@ SQLite WAL 상태에서도 파일 복사 대신 versioned script의 `sqlite3 .ba
 `backup-live-db.sh`는 오래된 파일을 삭제하지 않는다. 운영자는 `/var/lib/giwa/backups` 용량 증가를 관찰하고 승인된 retention/storage 정책을 별도로 기록해야 한다. 디스크 임계치와 외부 보관 방식이 없으면 release owner가 no-go를 선택한다.
 
 ### 4. service candidate 설치와 localhost smoke
+
+GIWA service activation 전후에 기존 non-GIWA service의 active 상태를 label로
+기록하고 비교한다. GIWA rollout은 그 서비스를 restart하지 않으며 상태가
+달라지면 즉시 중지한다.
 
 1. 네 unit 파일을 exact release에서 `/etc/systemd/system`의 candidate로 복사하고 이전 파일을 보존한다.
 2. `/etc/giwa/giwa-live.runtime`의 owner/mode와 변수 이름만 검토한다. 값은 출력하지 않는다.
@@ -408,6 +427,10 @@ rollback은 testnet transaction을 되돌리지 못한다. 실패한 live run은
 6. static/local/public smoke를 다시 실행한다. live schema compatibility와 exact process cwd가 확인된 경우에만 live를 유지한다.
 7. DB restore는 자동으로 하지 않는다. active writes 중지, backup `quick_check`, 이전/현재 schema compatibility assessment, restore owner의 명시적 승인이 모두 있을 때만 별도 절차로 수행한다.
 8. bounded 로그, source commit, failure category, smoke 결과와 owner 결정을 보존한다. runtime values와 run capability는 evidence에서 제외한다.
+
+일반 release rollback은 `/opt/giwa/runtime/node-v22.16.0`을 유지한다. 격리
+runtime 삭제는 정확한 절대 경로에 대한 별도 파괴적 승인 없이는 수행하지
+않는다. 공유 system Node와 non-GIWA service 상태는 rollback 대상이 아니다.
 
 live가 내려간 동안 `/user*`는 기록된 static evidence로 fallback하고, `/api/*`, `/healthz`, `/readyz`는 bounded `503`만 반환한다. static fallback을 live success로 표현하지 않는다.
 

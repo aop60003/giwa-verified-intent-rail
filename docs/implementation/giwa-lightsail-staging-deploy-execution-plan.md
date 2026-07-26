@@ -71,7 +71,15 @@ create /etc/giwa
 set restrictive ownership and permissions
 ```
 
-Stop if runtime source is not approved. Before install/build/service activation, `node --version` and `/usr/bin/node --version` must both equal `v22.16.0`, and `pnpm --version` must equal `10.32.1`. Record `corepack --version` if corepack supplies pnpm. Package install, corepack activation, or version change requires host approval. If `/usr/bin/node` is not the pinned version, stop and reconcile the versioned unit `ExecStart` path/version before deployment.
+Stop if runtime source is not approved. This is a historical plan; current runtime decisions and commands come from the GASOK staging runbook. Before install/build/service activation, the current contract is:
+
+```text
+/opt/giwa/runtime/node-v22.16.0/bin/node --version = v22.16.0
+PATH-prefixed pnpm --version = 10.32.1
+shared /usr/bin/node recorded but not changed or used by GIWA
+```
+
+Record `corepack --version` if corepack supplies pnpm. Package install, corepack activation, or version change requires host approval.
 
 ### 4. Fetch Source Or Artifact
 
@@ -90,9 +98,9 @@ The current state has no protected artifact metadata.
 Future operator actions inside `/opt/giwa/releases/<exact-source-commit>`:
 
 ```text
-verify node --version = v22.16.0
-verify /usr/bin/node --version = v22.16.0
-verify pnpm --version = 10.32.1
+verify /opt/giwa/runtime/node-v22.16.0/bin/node --version = v22.16.0
+verify PATH-prefixed pnpm --version = 10.32.1
+record shared /usr/bin/node without changing or using it for GIWA
 pnpm install --frozen-lockfile only if approved for the host
 pnpm build
 node --check ops/lightsail/render-nginx-config.mjs
