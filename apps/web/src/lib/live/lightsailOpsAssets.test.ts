@@ -19,6 +19,7 @@ describe("Lightsail systemd assets", () => {
   it("runs static and live services from the immutable release with least privilege", () => {
     const staticUnit = readOps("systemd/giwa-static.service");
     const liveUnit = readOps("systemd/giwa-live.service");
+    const isolatedNode = "/opt/giwa/runtime/node-v22.16.0/bin/node";
 
     for (const unit of [staticUnit, liveUnit]) {
       expect(unit).toContain("User=giwa");
@@ -30,10 +31,14 @@ describe("Lightsail systemd assets", () => {
       expect(unit).toContain("ProtectSystem=strict");
       expect(unit).toContain("Environment=HOST=127.0.0.1");
       expect(unit).toContain("Environment=GIWA_SKIP_PUBLIC_EXPORT=1");
+      expect(unit).toContain(isolatedNode);
+      expect(unit).not.toContain("/usr/bin/node");
     }
 
     expect(staticUnit).toContain("Environment=PORT=4176");
-    expect(staticUnit).toContain("apps/web/scripts/serve-static.mjs");
+    expect(staticUnit).toContain(
+      `ExecStart=${isolatedNode} --experimental-strip-types apps/web/scripts/serve-static.mjs`
+    );
     expect(staticUnit).not.toContain("EnvironmentFile=");
     expect(staticUnit).not.toContain("ReadWritePaths=");
     expect(staticUnit).not.toContain("/var/lib/giwa");
@@ -42,7 +47,7 @@ describe("Lightsail systemd assets", () => {
     expect(liveUnit).toContain("Environment=GIWA_LIVE_MODE=staging-testnet");
     expect(liveUnit).toContain("EnvironmentFile=/etc/giwa/giwa-live.runtime");
     expect(liveUnit).toContain(
-      "ExecStart=/usr/bin/env -- HOST=127.0.0.1 PORT=4177 GIWA_LIVE_MODE=staging-testnet GIWA_SKIP_PUBLIC_EXPORT=1 /usr/bin/node --experimental-strip-types apps/web/scripts/serve-live.mjs"
+      `ExecStart=/usr/bin/env -- HOST=127.0.0.1 PORT=4177 GIWA_LIVE_MODE=staging-testnet GIWA_SKIP_PUBLIC_EXPORT=1 ${isolatedNode} --experimental-strip-types apps/web/scripts/serve-live.mjs`
     );
     expect(occurrences(liveUnit, "ExecStart=")).toBe(1);
     expect(liveUnit).toContain("ReadWritePaths=/var/lib/giwa");

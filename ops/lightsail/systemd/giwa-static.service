@@ -11,7 +11,7 @@ WorkingDirectory=/opt/giwa/current
 Environment=HOST=127.0.0.1
 Environment=PORT=4176
 Environment=GIWA_SKIP_PUBLIC_EXPORT=1
-ExecStart=/usr/bin/node --experimental-strip-types apps/web/scripts/serve-static.mjs
+ExecStart=/opt/giwa/runtime/node-v22.16.0/bin/node --experimental-strip-types apps/web/scripts/serve-static.mjs
 Restart=on-failure
 RestartSec=5s
 NoNewPrivileges=true
