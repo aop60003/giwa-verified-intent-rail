@@ -321,6 +321,47 @@ describe("Lightsail Nginx assets", () => {
 });
 
 describe("Lightsail host scripts", () => {
+  it("installs one checksum-bound isolated Node runtime without replacing shared Node", () => {
+    const installer = readOps("scripts/install-isolated-node.sh");
+
+    expect(installer).toContain("#!/usr/bin/env bash");
+    expect(installer).toContain("set -euo pipefail");
+    expect(installer).toContain('node_version="v22.16.0"');
+    expect(installer).toContain('archive_name="node-v22.16.0-linux-x64.tar.xz"');
+    expect(installer).toContain(
+      'expected_sha256="f4cb75bb036f0d0eddf6b79d9596df1aaab9ddccd6a20bf489be5abe9467e84e"'
+    );
+    expect(installer).toContain('origin="https://nodejs.org/dist/v22.16.0"');
+    expect(installer).toContain('runtime_parent="/opt/giwa/runtime"');
+    expect(installer).toContain(
+      'final_path="/opt/giwa/runtime/node-v22.16.0"'
+    );
+    expect(installer).toContain('[ "$(id -u)" -eq 0 ]');
+    expect(installer).toContain('[ "$(uname -s)" = "Linux" ]');
+    expect(installer).toContain('[ "$(uname -m)" = "x86_64" ]');
+    expect(installer).toMatch(
+      /for command_name in curl tar sha256sum mktemp xz/u
+    );
+    expect(installer).toContain('curl --fail --silent --show-error --location');
+    expect(installer).toContain("SHASUMS256.txt");
+    expect(installer).toContain('grep -Fxc "$expected_manifest_line"');
+    expect(installer).toContain("sha256sum --check --status");
+    expect(installer).toContain('tar -xJf "$archive_path"');
+    expect(installer).toContain(
+      '[ "$("$candidate_path/bin/node" --version)" = "$node_version" ]'
+    );
+    expect(installer).toContain(
+      'mv -T --no-clobber "$candidate_path" "$final_path"'
+    );
+    expect(installer).toContain('[ ! -e "$candidate_path" ]');
+    expect(installer).toContain('chown -R root:root "$candidate_path"');
+    expect(installer).toContain('chmod -R go-w "$candidate_path"');
+    expect(installer).toContain("isolated-node %s ready");
+    expect(installer).not.toContain("/usr/bin/node");
+    expect(installer).not.toMatch(/curl[^\n]*\|\s*(?:ba)?sh/u);
+    expect(installer).not.toMatch(/rm\s+-rf\s+["']?\/opt\/giwa\/runtime/u);
+  });
+
   it("creates and verifies one safe SQLite backup without retention deletion", () => {
     const backup = readOps("scripts/backup-live-db.sh");
 
@@ -372,6 +413,7 @@ describe("Lightsail host scripts", () => {
       "systemd/giwa-backup.timer",
       "nginx/giwa-staging.conf.template",
       "render-nginx-config.mjs",
+      "scripts/install-isolated-node.sh",
       "scripts/backup-live-db.sh",
       "scripts/smoke-local.sh"
     ];
