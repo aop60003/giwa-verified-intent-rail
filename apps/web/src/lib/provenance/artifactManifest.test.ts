@@ -14,6 +14,8 @@ const currentPublicPaths = [
   "apps/web/public/demo.html",
   "apps/web/public/flow-data.json",
   "apps/web/public/flow.js",
+  "apps/web/public/giwa-demo.css",
+  "apps/web/public/giwa-demo.html",
   "apps/web/public/index.html",
   "apps/web/public/landing.css",
   "apps/web/public/landing.html",

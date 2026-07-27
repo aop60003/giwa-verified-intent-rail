@@ -173,7 +173,7 @@ rollback release를 동시에 보존할 수 있는지 계산한다. 고정 임�
 
 | 서비스 | bind | 쓰기 범위 | 비고 |
 | --- | --- | --- | --- |
-| `giwa-static.service` | `127.0.0.1:4176` | application write 없음 | `/`, `/evidence`, `/demo`, `/partner`, `/receipt/*` 및 live 장애 시 `/user*` fallback |
+| `giwa-static.service` | `127.0.0.1:4176` | application write 없음 | `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` 및 live 장애 시 `/user*` fallback |
 | `giwa-live.service` | `127.0.0.1:4177` | `/var/lib/giwa` | `/user*`, `/api/*`, `/healthz`, `/readyz` |
 | `giwa-backup.service` | network bind 없음 | `/var/lib/giwa/backups` | `backup-live-db.sh`만 실행 |
 | `giwa-backup.timer` | 해당 없음 | 해당 없음 | daily, persistent, 최대 30분 randomized delay |
@@ -394,9 +394,14 @@ Nginx 소유권은 다음과 같다.
 
 | 공개 route | 정상 upstream | live upstream 장애 |
 | --- | --- | --- |
-| `/`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static `127.0.0.1:4176` | landing and recorded evidence 유지 |
+| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static `127.0.0.1:4176` | production landing, public demo shell, operator Control Room, recorded evidence 유지 |
 | `/user`와 `/user/...` | live `127.0.0.1:4177` | static `/user*` fallback |
 | `/api/*`, `/healthz`, `/readyz` | live `127.0.0.1:4177` | bounded HTTP `503` JSON `{"error":"service_unavailable"}` |
+
+`/giwa-demo`의 HTML/CSS/JavaScript shell은 static upstream이 제공한다.
+동일 origin의 `/api/*`, `/healthz`, `/readyz` 요청은 기존 live upstream으로
+분리되므로 공개 데모 shell 추가가 API 인증·rate limit·SQLite 경계를
+변경하지 않는다.
 
 ### 6. DNS와 certificate
 
@@ -413,15 +418,18 @@ $env:GIWA_SMOKE_BASE_URL="https://$env:GIWA_STAGE_HOST"
 pnpm --filter @giwa/web smoke:staging
 ```
 
-`/`, `/evidence`, `/user`, `/user/help`, `/partner`, `/healthz`, `/readyz`,
-`/api/public/config` 여덟 route가 모두 `pass`여야 한다. 이후 사용자가 승인한 fresh wallet flow에서만 mint/approve/deposit을 수행한다. Receipt는 `matched` 이후 별도 브라우저 context에서 capability 없이 공개되는지 확인한다.
+`/`, `/giwa-demo`, `/evidence`, `/user`, `/user/help`, `/partner`, `/healthz`,
+`/readyz`, `/api/public/config` 아홉 route가 모두 `pass`여야 한다. 이후
+사용자가 승인한 fresh wallet flow에서만 mint/approve/deposit을 수행한다.
+Receipt는 `matched` 이후 별도 브라우저 context에서 capability 없이
+공개되는지 확인한다.
 
 ## rollback
 
 rollback은 testnet transaction을 되돌리지 못한다. 실패한 live run은 새 Manifest와 새 run으로 재시도한다.
 
 1. `giwa-live.service`를 중지해 새 write와 verification을 막는다.
-2. `giwa-static.service`는 건강하면 유지하여 `/`, `/evidence`, `/demo`, `/partner`, `/receipt/*`와 `/user*` fallback을 제공한다.
+2. `giwa-static.service`는 건강하면 유지하여 `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*`와 `/user*` fallback을 제공한다.
 3. `/opt/giwa/current`를 보존해 둔 이전 immutable release로 되돌린다.
 4. 이전 systemd unit candidate를 복원하고 `systemctl daemon-reload` 뒤 static을 먼저 `restart`한다. Active/MainPID와 이전 release cwd를 확인한 뒤에만 live를 `restart`한다.
 5. 이전 Nginx target으로 temporary symlink를 만들고 enabled link를 원자적으로 교체한다. 그 exact link state에서 `nginx -t`가 성공한 경우에만 더 변경하지 않고 reload한다.
@@ -437,6 +445,6 @@ live가 내려간 동안 `/user*`는 기록된 static evidence로 fallback하고
 
 ## release evidence와 종료 조건
 
-go를 기록하려면 exact source commit, resolved `/opt/giwa/current`, static/live MainPID와 exact release cwd, authority category, backup filename, schema gate, unit 상태, Nginx candidate/previous/tested target과 `nginx -t` 결과, DNS/HTTPS 결과, 여덟-route smoke, rollback rehearsal, public transaction/Receipt, release owner와 rollback owner가 모두 실제 값으로 있어야 한다.
+go를 기록하려면 exact source commit, resolved `/opt/giwa/current`, static/live MainPID와 exact release cwd, authority category, backup filename, schema gate, unit 상태, Nginx candidate/previous/tested target과 `nginx -t` 결과, DNS/HTTPS 결과, 아홉-route smoke, rollback rehearsal, public transaction/Receipt, release owner와 rollback owner가 모두 실제 값으로 있어야 한다.
 
 현재 상태는 배포 전이며 외부 공개 URL이나 staging transaction을 생성했다고 주장하지 않는다. 제출 증거 freeze는 `giwa-gasok-submission-checklist.md`의 모든 항목이 실제 값으로 채워진 뒤에만 가능하다.

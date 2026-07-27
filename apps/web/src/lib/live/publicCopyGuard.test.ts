@@ -11,6 +11,8 @@ const publicFiles = [
   "public/landing.html",
   "public/landing.css",
   "public/landing.js",
+  "public/giwa-demo.html",
+  "public/giwa-demo.css",
   "public/live.html",
   "public/demo.html",
   "public/demo-control-room.js",

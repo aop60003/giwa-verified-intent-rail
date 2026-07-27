@@ -1,5 +1,6 @@
 const BYTES32_PATTERN = /^0x[a-fA-F0-9]{64}$/u;
 const EXPLORER_TX_BASE = "https://sepolia-explorer.giwa.io/tx/";
+const STORY_STAGES = ["manifest", "execution", "matching", "receipt"];
 
 export function normalizeBytes32(value) {
   return typeof value === "string" && BYTES32_PATTERN.test(value) ? value.toLowerCase() : null;
@@ -26,32 +27,6 @@ export function projectRecordedEvidence(value) {
     depositTxHash,
     explorerHref: `${EXPLORER_TX_BASE}${depositTxHash}`
   };
-}
-
-const STORY_STEPS = new Set(["review", "sign", "execute", "verify", "receipt"]);
-
-export function chooseActiveStoryStep(values, fallback = "review") {
-  const safeFallback = STORY_STEPS.has(fallback) ? fallback : "review";
-  let selected = safeFallback;
-  let selectedRatio = -1;
-
-  for (const value of values) {
-    if (
-      value === null ||
-      typeof value !== "object" ||
-      !STORY_STEPS.has(value.id) ||
-      typeof value.ratio !== "number" ||
-      !Number.isFinite(value.ratio) ||
-      value.ratio < 0
-    ) {
-      continue;
-    }
-    if (value.ratio > selectedRatio) {
-      selected = value.id;
-      selectedRatio = value.ratio;
-    }
-  }
-  return selected;
 }
 
 export async function fetchRecordedEvidence(fetcher = fetch) {
@@ -85,32 +60,107 @@ export function applyRecordedEvidence(root, evidence) {
   for (const value of txValues) value.textContent = shortHash(evidence.depositTxHash);
 }
 
-export function setupStory(rootDocument = document) {
-  const storyRoot = rootDocument.querySelector("[data-story-root]");
-  const steps = Array.from(rootDocument.querySelectorAll("[data-story-step]"));
-  if (!storyRoot || steps.length === 0 || typeof IntersectionObserver !== "function") return;
+export function applyStoryStage(root, steps, stage) {
+  if (!STORY_STAGES.includes(stage)) return false;
 
-  const ratios = new Map(steps.map((step) => [step.dataset.storyStep, 0]));
-  const observer = new IntersectionObserver(
-    (entries) => {
+  root.dataset.storyStage = stage;
+  for (const step of steps) {
+    if (step.dataset.storyStep === stage) {
+      step.setAttribute("aria-current", "step");
+    } else {
+      step.removeAttribute("aria-current");
+    }
+  }
+  return true;
+}
+
+export function setupScrollStory(
+  rootDocument = document,
+  ObserverCtor = globalThis.IntersectionObserver
+) {
+  const root = rootDocument.querySelector("[data-scroll-story]");
+  const steps = root ? Array.from(root.querySelectorAll("[data-story-step]")) : [];
+  const triggers = root ? Array.from(root.querySelectorAll("[data-story-trigger]")) : [];
+  const progress = root?.querySelector("[data-story-progress]");
+
+  if (
+    !root ||
+    steps.length !== STORY_STAGES.length ||
+    triggers.length !== STORY_STAGES.length ||
+    typeof ObserverCtor !== "function"
+  ) {
+    return () => {};
+  }
+
+  const setActive = (stage) => {
+    if (!applyStoryStage(root, steps, stage)) return;
+    const index = STORY_STAGES.indexOf(stage);
+    if (progress) {
+      progress.textContent = `${String(index + 1).padStart(2, "0")} / 04`;
+    }
+  };
+
+  let observer;
+  try {
+    observer = new ObserverCtor((entries) => {
+      const active = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+      const stage = active?.target?.dataset?.storyTrigger;
+      if (typeof stage === "string") setActive(stage);
+    }, {
+      rootMargin: "-28% 0px -48% 0px",
+      threshold: [0.15, 0.35, 0.55, 0.75]
+    });
+
+    setActive("manifest");
+    for (const trigger of triggers) observer.observe(trigger);
+    root.dataset.storyEnhanced = "true";
+  } catch {
+    observer?.disconnect();
+    delete root.dataset.storyEnhanced;
+    return () => {};
+  }
+
+  return () => observer.disconnect();
+}
+
+export function setupReveals(
+  rootDocument = document,
+  ObserverCtor = globalThis.IntersectionObserver
+) {
+  const nodes = Array.from(rootDocument.querySelectorAll("[data-reveal]"));
+  const documentElement = rootDocument.documentElement;
+  if (
+    nodes.length === 0 ||
+    !documentElement ||
+    typeof ObserverCtor !== "function"
+  ) {
+    return () => {};
+  }
+
+  let observer;
+  try {
+    observer = new ObserverCtor((entries) => {
       for (const entry of entries) {
-        const id = entry.target.dataset.storyStep;
-        if (STORY_STEPS.has(id)) ratios.set(id, entry.isIntersecting ? entry.intersectionRatio : 0);
+        if (!entry.isIntersecting) continue;
+        entry.target.dataset.visible = "true";
+        observer?.unobserve(entry.target);
       }
-      const active = chooseActiveStoryStep(
-        Array.from(ratios, ([id, ratio]) => ({ id, ratio })),
-        storyRoot.dataset.activeStep
-      );
-      storyRoot.dataset.activeStep = active;
-      for (const step of steps) {
-        if (step.dataset.storyStep === active) step.setAttribute("aria-current", "step");
-        else step.removeAttribute("aria-current");
-      }
-    },
-    { rootMargin: "-22% 0px -38% 0px", threshold: [0, 0.2, 0.4, 0.6, 0.8] }
-  );
+    }, {
+      rootMargin: "0px 0px -12% 0px",
+      threshold: 0.12
+    });
 
-  for (const step of steps) observer.observe(step);
+    for (const node of nodes) observer.observe(node);
+    documentElement.dataset.revealEnhanced = "true";
+  } catch {
+    observer?.disconnect();
+    delete documentElement.dataset.revealEnhanced;
+    return () => {};
+  }
+
+  return () => observer.disconnect();
 }
 
 export function setupMenu(rootDocument = document) {
@@ -136,7 +186,8 @@ export function setupMenu(rootDocument = document) {
 
 export async function initLanding(rootDocument = document) {
   setupMenu(rootDocument);
-  setupStory(rootDocument);
+  setupScrollStory(rootDocument);
+  setupReveals(rootDocument);
   const evidence = await fetchRecordedEvidence();
   applyRecordedEvidence(rootDocument, evidence);
 }

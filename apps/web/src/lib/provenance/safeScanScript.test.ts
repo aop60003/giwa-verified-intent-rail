@@ -84,6 +84,12 @@ describe("safe scan script contract", () => {
     expect(script).not.toContain('$RuleId -eq "sensitive-term") { return $true }');
   });
 
+  it("loads policy functions without launching the full scan when dot-sourced", () => {
+    const script = safeScanScript();
+
+    expect(script).toContain('if ($MyInvocation.InvocationName -eq ".") { return }');
+  });
+
   it("detects common secret-like names without printing real env values", () => {
     const script = safeScanScript().toLowerCase();
 

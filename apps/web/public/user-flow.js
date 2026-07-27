@@ -373,6 +373,44 @@ function routeName() {
   return "action";
 }
 
+function isGiwaDemoRoute() {
+  return location.pathname === "/giwa-demo";
+}
+
+function combineDemoStageState(states) {
+  if (states.includes("blocked")) return "blocked";
+  if (states.every((state) => state === "complete")) return "complete";
+  if (states.includes("active")) return "active";
+  return "pending";
+}
+
+function demoProgressStages() {
+  const states = Object.fromEntries(
+    progressSteps().map(([id, , , state]) => [id, state])
+  );
+  return [
+    ["prepare", "준비", combineDemoStageState([states.wallet_connected])],
+    ["review", "조건 검토", combineDemoStageState([states.intent_issued])],
+    [
+      "execute",
+      "실행",
+      combineDemoStageState([
+        states.approval_submitted,
+        states.deposit_submitted
+      ])
+    ],
+    [
+      "receipt",
+      "Receipt",
+      combineDemoStageState([
+        states.standard_rpc_receipt_found,
+        states.verification_matched,
+        states.receipt_ready
+      ])
+    ]
+  ];
+}
+
 function receiptHashFromRoute() {
   try {
     const value = decodeURIComponent(location.pathname.slice("/user/receipt/".length));
@@ -789,6 +827,39 @@ function renderStatusRail() {
   ]);
 }
 
+function renderDemoTopBar() {
+  return view("header", { className: "giwa-demo-topbar" }, [
+    view("a", {
+      className: "giwa-demo-wordmark",
+      href: "/",
+      text: "GIWA VERIFIED INTENT RAIL"
+    }),
+    view("p", {
+      className: "giwa-demo-environment",
+      text: "GIWA Sepolia · Testnet"
+    }),
+    view("a", { className: "secondary-link giwa-demo-product-link", href: "/", text: "제품 소개" })
+  ]);
+}
+
+function renderDemoStageRail() {
+  return view(
+    "ol",
+    { className: "giwa-demo-stage-rail", "aria-label": "데모 진행 단계" },
+    demoProgressStages().map(([id, label, state], index) =>
+      view("li", {
+        className: `giwa-demo-stage ${state}`,
+        "data-demo-stage": id,
+        "aria-current": state === "active" ? "step" : null
+      }, [
+        view("span", { text: String(index + 1).padStart(2, "0") }),
+        view("strong", { text: label }),
+        view("em", { text: state })
+      ])
+    )
+  );
+}
+
 function renderExpectedSteps() {
   return view("ul", { className: "user-step-list" }, [
     view("li", { text: "1. 연결한 지갑과 테스트 자산 상태를 확인합니다." }),
@@ -864,6 +935,7 @@ function renderIntentPanel() {
 
 function renderActionPage() {
   const action = nextPrimaryAction();
+  const demoRoute = isGiwaDemoRoute();
   const faucetLink = assetState.next === "gas_required" && publicConfig?.faucetHelpUrl
     ? view("a", { className: "secondary-link", href: publicConfig.faucetHelpUrl, target: "_blank", rel: "noopener noreferrer", text: "공식 Faucet 안내" })
     : null;
@@ -885,20 +957,47 @@ function renderActionPage() {
   );
 
   app.textContent = "";
-  app.append(
-    view("section", { className: "hero-flow user-action-hero" }, [
-      view("div", { className: "hero-copy" }, [
-        view("p", { className: "eyebrow", text: "GIWA Verified Intent Rail" }),
-        view("h1", { text: "서명 전에 테스트넷 액션을 검토하세요" }),
-        view("p", { className: "lead", text: "한 개의 버튼이 현재 필요한 단계만 안내합니다. Manifest와 일치한 트랜잭션만 공개 Receipt를 받습니다." }),
-        view("p", { className: "notice", role: "status", "aria-live": "polite", "aria-atomic": "true", text: notice }),
-        view("p", { className: flowStateClass(), text: inFlight ? `${primaryLabel()} 작업을 처리하고 있습니다.` : assetCopy() }),
-        view("div", { className: "hero-actions user-cta-cluster", "data-current-action": action }, actions),
-        renderStatusRail()
-      ]),
-      view("div", {}, [renderActionSummary(), renderIntentPanel()])
+  const actionPage = view("section", {
+    className: `hero-flow user-action-hero ${demoRoute ? "giwa-demo-frame" : ""}`
+  }, [
+    view("div", { className: "hero-copy" }, [
+      view("p", { className: "eyebrow", text: "GIWA Verified Intent Rail" }),
+      ...(demoRoute ? [renderDemoStageRail()] : []),
+      view("h1", {
+        text: demoRoute
+          ? "조건을 확인하고 GIWA에서 실행하세요"
+          : "서명 전에 테스트넷 액션을 검토하세요"
+      }),
+      view("p", {
+        className: "lead",
+        text: demoRoute
+          ? "현재 필요한 액션 하나만 안내합니다. 실행 후 Manifest와 트랜잭션을 대조해 공개 Receipt를 만듭니다."
+          : "한 개의 버튼이 현재 필요한 단계만 안내합니다. Manifest와 일치한 트랜잭션만 공개 Receipt를 받습니다."
+      }),
+      view("p", {
+        className: "notice",
+        role: "status",
+        "aria-live": "polite",
+        "aria-atomic": "true",
+        text: notice
+      }),
+      view("p", {
+        className: flowStateClass(),
+        text: inFlight ? `${primaryLabel()} 작업을 처리하고 있습니다.` : assetCopy()
+      }),
+      view("div", {
+        className: "hero-actions user-cta-cluster",
+        "data-current-action": action
+      }, actions),
+      ...(demoRoute ? [] : [renderStatusRail()])
+    ]),
+    view("div", { className: demoRoute ? "giwa-demo-evidence" : "" }, [
+      renderActionSummary(),
+      renderIntentPanel()
     ])
-  );
+  ]);
+
+  app.append(...(demoRoute ? [renderDemoTopBar(), actionPage] : [actionPage]));
   document.querySelector("#user-primary-action")?.addEventListener("click", onPrimaryAction);
 }
 
@@ -1514,7 +1613,8 @@ async function renderReceiptRoute() {
           matched
             ? view("a", { className: "secondary-link", href: `/receipt/${receiptHash}`, text: "검증 증거 열기" })
             : view("span", { className: "disabled-link", text: "검증 증거 열기" }),
-          view("a", { className: "secondary-link", href: "/user", text: "새 테스트 시작" })
+          view("a", { className: "secondary-link", href: "/giwa-demo", text: "다시 실행" }),
+          view("a", { className: "secondary-link", href: "/", text: "제품 소개" })
         ])
       ]),
       view("article", { className: "user-receipt-card" }, [

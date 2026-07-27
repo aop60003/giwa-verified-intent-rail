@@ -550,7 +550,7 @@ git diff --check
 git diff -- apps/web/public/landing.js apps/web/src/lib/landing/landingEvidence.test.ts
 ```
 
-If Git authorization exists:
+If Git approval exists:
 
 ```text
 git add apps/web/public/landing.js apps/web/src/lib/landing/landingEvidence.test.ts
@@ -884,7 +884,7 @@ git diff --check
 git diff -- apps/web/public/landing.html apps/web/src/lib/landing/landingPresentation.test.ts
 ```
 
-If Git authorization exists:
+If Git approval exists:
 
 ```text
 git add apps/web/public/landing.html apps/web/src/lib/landing/landingPresentation.test.ts
@@ -1632,7 +1632,7 @@ git diff --check
 git diff -- apps/web/public/landing.css apps/web/src/lib/landing/landingPresentation.test.ts
 ```
 
-If Git authorization exists:
+If Git approval exists:
 
 ```text
 git add apps/web/public/landing.css apps/web/src/lib/landing/landingPresentation.test.ts
@@ -1833,7 +1833,7 @@ git diff --check
 git diff -- apps/web/public/landing.js apps/web/src/lib/landing/landingEvidence.test.ts apps/web/src/lib/landing/landingPresentation.test.ts
 ```
 
-If Git authorization exists:
+If Git approval exists:
 
 ```text
 git add apps/web/public/landing.js apps/web/src/lib/landing/landingEvidence.test.ts apps/web/src/lib/landing/landingPresentation.test.ts
@@ -1904,7 +1904,7 @@ git diff --check
 git diff -- apps/web/src/lib/live/publicCopyGuard.test.ts apps/web/src/lib/provenance/artifactManifest.test.ts
 ```
 
-If Git authorization exists:
+If Git approval exists:
 
 ```text
 git add apps/web/src/lib/live/publicCopyGuard.test.ts apps/web/src/lib/provenance/artifactManifest.test.ts
@@ -2009,7 +2009,7 @@ SQLite, local wallet, or `.superpowers` path appears.
 
 - [ ] **Step 6: Conditionally commit documentation and generated evidence**
 
-If Git authorization exists:
+If Git approval exists:
 
 ```text
 git add README.md docs/implementation/giwa-gasok-staging-runbook.md docs/evidence/local-artifact-manifest.json docs/evidence/local-command-evidence-report.json docs/evidence/local-provenance-report.json docs/evidence/local-provenance-report.json.sha256 docs/evidence/local-provenance-verification.json

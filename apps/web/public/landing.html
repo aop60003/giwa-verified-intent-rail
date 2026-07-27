@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="GIWA Sepolia 테스트넷에서 사용자가 확인한 조건과 실제 실행을 대조하고 공개 Receipt를 만드는 검증 흐름."
+      content="서명한 조건과 GIWA Sepolia 테스트넷 실행을 대조하고, 일치한 실행만 공개 Receipt로 남기는 GIWA Verified Intent Rail."
     />
     <title>GIWA Verified Intent Rail</title>
     <link
@@ -18,9 +18,11 @@
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+
     <header class="site-header" data-header>
       <a class="wordmark" href="/" aria-label="GIWA Verified Intent Rail 홈">
-        GIWA VERIFIED INTENT RAIL
+        <span>GIWA</span>
+        <span>VERIFIED INTENT RAIL</span>
       </a>
       <button
         class="menu-toggle"
@@ -32,204 +34,453 @@
         MENU
       </button>
       <nav id="site-menu" class="site-menu" aria-label="주요 탐색" data-menu>
-        <a href="#problem">PRODUCT</a>
-        <a href="#how-it-works">HOW IT WORKS</a>
-        <a href="#evidence">EVIDENCE</a>
-        <a href="#why-giwa">WHY GIWA</a>
+        <a href="#product">제품</a>
+        <a href="#how-it-works">검증 방식</a>
+        <a href="#use-cases">활용</a>
+        <a href="#why-giwa">GIWA</a>
+        <a href="#scope">범위</a>
       </nav>
-      <a class="button button-dark header-cta" href="/user">LIVE DEMO ↗</a>
+      <a class="button button-primary header-cta" href="/giwa-demo">
+        GIWA 데모 열기
+      </a>
     </header>
 
-    <main id="main-content">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-slip hero-slip-intent" aria-hidden="true">
-          <span>01 / INTENT</span><strong>LOCKED</strong>
-        </div>
-        <div class="hero-slip hero-slip-wallet" aria-hidden="true">
-          <span>02 / WALLET</span><strong>REVIEWED</strong>
-        </div>
-        <div class="hero-slip hero-slip-receipt" aria-hidden="true">
-          <span>04 / RECEIPT</span><strong>PUBLIC</strong>
-        </div>
-
+    <main id="main-content" tabindex="-1">
+      <section id="product" class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="status-pill"><span aria-hidden="true"></span>GIWA SEPOLIA · TESTNET ONLY</p>
-          <h1 id="hero-title">확인한 행동만<br /><mark>증거</mark>가 됩니다.</h1>
+          <p class="eyebrow">GIWA SEPOLIA · VERIFIED EXECUTION</p>
+          <h1 id="hero-title">
+            <span>조건은 서명되고,</span>
+            <span>실행은 증명됩니다.</span>
+          </h1>
           <p class="hero-description">
-            사용자가 확인한 조건과 실제 GIWA Sepolia 실행이 일치할 때만
-            누구나 검증할 수 있는 공개 Receipt를 만듭니다.
+            Manifest에 서명한 조건을 GIWA Sepolia 트랜잭션과 대조해,
+            일치한 실행만 공개 Receipt로 남깁니다.
           </p>
           <div class="hero-actions">
-            <a class="button button-dark" href="/user">실제 흐름 실행하기</a>
-            <a class="button button-light" data-recorded-receipt href="/evidence">
-              검증 결과 보기
+            <a class="button button-primary" href="/giwa-demo">
+              GIWA 데모 열기
+            </a>
+            <a
+              class="button button-secondary"
+              data-recorded-receipt
+              href="/evidence"
+            >
+              검증된 Receipt 보기
             </a>
           </div>
-        </div>
-
-        <ul class="hero-proof-list" aria-label="검증 흐름">
-          <li><span>01</span>Intent terms locked</li>
-          <li><span>02</span>Wallet review</li>
-          <li><span>03</span>Standard RPC match</li>
-          <li><span>04</span>Public Receipt</li>
-        </ul>
-      </section>
-
-      <section id="problem" class="section problem-section" aria-labelledby="problem-title">
-        <p class="section-index">01 / THE GAP</p>
-        <div>
-          <h2 id="problem-title">클릭은 참여를 보여줍니다.<br />일치는 실행을 증명합니다.</h2>
-          <p>
-            GIWA Verified Intent Rail은 서명된 Manifest 범위의 테스트넷 행동이
-            block-confirmed transaction evidence와 일치했는지 확인합니다.
+          <p class="hero-note">
+            GIWA Sepolia · Chain ID 91342 · Testnet assets only
           </p>
         </div>
-        <div class="comparison" aria-label="기존 지표와 검증 증거 비교">
-          <article><small>BEFORE</small><strong>참여 버튼을 눌렀다</strong></article>
-          <span aria-hidden="true">→</span>
-          <article class="comparison-result">
-            <small>WITH THE RAIL</small>
-            <strong>정해진 조건으로 실행됐다</strong>
+
+        <article class="hero-proof" aria-label="검증 결과 미리보기">
+          <header class="proof-header">
+            <div>
+              <span>RECORDED PROOF</span>
+              <strong>Manifest / Transaction</strong>
+            </div>
+            <p><span aria-hidden="true"></span>4 / 4 MATCHED</p>
+          </header>
+          <div class="hero-proof-grid" role="table" aria-label="필드 대조 결과">
+            <div class="proof-row proof-row-head" role="row">
+              <span role="columnheader">FIELD</span>
+              <span role="columnheader">SIGNED</span>
+              <span role="columnheader">EXECUTED</span>
+            </div>
+            <div class="proof-row" role="row">
+              <span role="cell">NETWORK</span>
+              <strong role="cell">GIWA Sepolia</strong>
+              <em role="cell">MATCHED</em>
+            </div>
+            <div class="proof-row" role="row">
+              <span role="cell">TARGET</span>
+              <strong role="cell">Mock vault</strong>
+              <em role="cell">MATCHED</em>
+            </div>
+            <div class="proof-row" role="row">
+              <span role="cell">ACTION</span>
+              <strong role="cell">Deposit selector</strong>
+              <em role="cell">MATCHED</em>
+            </div>
+            <div class="proof-row" role="row">
+              <span role="cell">AMOUNT</span>
+              <strong role="cell">Exact value</strong>
+              <em role="cell">MATCHED</em>
+            </div>
+          </div>
+          <footer class="proof-footer">
+            <span>PUBLIC RECEIPT</span>
+            <strong data-receipt-hash>검증된 실행</strong>
+          </footer>
+        </article>
+      </section>
+
+      <section
+        class="section statement-section"
+        aria-labelledby="problem-title"
+        data-reveal
+      >
+        <p class="section-index">01 · WHY IT EXISTS</p>
+        <h2 id="problem-title">
+          트랜잭션이 존재한다는 사실만으로는,<br />
+          약속한 실행이었다고 말할 수 없습니다.
+        </h2>
+        <div class="statement-copy">
+          <p>
+            GIWA Verified Intent Rail은 서명된 Manifest와 block-confirmed
+            Standard RPC 증거를 필드 단위로 비교합니다.
+          </p>
+          <p>
+            결과가 모두 일치할 때만 누구나 다시 확인할 수 있는 공개
+            Receipt를 남깁니다.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="how-it-works"
+        class="section story-section"
+        data-scroll-story
+        data-story-stage="manifest"
+        aria-labelledby="story-title"
+      >
+        <span id="evidence" class="anchor-target" aria-hidden="true"></span>
+        <header class="story-heading" data-reveal>
+          <p class="section-index">02 · VERIFICATION</p>
+          <div>
+            <h2 id="story-title">
+              약속과 실행 사이를,<br />
+              네 단계로 확인합니다.
+            </h2>
+            <p>스크롤을 따라 검증 구조를 확인하세요.</p>
+          </div>
+        </header>
+
+        <div class="story-progress" aria-hidden="true">
+          <span data-story-progress>01 / 04</span>
+          <span class="story-progress-line"><i></i></span>
+        </div>
+
+        <div class="story-steps">
+          <article
+            class="story-step"
+            data-story-step="manifest"
+            aria-current="step"
+          >
+            <div class="story-copy" data-story-trigger="manifest">
+              <span class="story-number">01</span>
+              <p>MANIFEST</p>
+              <h3>무엇을 실행할지 먼저 고정합니다.</h3>
+              <p>
+                네트워크, 대상, 액션, 수량을 하나의 Manifest에 담고
+                사용자가 실행 전에 검토합니다.
+              </p>
+            </div>
+            <div class="story-proof" data-story-proof="manifest">
+              <header class="story-proof-header">
+                <div>
+                  <span>STEP 01</span>
+                  <strong>SIGNED CONDITION</strong>
+                </div>
+                <p>MANIFEST</p>
+              </header>
+              <dl class="manifest-fields">
+                <div>
+                  <dt>Network</dt>
+                  <dd>GIWA Sepolia</dd>
+                  <span>LOCKED</span>
+                </div>
+                <div>
+                  <dt>Target</dt>
+                  <dd>Mock vault</dd>
+                  <span>LOCKED</span>
+                </div>
+                <div>
+                  <dt>Action</dt>
+                  <dd>Deposit selector</dd>
+                  <span>LOCKED</span>
+                </div>
+                <div>
+                  <dt>Amount</dt>
+                  <dd>Exact value</dd>
+                  <span>LOCKED</span>
+                </div>
+              </dl>
+              <footer class="story-proof-footer">
+                <span>Execution evidence</span>
+                <strong>PENDING</strong>
+              </footer>
+            </div>
+          </article>
+
+          <article class="story-step" data-story-step="execution">
+            <div class="story-copy" data-story-trigger="execution">
+              <span class="story-number">02</span>
+              <p>EXECUTION</p>
+              <h3>동일한 조건으로 테스트넷 트랜잭션을 전송합니다.</h3>
+              <p>
+                사용자가 지갑에서 직접 전송하고, Standard RPC가
+                block-confirmed 트랜잭션 증거를 반환합니다.
+              </p>
+            </div>
+            <div class="story-proof" data-story-proof="execution">
+              <header class="story-proof-header">
+                <div>
+                  <span>STEP 02</span>
+                  <strong>BLOCK CONFIRMED</strong>
+                </div>
+                <p>TRANSACTION</p>
+              </header>
+              <ol class="execution-timeline">
+                <li>
+                  <span>01</span>
+                  <div>
+                    <strong>Manifest reviewed</strong>
+                    <p>실행 조건 확인 완료</p>
+                  </div>
+                  <em>READY</em>
+                </li>
+                <li>
+                  <span>02</span>
+                  <div>
+                    <strong>Wallet submitted</strong>
+                    <p>GIWA Sepolia 테스트넷 전송</p>
+                  </div>
+                  <em>SUBMITTED</em>
+                </li>
+                <li>
+                  <span>03</span>
+                  <div>
+                    <strong>Standard RPC evidence</strong>
+                    <p data-deposit-hash>Block-confirmed transaction</p>
+                  </div>
+                  <em>CONFIRMED</em>
+                </li>
+              </ol>
+              <footer class="story-proof-footer">
+                <span>Network</span>
+                <strong>GIWA Sepolia · 91342</strong>
+              </footer>
+            </div>
+          </article>
+
+          <article class="story-step" data-story-step="matching">
+            <div class="story-copy" data-story-trigger="matching">
+              <span class="story-number">03</span>
+              <p>FIELD MATCHING</p>
+              <h3>네 개의 필드를 각각 대조합니다.</h3>
+              <p>
+                Manifest와 트랜잭션 증거의 Network, Target, Action,
+                Amount가 모두 같은지 독립적으로 확인합니다.
+              </p>
+            </div>
+            <div class="story-proof" data-story-proof="matching">
+              <header class="story-proof-header">
+                <div>
+                  <span>STEP 03</span>
+                  <strong>4 / 4 MATCHED</strong>
+                </div>
+                <p>VERIFIER</p>
+              </header>
+              <div
+                class="matching-fields"
+                role="table"
+                aria-label="Manifest와 트랜잭션 필드 대조"
+              >
+                <div role="row">
+                  <span role="cell">Network</span>
+                  <strong role="cell">GIWA Sepolia</strong>
+                  <em role="cell">MATCHED</em>
+                </div>
+                <div role="row">
+                  <span role="cell">Target</span>
+                  <strong role="cell">Mock vault</strong>
+                  <em role="cell">MATCHED</em>
+                </div>
+                <div role="row">
+                  <span role="cell">Action</span>
+                  <strong role="cell">Deposit selector</strong>
+                  <em role="cell">MATCHED</em>
+                </div>
+                <div role="row">
+                  <span role="cell">Amount</span>
+                  <strong role="cell">Exact value</strong>
+                  <em role="cell">MATCHED</em>
+                </div>
+              </div>
+              <footer class="story-proof-footer">
+                <span>Verification result</span>
+                <strong>ALL CONDITIONS MATCHED</strong>
+              </footer>
+            </div>
+          </article>
+
+          <article class="story-step" data-story-step="receipt">
+            <div class="story-copy" data-story-trigger="receipt">
+              <span class="story-number">04</span>
+              <p>PUBLIC RECEIPT</p>
+              <h3>일치한 실행만 공개 Receipt로 남깁니다.</h3>
+              <p>
+                Receipt는 Manifest 범위의 테스트넷 실행 증거와 대조 결과를
+                한곳에서 다시 확인할 수 있게 합니다.
+              </p>
+            </div>
+            <div class="story-proof receipt-proof" data-story-proof="receipt">
+              <header class="story-proof-header">
+                <div>
+                  <span>STEP 04</span>
+                  <strong>RECEIPT READY</strong>
+                </div>
+                <p>PUBLIC</p>
+              </header>
+              <div class="receipt-result">
+                <span>VERIFICATION RESULT</span>
+                <strong>MATCHED</strong>
+                <p>Manifest-covered testnet action</p>
+              </div>
+              <dl class="receipt-meta">
+                <div>
+                  <dt>Receipt</dt>
+                  <dd data-receipt-hash>검증된 실행</dd>
+                </div>
+                <div>
+                  <dt>Network</dt>
+                  <dd>GIWA Sepolia</dd>
+                </div>
+              </dl>
+              <footer class="receipt-actions">
+                <a
+                  class="button button-primary"
+                  data-recorded-receipt
+                  href="/evidence"
+                >
+                  검증된 Receipt 보기
+                </a>
+                <a
+                  class="text-link"
+                  data-recorded-explorer
+                  href="/evidence"
+                  hidden
+                >
+                  GIWA Explorer에서 확인
+                </a>
+              </footer>
+            </div>
           </article>
         </div>
       </section>
 
-      <section id="how-it-works" class="story-section" aria-labelledby="story-title">
-        <header class="section-heading">
-          <p class="section-index">02 / PRODUCT</p>
-          <h2 id="story-title">한 번의 스크롤이<br />하나의 Receipt를 완성합니다.</h2>
-        </header>
+      <section
+        id="use-cases"
+        class="section use-cases-section"
+        aria-labelledby="use-title"
+        data-reveal
+      >
+        <p class="section-index">03 · USE CASES</p>
+        <div class="section-heading-row">
+          <h2 id="use-title">제품이 필요한 순간</h2>
+          <p>
+            참여 기록만으로 부족할 때, 약속한 온체인 액션이 실제로
+            실행됐는지 확인합니다.
+          </p>
+        </div>
+        <div class="use-case-list">
+          <article>
+            <span>01</span>
+            <strong>온체인 캠페인</strong>
+            <p>Manifest가 정한 액션의 테스트넷 실행 근거를 확인합니다.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <strong>퀘스트와 활성화</strong>
+            <p>오프체인 참여 기록과 실제 온체인 실행을 구분합니다.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <strong>파트너 검증</strong>
+            <p>Manifest 범위의 실행 증거를 공개 Receipt로 전달합니다.</p>
+          </article>
+        </div>
+      </section>
 
-        <div class="story-layout" data-story-root data-active-step="review">
-          <div class="story-copy">
-            <article class="story-step" data-story-step="review">
-              <p>01 / REVIEW</p>
-              <h3>서명 전에 조건을 확인합니다.</h3>
-              <p>네트워크, 대상, 수량, spender, exact allowance를 먼저 잠급니다.</p>
-            </article>
-            <article class="story-step" data-story-step="sign">
-              <p>02 / SIGN</p>
-              <h3>Manifest를 지갑에 연결합니다.</h3>
-              <p>연결된 계정과 Intent hash가 같은 실행 문맥을 가리킵니다.</p>
-            </article>
-            <article class="story-step" data-story-step="execute">
-              <p>03 / EXECUTE</p>
-              <h3>테스트넷 행동은 지갑이 실행합니다.</h3>
-              <p>필요한 경우 exact approval 후 mock vault deposit을 전송합니다.</p>
-            </article>
-            <article class="story-step" data-story-step="verify">
-              <p>04 / VERIFY</p>
-              <h3>Standard RPC 증거를 대조합니다.</h3>
-              <p>transaction, receipt, block, confirmation depth를 Manifest와 비교합니다.</p>
-            </article>
-            <article class="story-step" data-story-step="receipt">
-              <p>05 / RECEIPT</p>
-              <h3>일치한 실행만 공개됩니다.</h3>
-              <p>matched 결정 이후에만 공유 가능한 Receipt hash를 만듭니다.</p>
-            </article>
+      <section
+        id="why-giwa"
+        class="section giwa-section"
+        aria-labelledby="giwa-title"
+        data-reveal
+      >
+        <p class="section-index">04 · BUILT ON GIWA</p>
+        <div class="section-heading-row">
+          <h2 id="giwa-title">
+            실행한 체인에서,<br />
+            같은 증거를 확인합니다.
+          </h2>
+          <p>
+            현재는 GIWA Sepolia의 공개 증거를 사용합니다. GIWA Wallet
+            in-app 진입과 Receipt handoff는 다음 연결 경로입니다.
+          </p>
+        </div>
+        <div class="giwa-list">
+          <article>
+            <small>NOW</small>
+            <strong>GIWA Sepolia</strong>
+            <p>Chain ID 91342의 테스트넷 실행과 Standard RPC 증거.</p>
+          </article>
+          <article>
+            <small>NOW</small>
+            <strong>Public Receipt</strong>
+            <p>일치한 실행에 한해 공개되는 필드 대조 결과.</p>
+          </article>
+          <article>
+            <small>NEXT</small>
+            <strong>GIWA Wallet in-app</strong>
+            <p>액션 진입과 Receipt 확인을 지갑 안으로 연결하는 경로.</p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        id="scope"
+        class="section scope-section"
+        aria-labelledby="scope-title"
+        data-reveal
+      >
+        <p class="section-index">05 · CURRENT SCOPE</p>
+        <div class="scope-layout">
+          <div>
+            <h2 id="scope-title">현재 검증 범위</h2>
+            <p>데모는 테스트넷의 한 가지 mock-vault deposit 흐름에 집중합니다.</p>
           </div>
-
-          <div class="story-stage" aria-hidden="true">
-            <div class="product-window">
-              <div class="product-window-bar">
-                <span>GIWA VERIFIED INTENT RAIL / LIVE</span>
-                <span>CHAIN 91342</span>
-              </div>
-              <div class="story-frame" data-story-frame="review">
-                <small>INTENT MANIFEST</small><h3>Review exact terms</h3>
-                <dl><div><dt>NETWORK</dt><dd>GIWA Sepolia</dd></div><div><dt>AMOUNT</dt><dd>1 mock asset</dd></div><div><dt>ALLOWANCE</dt><dd>Exact only</dd></div></dl>
-              </div>
-              <div class="story-frame" data-story-frame="sign">
-                <small>WALLET-BOUND INTENT</small><h3>Terms ready to sign</h3>
-                <dl><div><dt>ACCOUNT</dt><dd>0xf3a7…9476</dd></div><div><dt>INTENT</dt><dd>0x3592…c7a4</dd></div><div><dt>EXPIRY</dt><dd>Bounded</dd></div></dl>
-              </div>
-              <div class="story-frame" data-story-frame="execute">
-                <small>GIWA SEPOLIA</small><h3>Wallet execution</h3>
-                <dl><div><dt>APPROVE</dt><dd>Exact amount</dd></div><div><dt>DEPOSIT</dt><dd>Mock vault</dd></div><div><dt>SIGNER</dt><dd>User wallet</dd></div></dl>
-              </div>
-              <div class="story-frame" data-story-frame="verify">
-                <small>STANDARD RPC</small><h3>Evidence matched</h3>
-                <dl><div><dt>CHAIN ID</dt><dd>Matched</dd></div><div><dt>TARGET</dt><dd>Matched</dd></div><div><dt>AMOUNT</dt><dd>Matched</dd></div></dl>
-              </div>
-              <div class="story-frame receipt-frame" data-story-frame="receipt">
-                <small>PUBLIC RECEIPT</small><h3 data-receipt-hash>검증된 예시</h3>
-                <dl><div><dt>STATUS</dt><dd>MATCHED</dd></div><div><dt>DEPOSIT TX</dt><dd data-deposit-hash>기록형 증거</dd></div><div><dt>NETWORK</dt><dd>GIWA Sepolia</dd></div></dl>
-              </div>
-            </div>
-          </div>
+          <ul>
+            <li><span>01</span>GIWA Sepolia 테스트넷 실행</li>
+            <li><span>02</span>Manifest의 네 필드 대조</li>
+            <li><span>03</span>Standard RPC transaction evidence</li>
+            <li><span>04</span>일치한 실행의 공개 Receipt</li>
+          </ul>
         </div>
-      </section>
-
-      <section id="evidence" class="section evidence-section" aria-labelledby="evidence-title">
-        <p class="section-index">03 / DETERMINISTIC MATCH</p>
-        <div>
-          <h2 id="evidence-title">주장이 아니라<br />필드 단위로 대조합니다.</h2>
-          <p>Manifest와 block-confirmed Standard RPC evidence를 같은 줄에서 확인합니다.</p>
-        </div>
-        <div class="match-table" role="table" aria-label="Manifest와 transaction evidence 비교">
-          <div role="row"><span role="cell">CHAIN ID</span><strong role="cell">91342</strong><span role="cell">MATCHED</span></div>
-          <div role="row"><span role="cell">TARGET</span><strong role="cell">Mock vault</strong><span role="cell">MATCHED</span></div>
-          <div role="row"><span role="cell">ACTION</span><strong role="cell">Deposit selector</strong><span role="cell">MATCHED</span></div>
-          <div role="row"><span role="cell">AMOUNT</span><strong role="cell">Exact value</strong><span role="cell">MATCHED</span></div>
-        </div>
-      </section>
-
-      <section class="receipt-section" aria-labelledby="receipt-title">
-        <div class="receipt-object">
-          <small>GIWA VERIFIED INTENT RAIL</small>
-          <h3 id="receipt-title">MANIFEST MATCHED</h3>
-          <dl>
-            <div><dt>RECEIPT</dt><dd data-receipt-hash>검증된 예시</dd></div>
-            <div><dt>DEPOSIT</dt><dd data-deposit-hash>기록형 증거</dd></div>
-            <div><dt>NETWORK</dt><dd>GIWA SEPOLIA</dd></div>
-          </dl>
-          <strong class="receipt-stamp">MATCHED</strong>
-        </div>
-        <div class="receipt-copy">
-          <p class="section-index">04 / PUBLIC EVIDENCE</p>
-          <h2>직접 열어보고<br />직접 대조하세요.</h2>
-          <div class="stacked-actions">
-            <a class="button button-light" data-recorded-receipt href="/evidence">기록형 Receipt 열기</a>
-            <a class="button button-light" data-recorded-explorer href="/evidence" hidden>GIWA Explorer에서 확인</a>
-            <a class="button button-light" href="/evidence">기록형 증거 보기</a>
-          </div>
-        </div>
-      </section>
-
-      <section id="why-giwa" class="section giwa-section" aria-labelledby="giwa-title">
-        <p class="section-index">05 / WHY GIWA</p>
-        <div><h2 id="giwa-title">GIWA 위에서<br />작동해야 하는 이유.</h2></div>
-        <div class="giwa-grid">
-          <article><small>NOW</small><h3>GIWA Sepolia</h3><p>Chain ID 91342에서 실제 mock action을 실행합니다.</p></article>
-          <article><small>NOW</small><h3>Standard RPC</h3><p>누구나 다시 읽을 수 있는 transaction evidence를 사용합니다.</p></article>
-          <article><small>NEXT</small><h3>GIWA Wallet in-app</h3><p>Action preview와 Receipt handoff를 지갑 안으로 연결합니다.</p></article>
-        </div>
-      </section>
-
-      <section id="execution" class="execution-section" aria-labelledby="execution-title">
-        <div>
-          <p class="section-index">06 / SHIPPED</p>
-          <h2 id="execution-title">선발을 위한 아이디어가 아니라,<br />이미 실행된 테스트넷 흐름입니다.</h2>
-        </div>
-        <ul>
-          <li>Public HTTPS application</li>
-          <li>Fresh-wallet GIWA Sepolia rehearsal</li>
-          <li>Deterministic verifier</li>
-          <li>Matched-only public Receipt</li>
-          <li>Recorded static fallback</li>
-        </ul>
-        <p>
-          첫 대상은 클릭 수가 아니라 조건과 일치한 온체인 실행 증거가 필요한
-          테스트넷 캠페인과 퀘스트입니다.
+        <p class="scope-note">
+          Mock contracts · Mock assets · Testnet simulation only
         </p>
       </section>
 
-      <section class="final-cta" aria-labelledby="final-title">
-        <p>TESTNET ONLY · MOCK ASSET · GIWA SEPOLIA</p>
-        <h2 id="final-title">이제 직접 실행하고<br />증거를 확인하세요.</h2>
+      <section class="final-cta" aria-labelledby="final-title" data-reveal>
+        <p>GIWA SEPOLIA · TESTNET ASSETS ONLY</p>
+        <h2 id="final-title">
+          제품을 이해했다면,<br />
+          다시 직접 실행해보세요.
+        </h2>
         <div class="hero-actions">
-          <a class="button button-dark" href="/user">LIVE FLOW 실행</a>
-          <a class="button button-light" data-recorded-receipt href="/evidence">VERIFIED EXAMPLE</a>
+          <a class="button button-primary" href="/giwa-demo">
+            GIWA 데모 열기
+          </a>
+          <a
+            class="button button-secondary"
+            data-recorded-receipt
+            href="/evidence"
+          >
+            검증된 Receipt 보기
+          </a>
         </div>
       </section>
     </main>
@@ -238,7 +489,6 @@
       <span>GIWA VERIFIED INTENT RAIL</span>
       <span>GIWA SEPOLIA · TESTNET ONLY</span>
     </footer>
-
     <script type="module" src="/landing.js"></script>
   </body>
 </html>

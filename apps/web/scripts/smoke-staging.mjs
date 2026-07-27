@@ -2,6 +2,7 @@ const REQUEST_TIMEOUT_MS = 8000;
 
 const checks = [
   ["/",200,"landing.js"],
+  ["/giwa-demo",200,"user-flow.js"],
   ["/evidence",200,"flow.js"],
   ["/user",200,"user-flow.js"],
   ["/user/help",200,"user-flow.js"],

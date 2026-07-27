@@ -1,0 +1,245 @@
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 12px;
+  left: 12px;
+  padding: 12px 16px;
+  color: #fff;
+  background: #171916;
+  transform: translateY(-180%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.giwa-demo-shell {
+  height: 100dvh;
+  min-height: 720px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 64px minmax(0, 1fr);
+  background: #f7f6f1;
+  color: #171916;
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+}
+
+.giwa-demo-shell:focus-within {
+  scroll-behavior: auto;
+}
+
+.giwa-demo-shell :focus-visible {
+  outline: 3px solid #0b5f43;
+  outline-offset: 3px;
+}
+
+.giwa-demo-topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+  padding: 0 clamp(20px, 3vw, 48px);
+  border-bottom: 1px solid #cdcec6;
+}
+
+.giwa-demo-wordmark {
+  overflow: hidden;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.giwa-demo-environment {
+  margin: 0;
+  color: #0b5f43;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.giwa-demo-product-link {
+  justify-self: end;
+}
+
+.giwa-demo-frame {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  grid-template-columns: minmax(420px, 0.82fr) minmax(520px, 1.18fr);
+  align-items: stretch;
+  gap: clamp(28px, 4vw, 64px);
+  padding: clamp(24px, 3vw, 48px);
+}
+
+.giwa-demo-frame > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+.giwa-demo-frame .hero-copy {
+  max-width: 680px;
+  align-self: center;
+}
+
+.giwa-demo-frame h1 {
+  margin-block: 18px 14px;
+  font-size: clamp(42px, 4.4vw, 68px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.giwa-demo-frame .lead {
+  max-width: 58ch;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.giwa-demo-stage-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  border-block: 1px solid #cdcec6;
+}
+
+.giwa-demo-stage {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-right: 1px solid #cdcec6;
+}
+
+.giwa-demo-stage:last-child {
+  border-right: 0;
+}
+
+.giwa-demo-stage span,
+.giwa-demo-stage em {
+  color: #656960;
+  font-size: 11px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.giwa-demo-stage.complete strong,
+.giwa-demo-stage.complete em,
+.giwa-demo-stage.active strong {
+  color: #0b5f43;
+}
+
+.giwa-demo-stage.blocked {
+  background: #fff3d8;
+}
+
+.giwa-demo-evidence {
+  min-height: 0;
+  overflow: auto;
+  align-self: stretch;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+.giwa-demo-evidence .panel {
+  background: #fcfbf7;
+  border-color: #cdcec6;
+  box-shadow: none;
+}
+
+.giwa-demo-frame .user-status-rail {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .giwa-demo-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    display: block;
+  }
+
+  .giwa-demo-topbar {
+    min-height: 64px;
+    position: static;
+  }
+
+  .giwa-demo-frame {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+
+  .giwa-demo-evidence {
+    overflow: visible;
+  }
+}
+
+@media (max-height: 760px) {
+  .giwa-demo-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    display: block;
+  }
+
+  .giwa-demo-topbar {
+    min-height: 64px;
+    position: static;
+  }
+
+  .giwa-demo-frame {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+
+  .giwa-demo-evidence {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 620px) {
+  .giwa-demo-topbar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .giwa-demo-environment {
+    display: none;
+  }
+
+  .giwa-demo-stage-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .giwa-demo-frame {
+    padding: 22px 14px 40px;
+  }
+
+  .giwa-demo-frame h1 {
+    font-size: clamp(38px, 11vw, 52px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .giwa-demo-shell *,
+  .giwa-demo-shell *::before,
+  .giwa-demo-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

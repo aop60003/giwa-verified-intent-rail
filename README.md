@@ -39,18 +39,22 @@ Approved public route ownership:
 
 | Route | Owner | Failure behavior |
 | --- | --- | --- |
-| `/`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static service on `127.0.0.1:4176` | judge landing and recorded evidence remain available |
-| `/user*` | live service on `127.0.0.1:4177` | recorded static user fallback |
-| `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | bounded `503`; never proxy to static |
+| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static service on `127.0.0.1:4176` | production landing, public demo shell, operator control, and recorded evidence |
+| `/user*` | live service on `127.0.0.1:4177` | compatibility live flow with recorded static fallback |
+| `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | live API and health surfaces |
 
 SQLite storage and the in-memory rate limiter are intentionally one-instance GASOK testnet-staging choices, not horizontal-scaling claims.
 
-`/` is the presentation-first judge landing. `/evidence` preserves the recorded
-guided technical projection independently of the live adapter.
+`/` is the evergreen production landing. `/giwa-demo` is the public one-screen
+testnet demo, while `/demo` remains the operator Control Room. `/evidence`
+preserves the recorded guided technical projection independently of the live
+adapter.
 
 ```text
-Judge landing:     http://127.0.0.1:4176/
-Recorded evidence: http://127.0.0.1:4176/evidence
+Production landing:   http://127.0.0.1:4176/
+Public GIWA demo:     http://127.0.0.1:4176/giwa-demo
+Operator control:     http://127.0.0.1:4176/demo
+Compatibility user:  http://127.0.0.1:4176/user
 ```
 
 ## Current GASOK Final Demo Gate

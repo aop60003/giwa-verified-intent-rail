@@ -400,18 +400,20 @@ async function startLiveServer() {
         ? "/landing.html"
         : decoded === "/live"
           ? "/live.html"
-          : decoded === "/demo"
-            ? "/demo.html"
-            : decoded === "/user" ||
-                decoded === "/user/receipts" ||
-                decoded === "/user/help" ||
-                decoded.startsWith("/user/receipt/")
-              ? "/user.html"
-              : decoded === "/evidence" ||
-                  decoded === "/partner" ||
-                  decoded.startsWith("/receipt/")
-                ? "/index.html"
-                : decoded;
+          : decoded === "/giwa-demo"
+            ? "/giwa-demo.html"
+            : decoded === "/demo"
+              ? "/demo.html"
+              : decoded === "/user" ||
+                  decoded === "/user/receipts" ||
+                  decoded === "/user/help" ||
+                  decoded.startsWith("/user/receipt/")
+                ? "/user.html"
+                : decoded === "/evidence" ||
+                    decoded === "/partner" ||
+                    decoded.startsWith("/receipt/")
+                  ? "/index.html"
+                  : decoded;
     const normalized = normalize(requested).replace(/^(\.\.[/\\])+/, "");
     return join(publicDir, normalized);
   }

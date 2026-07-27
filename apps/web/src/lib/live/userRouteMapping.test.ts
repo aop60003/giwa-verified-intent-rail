@@ -12,6 +12,10 @@ describe("commercial user route mapping", () => {
   it("maps user-facing routes without replacing existing static routes", () => {
     const source = readWebFile("scripts/serve-static.mjs");
 
+    expect(source).toContain('decoded === "/giwa-demo"');
+    expect(source).toContain('"/giwa-demo.html"');
+    expect(source).toContain('decoded === "/demo"');
+    expect(source).toContain('"/demo.html"');
     expect(source).toContain('decoded === "/user"');
     expect(source).toContain('decoded.startsWith("/user/receipt/")');
     expect(source).toContain('decoded === "/partner"');
@@ -21,6 +25,10 @@ describe("commercial user route mapping", () => {
   it("maps user-facing routes on the live server", () => {
     const source = readWebFile("scripts/serve-live.mjs");
 
+    expect(source).toContain('decoded === "/giwa-demo"');
+    expect(source).toContain('"/giwa-demo.html"');
+    expect(source).toContain('decoded === "/demo"');
+    expect(source).toContain('"/demo.html"');
     expect(source).toContain('decoded === "/user"');
     expect(source).toContain('decoded.startsWith("/user/receipt/")');
     expect(source).toContain('decoded === "/live"');

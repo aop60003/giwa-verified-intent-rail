@@ -199,6 +199,8 @@ function Invoke-Scan {
   return $failures
 }
 
+if ($MyInvocation.InvocationName -eq ".") { return }
+
 $unfinishedPattern = ("TO" + "DO") + "|" + ("FIX" + "ME") + "|" + ("T" + "BD")
 $failures = @()
 $failures += Invoke-Scan "unfinished-marker" $unfinishedPattern
