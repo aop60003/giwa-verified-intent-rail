@@ -43,6 +43,9 @@ test-output/
 .cache/
 cache/
 
+# Local visual brainstorming artifacts
+.superpowers/
+
 # MVP local runtime data
 apps/web/.data/
 docs/evidence/local/

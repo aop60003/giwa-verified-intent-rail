@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-26T08:57:57.539Z",
+  "generatedAt": "2026-07-27T04:50:26.598Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -138,6 +138,36 @@
         "required": true,
         "sha256": "7e0027a0b3ab591ddc279bf062fdb59ef6eaa7aa0252ad00aec913b2c5a113a3",
         "bytes": 535,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/landing.css",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "8d54e219ba635a70984c5937be5a0a78761a80d5f49ab00fecb9db670723b293",
+        "bytes": 11239,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/landing.html",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "2dd34a99ef335e96a5329ee87e14e54e7b38b06a3f16a7f11ccc4ac73710e47d",
+        "bytes": 12166,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "apps/web/public/landing.js",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "4ef508ec6e96d3c7cddf0beb22cf0fa2be40859b1e3e78dd399a42c1eb1f09c1",
+        "bytes": 5341,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -580,8 +610,8 @@
         "path": "docs/implementation/giwa-gasok-staging-runbook.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "8c11b9b676a9fe3f08caed9f1ce62b7e387da2f20d6d831b9099b95969bbd514",
-        "bytes": 26014,
+        "sha256": "c204a3aa142c17c4ab1d39a2e8aef369b4c500e816a934da2ad1ab199e94b63b",
+        "bytes": 26131,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1215,6 +1245,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "033c8bfacdbdaf2f9cdc08b09c57111b514cd5fbcdf473fdc090b95c42a788d3",
+  "buildTreeSha256": "b4375cefb067fe7fea3f72b3df0c833321de3e0822a4b9527503972d7c9abd43",
   "unmanifestedFilePolicy": "fail"
 }

@@ -37,13 +37,21 @@ Versioned Lightsail assets:
 
 Approved public route ownership:
 
-| Route family | Normal owner | Live upstream failure |
+| Route | Owner | Failure behavior |
 | --- | --- | --- |
-| `/`, `/demo`, `/partner` | static service on `127.0.0.1:4176` | static remains available |
+| `/`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static service on `127.0.0.1:4176` | judge landing and recorded evidence remain available |
 | `/user*` | live service on `127.0.0.1:4177` | recorded static user fallback |
-| `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | bounded HTTP `503` JSON |
+| `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | bounded `503`; never proxy to static |
 
 SQLite storage and the in-memory rate limiter are intentionally one-instance GASOK testnet-staging choices, not horizontal-scaling claims.
+
+`/` is the presentation-first judge landing. `/evidence` preserves the recorded
+guided technical projection independently of the live adapter.
+
+```text
+Judge landing:     http://127.0.0.1:4176/
+Recorded evidence: http://127.0.0.1:4176/evidence
+```
 
 ## Current GASOK Final Demo Gate
 

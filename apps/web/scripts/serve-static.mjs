@@ -23,8 +23,8 @@ const staticDemoStatusPayload = {
     openingOrder: [
       {
         id: "static-fallback",
-        label: "Static fallback",
-        href: "/",
+        label: "Recorded evidence",
+        href: "/evidence",
         state: "available",
         reason: "Recorded evidence remains available without the live local API."
       },
@@ -82,16 +82,20 @@ function writeJson(response, payload) {
 function publicPath(pathname) {
   const decoded = decodeURIComponent(pathname);
   const requested =
-    decoded === "/demo"
-      ? "/demo.html"
-      : decoded === "/user" ||
-          decoded === "/user/receipts" ||
-          decoded === "/user/help" ||
-          decoded.startsWith("/user/receipt/")
-        ? "/user.html"
-      : decoded === "/" || decoded === "/partner" || decoded.startsWith("/receipt/")
-        ? "/index.html"
-        : decoded;
+    decoded === "/"
+      ? "/landing.html"
+      : decoded === "/demo"
+        ? "/demo.html"
+        : decoded === "/user" ||
+            decoded === "/user/receipts" ||
+            decoded === "/user/help" ||
+            decoded.startsWith("/user/receipt/")
+          ? "/user.html"
+          : decoded === "/evidence" ||
+              decoded === "/partner" ||
+              decoded.startsWith("/receipt/")
+            ? "/index.html"
+            : decoded;
   const normalized = normalize(requested).replace(/^(\.\.[/\\])+/, "");
   return join(publicDir, normalized);
 }
