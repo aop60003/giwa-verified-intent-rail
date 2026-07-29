@@ -93,9 +93,10 @@ describe("evaluator public boundary", () => {
   it("projects only strict session runs and rejects restored wallet or config mismatches", () => {
     const source = readWebFile("public/user-flow.js");
     const functions = standaloneFunctions<{
+      projectFailureCode: (value: unknown) => string | null;
       projectSessionRun: (value: unknown) => Record<string, unknown> | null;
       runMatchesContext: (run: unknown, account: string, config: unknown) => boolean;
-    }>(source, ["projectSessionRun", "runMatchesContext"]);
+    }>(source, ["projectFailureCode", "projectSessionRun", "runMatchesContext"]);
     const projected = functions.projectSessionRun({ ...strictRunFixture, arbitraryServerField: "discard-me" });
 
     expect(projected).not.toBeNull();
@@ -122,6 +123,37 @@ describe("evaluator public boundary", () => {
     expect(source.indexOf("projectIssuedRun(body, expectedContext)")).toBeLessThan(source.indexOf("runState = issuedRun"));
     expect(source).toContain("runState.wallet");
     expect(source).not.toContain("manifestPreview?.wallet");
+
+    const mismatched = functions.projectSessionRun({
+      ...strictRunFixture,
+      status: "mismatched",
+      failureCode: "TARGET_MISMATCH"
+    });
+    expect(mismatched?.failureCode).toBe("TARGET_MISMATCH");
+    expect(
+      functions.projectSessionRun({
+        ...strictRunFixture,
+        status: "mismatched",
+        failureCode: "raw upstream details"
+      })
+    ).toBeNull();
+  });
+
+  it("projects only bounded verifier failure codes for the public mismatch state", () => {
+    const source = readWebFile("public/user-flow.js");
+    const functions = standaloneFunctions<{
+      projectFailureCode: (value: unknown) => string | null;
+      mismatchDisplayCopy: (value: unknown) => string;
+    }>(source, ["projectFailureCode", "mismatchDisplayCopy"]);
+
+    expect(functions.projectFailureCode("TARGET_MISMATCH")).toBe("TARGET_MISMATCH");
+    expect(functions.projectFailureCode("ALLOWANCE_EXCEEDED")).toBe("ALLOWANCE_EXCEEDED");
+    expect(functions.projectFailureCode("provider said secret details")).toBeNull();
+    expect(functions.mismatchDisplayCopy("TARGET_MISMATCH")).toContain("실행 대상");
+    expect(functions.mismatchDisplayCopy("ALLOWANCE_EXCEEDED")).toContain("승인 조건");
+    expect(functions.mismatchDisplayCopy("unknown")).toBe(
+      "확인한 조건과 실행 결과가 달라 Receipt를 발급하지 않았습니다."
+    );
   });
 
   it("cancels stale async work before listener invalidation can race it", () => {
@@ -173,9 +205,10 @@ describe("evaluator public boundary", () => {
   it("merges Task 5 responses without erasing local run identity or evidence state", () => {
     const source = readWebFile("public/user-flow.js");
     const { projectSessionRun, mergeRunResponse } = standaloneFunctions<{
+      projectFailureCode: (value: unknown) => string | null;
       projectSessionRun: (value: unknown) => Record<string, unknown> | null;
       mergeRunResponse: (current: Record<string, unknown>, response: unknown) => Record<string, unknown> | null;
-    }>(source, ["projectSessionRun", "mergeRunResponse"]);
+    }>(source, ["projectFailureCode", "projectSessionRun", "mergeRunResponse"]);
     const current = projectSessionRun(strictRunFixture);
     expect(current).not.toBeNull();
 
@@ -390,14 +423,86 @@ describe("evaluator public boundary", () => {
 
     expect(receiptRoute).toContain('const result = await apiFetchJson(`/api/receipts/${hash}`)');
     expect(receiptRoute).not.toContain("shouldReadReceiptApi");
-    expect(receiptRoute).toContain('response.ok && body?.receiptHash === hash && body?.payload?.status === "matched"');
-    for (const field of ["wallet", "target", "asset", "amountBaseUnits", "depositTxHash", "depositBlockNumber", "depositBlockHash", "issuedAt", "safetyNotice"]) {
-      expect(receiptRoute).toContain(`body?.payload?.${field}`);
+    expect(receiptRoute).toContain("projectMatchedReceiptBody(body, hash)");
+    expect(receiptRoute).not.toContain(
+      'response.ok && body?.receiptHash === hash && body?.payload?.status === "matched"'
+    );
+    for (const field of [
+      "wallet",
+      "target",
+      "asset",
+      "amountBaseUnits",
+      "depositTxHash",
+      "depositBlockNumber",
+      "depositBlockHash",
+      "issuedAt",
+      "safetyNotice",
+      "actionType",
+      "spender",
+      "maxAllowanceBaseUnits",
+      "allowanceUsedBaseUnits",
+      "networkName"
+    ]) {
+      expect(receiptRoute).toContain(`payload?.${field}`);
     }
-    expect(source).toContain("body?.verification");
-    for (const field of ["confirmationDepth", "verifierInputHash"]) {
-      expect(source).toContain(`body?.${field}`);
-    }
+    expect(source).toContain("matchedReceiptRows");
+    expect(source).toContain("renderMatchedReceiptSeal");
+    expect(source).toContain("projectMatchedReceiptBody");
+    expect(source).toContain("확인한 조건대로 실행됐습니다.");
+    expect(source).toContain("Matched Receipt");
+  });
+
+  it("shows the Matched Receipt and Seal only for a complete live public payload", () => {
+    const source = readWebFile("public/user-flow.js");
+    const project = standaloneFunction<
+      (body: unknown, expectedHash: string) => Record<string, unknown> | null
+    >(source, "projectMatchedReceiptBody");
+    const receiptHash = `0x${"a".repeat(64)}`;
+    const intentHash = `0x${"b".repeat(64)}`;
+    const depositTxHash = `0x${"c".repeat(64)}`;
+    const blockHash = `0x${"d".repeat(64)}`;
+    const verifierInputHash = `0x${"e".repeat(64)}`;
+    const body = {
+      source: "live",
+      receiptHash,
+      intentHash,
+      verifierInputHash,
+      standardRpcReceiptStatus: 1,
+      depositBlockNumber: 123,
+      depositBlockHash: blockHash,
+      confirmationDepth: 3,
+      testnetNotice: "Testnet-only. No real asset, no yield, no RWA claim.",
+      payload: {
+        status: "matched",
+        chainId: 91342,
+        networkName: "GIWA Sepolia",
+        actionType: "mockVaultDeposit",
+        intentHash,
+        wallet: "0x1111111111111111111111111111111111111111",
+        target: "0x2222222222222222222222222222222222222222",
+        asset: "0x3333333333333333333333333333333333333333",
+        spender: "0x2222222222222222222222222222222222222222",
+        amountBaseUnits: "1000000000000000000",
+        maxAllowanceBaseUnits: "1000000000000000000",
+        allowanceUsedBaseUnits: "1000000000000000000",
+        depositTxHash,
+        depositBlockNumber: 123,
+        depositBlockHash: blockHash,
+        issuedAt: 1_800_000_000,
+        safetyNotice: "Testnet-only. No real asset, no yield, no RWA claim."
+      }
+    };
+
+    expect(project(body, receiptHash)).not.toBeNull();
+    expect(project({ ...body, source: "fixture" }, receiptHash)).toBeNull();
+    expect(project({ ...body, receiptHash: `0x${"f".repeat(64)}` }, receiptHash)).toBeNull();
+    expect(project({ ...body, payload: { ...body.payload, status: "failed" } }, receiptHash)).toBeNull();
+    expect(
+      project({
+        ...body,
+        payload: { ...body.payload, allowanceUsedBaseUnits: undefined }
+      }, receiptHash)
+    ).toBeNull();
   });
 
   it("does not expose internal or unsupported claim copy in public assets", () => {

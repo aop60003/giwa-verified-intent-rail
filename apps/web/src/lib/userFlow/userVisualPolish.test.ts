@@ -8,13 +8,19 @@ function readWebFile(path: string): string {
   return readFileSync(existsSync(directPath) ? directPath : workspacePath, "utf8");
 }
 
+function readWebBuffer(path: string): Uint8Array {
+  const directPath = join(process.cwd(), path);
+  const workspacePath = join(process.cwd(), "apps/web", path);
+  return readFileSync(existsSync(directPath) ? directPath : workspacePath);
+}
+
 describe("evaluator visual polish", () => {
   it("uses Korean-first document language and accessible live status", () => {
     const html = readWebFile("public/user.html");
     const source = readWebFile("public/user-flow.js");
 
     expect(html).toContain('<html lang="ko">');
-    expect(html).toContain("GIWA Verified Intent Rail 평가자 흐름");
+    expect(html).toContain("<title>GIWA Verified Intent Rail</title>");
     expect(html).toContain("액션 화면을 불러오는 중");
     expect(source).toContain('role: "status", "aria-live": "polite"');
     expect(source).toContain('"aria-label": primaryLabel()');
@@ -41,7 +47,7 @@ describe("evaluator visual polish", () => {
     expect(source).toContain("user-state blocked");
     expect(source).toContain("user-state complete");
     expect(source).toContain("user-receipt-actions");
-    expect(source).toContain("트랜잭션 열기");
+    expect(source).toContain("GIWA Explorer에서 보기");
     expect(source).toContain("user-help-card");
     expect(source).not.toMatch(/raw error|upstream|runtime config/iu);
   });
@@ -66,5 +72,49 @@ describe("evaluator visual polish", () => {
     expect(staticServer).toContain('url.pathname === "/healthz"');
     expect(staticServer).toContain('url.pathname === "/readyz"');
     expect(staticServer).not.toMatch(/PRIVATE_KEY|MNEMONIC|BEARER_TOKEN|API_KEY|SECRET_VALUE/u);
+  });
+
+  it("uses one real Seal asset and a human-readable matched Receipt hierarchy", () => {
+    const html = readWebFile("public/user.html");
+    const source = readWebFile("public/user-flow.js");
+    const css = readWebFile("public/styles.css");
+    const seal = readWebBuffer("public/matched-receipt-seal.png");
+    const routeStart = source.indexOf("async function renderReceiptRoute");
+    const receiptRoute = source.slice(
+      routeStart,
+      source.indexOf("function renderHelp", routeStart)
+    );
+
+    expect(html).toContain("pretendardvariable-dynamic-subset.min.css");
+    expect(source).toContain("/matched-receipt-seal.png");
+    expect(source).toContain('alt: ""');
+    expect(source).toContain('"aria-hidden": "true"');
+    expect(receiptRoute.indexOf("renderMatchedReceiptRows(matchRows)")).toBeLessThan(
+      receiptRoute.indexOf('field("Receipt hash", receiptHash)')
+    );
+    expect(source).toContain('id: "copy-receipt-feedback"');
+    expect(source).toContain('tabindex: "-1"');
+    expect(css).toContain(".matched-receipt-seal");
+    expect(css).toContain(".matched-receipt-rows");
+    expect(css).toContain("@keyframes matched-receipt-reveal");
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect([...seal.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  });
+
+  it("describes Receipt history as local browser execution records", () => {
+    const source = readWebFile("public/user-flow.js");
+
+    expect(source).toContain("내 실행 기록");
+    expect(source).toContain("이 브라우저에 저장된 테스트넷 실행 기록입니다.");
+    expect(source).toContain(
+      "사용자는 실행 기록을 받고, 파트너는 클릭이 아니라 Manifest와 일치한 트랜잭션을 KPI로 확인합니다."
+    );
+    expect(source).toContain(
+      "GIWA Wallet 안에서 실행 전 Manifest와 실행 후 Receipt 기록을 연결할 수 있습니다."
+    );
+    expect(source).toContain('networkName: "GIWA Sepolia"');
+    expect(source).toContain("savedAt:");
+    expect(source).not.toContain("영구 소유");
+    expect(source).not.toContain("지갑에 귀속된 NFT");
   });
 });

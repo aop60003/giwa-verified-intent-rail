@@ -23,6 +23,7 @@ const currentPublicPaths = [
   "apps/web/public/live-demo-snapshot.json",
   "apps/web/public/live-flow.js",
   "apps/web/public/live.html",
+  "apps/web/public/matched-receipt-seal.png",
   "apps/web/public/partner-snapshot.json",
   "apps/web/public/styles.css"
 ];

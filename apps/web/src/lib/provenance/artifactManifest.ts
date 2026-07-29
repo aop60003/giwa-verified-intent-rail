@@ -120,7 +120,7 @@ const PACKAGE_METADATA_PATHS = new Set([
   "packages/protocol/package.json",
   "packages/contracts/package.json"
 ]);
-const PUBLIC_EXTENSIONS = new Set([".html", ".js", ".css", ".json"]);
+const PUBLIC_EXTENSIONS = new Set([".html", ".js", ".css", ".json", ".png"]);
 const EVIDENCE_EXTENSIONS = new Set([".json", ".md"]);
 const IMPLEMENTATION_EXTENSIONS = new Set([".md"]);
 const EQUIVALENCE_GROUPS = [

@@ -83,6 +83,9 @@ function projectLiveReceiptModel(body, expectedHash) {
   const receiptHash = body.receiptHash.toLowerCase();
   const depositTxHash = payload.depositTxHash.toLowerCase();
   return {
+    source: {
+      mode: "fresh-live"
+    },
     manifest: {
       target: payload.target.toLowerCase(),
       selector: "0x47e7ef24",
@@ -373,15 +376,25 @@ function renderReceiptRoute(model, routeAllowed, routeHash) {
     return;
   }
 
+  const recorded = model.source?.mode === "completed-demo-evidence";
+  const sourceLabel = recorded
+    ? "Recorded verified example"
+    : "Live matched receipt";
   const receipt = model.receipt;
   app.append(
     el("section", { className: "hero-flow receipt-hero" }, [
       el("div", { className: "hero-copy" }, [
-        el("p", { className: "eyebrow", text: "Testnet receipt" }),
+        el("p", { className: "eyebrow", text: sourceLabel }),
         el("h1", { text: "Receipt ready" }),
         el("p", {
           className: "lead",
           text: "Verifier matched the confirmed mock vault action to the signed manifest."
+        }),
+        el("p", {
+          className: "notice",
+          text: recorded
+            ? "이 화면은 이전 GIWA Sepolia 테스트넷 실행에서 저장된 검증 예시입니다."
+            : "이 Receipt는 현재 live verifier와 public Receipt gate를 통과했습니다."
         }),
         el("div", { className: "hero-actions" }, [
           el("a", { className: "primary-link", href: receipt.depositExplorerUrl ?? "#", text: "Deposit tx" }),

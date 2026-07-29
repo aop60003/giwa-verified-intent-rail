@@ -88,11 +88,15 @@ describe("live public Receipt route", () => {
 
   it("projects a strict verifier-matched live Receipt into the existing route model", () => {
     const model = functions.projectLiveReceiptModel(matchedLiveReceipt, receiptHash) as {
+      source: { mode: string };
       manifest: Record<string, unknown>;
       receipt: Record<string, unknown>;
       partnerConsole: { evidenceCards: { decodedLogSummary: unknown[] } };
     };
 
+    expect(model).toMatchObject({
+      source: { mode: "fresh-live" }
+    });
     expect(model.manifest).toMatchObject({
       target,
       selector: "0x47e7ef24",
@@ -172,5 +176,11 @@ describe("live public Receipt route", () => {
     );
     expect(main).toContain("renderReceiptRoute(liveModel, true, routeHash)");
     expect(main).toContain("render(await response.json())");
+  });
+
+  it("labels fresh live and committed recorded receipts differently", () => {
+    expect(source).toContain("Live matched receipt");
+    expect(source).toContain("Recorded verified example");
+    expect(source).toContain('model.source?.mode === "completed-demo-evidence"');
   });
 });
