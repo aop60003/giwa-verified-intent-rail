@@ -23,6 +23,24 @@ describe("production landing presentation", () => {
     expect(html).toContain("<title>Looprail Demo</title>");
   });
 
+  it("uses the Looprail Demo description across social previews", () => {
+    const html = readWebFile("public/landing.html");
+    const description =
+      "서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 Looprail Demo.";
+    expect(html).toContain(
+      `<meta name="description" content="${description}" />`
+    );
+    expect(html).toContain(
+      `<meta property="og:description" content="${description}" />`
+    );
+    expect(html).toContain(
+      `<meta name="twitter:description" content="${description}" />`
+    );
+    expect(html).not.toContain(
+      "서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 GIWA Verified Intent Rail."
+    );
+  });
+
   it("is Korean-first, concise, and demo-directed", () => {
     const html = readWebFile("public/landing.html");
     expect(html).toContain('<html lang="ko">');
