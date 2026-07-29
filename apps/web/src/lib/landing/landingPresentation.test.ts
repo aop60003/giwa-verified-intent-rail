@@ -9,45 +9,38 @@ function readWebFile(path: string): string {
 }
 
 describe("production landing presentation", () => {
-  it("is Korean-first, evergreen, and demo-directed", () => {
+  it("is Korean-first, concise, and demo-directed", () => {
     const html = readWebFile("public/landing.html");
     expect(html).toContain('<html lang="ko">');
     expect(html).toContain('class="skip-link"');
     expect(html).toContain('id="main-content"');
-    expect(html).toContain("조건은 서명되고,");
-    expect(html).toContain("실행은 증명됩니다.");
-    expect(html).toContain('href="/giwa-demo"');
-    expect(html).toContain("GIWA 데모 열기");
-    expect(html).toContain("검증된 Receipt 보기");
+    expect(html).toContain("실행은 기록되고,");
+    expect(html).toContain("약속은 증명됩니다.");
+    expect(html).toContain(
+      "서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해"
+    );
+    expect(html).toContain('class="button button-primary" href="/giwa-demo"');
+    expect(html).toContain("데모 실행");
+    expect(html).toContain("Receipt 확인");
     expect(html).not.toMatch(/GASOK|심사|평가자|선발|제출|데모데이/iu);
   });
 
-  it("contains the approved evergreen information architecture", () => {
+  it("uses four focused editorial chapters", () => {
     const html = readWebFile("public/landing.html");
-    for (const id of [
-      "product",
-      "how-it-works",
-      "evidence",
-      "use-cases",
-      "why-giwa",
-      "scope"
-    ]) {
+    expect(html.match(/<section\b/gu)).toHaveLength(4);
+    for (const id of ["product", "why", "how-it-works", "final-action"]) {
       expect(html).toContain(`id="${id}"`);
     }
-    for (const copy of [
-      "트랜잭션이 존재한다는 사실만으로는",
-      "무엇을 실행할지 먼저 고정합니다.",
-      "동일한 조건으로 테스트넷 트랜잭션을 전송합니다.",
-      "네 개의 필드를 각각 대조합니다.",
-      "일치한 실행만 공개 Receipt로 남깁니다.",
-      "제품이 필요한 순간",
-      "현재 검증 범위"
-    ]) {
-      expect(html).toContain(copy);
-    }
+    expect(html).toContain('id="why-giwa"');
+    expect(html).toContain("트랜잭션이 남았다는 사실만으로는");
+    expect(html).toContain("Manifest에서 Receipt까지,");
+    expect(html).toContain("하나의 검증 흐름.");
+    expect(html).toContain("직접 실행하고,");
+    expect(html).toContain("결과를 확인해보세요.");
+    expect(html).not.toMatch(/use-cases-section|scope-section/iu);
   });
 
-  it("uses a semantic four-stage proof story without decorative metaphors", () => {
+  it("keeps the semantic four-stage proof story", () => {
     const html = readWebFile("public/landing.html");
     expect(html).toContain("data-scroll-story");
     expect(html).toContain("data-story-progress");
@@ -64,6 +57,18 @@ describe("production landing presentation", () => {
     expect(html).not.toMatch(/hero-slip|receipt-stamp|data-story-root/iu);
   });
 
+  it("shows both sides of every proof comparison and the mismatch rule", () => {
+    const html = readWebFile("public/landing.html");
+    expect(html).toContain('role="columnheader">MANIFEST');
+    expect(html).toContain('role="columnheader">ON-CHAIN');
+    expect(html).toContain('class="ledger-rule"');
+    expect(html).toContain(
+      "한 필드라도 다르면 Receipt를 발행하지 않습니다."
+    );
+    expect(html.match(/class="ledger-manifest"/gu)).toHaveLength(4);
+    expect(html.match(/class="ledger-onchain"/gu)).toHaveLength(4);
+  });
+
   it("keeps unsupported claims and wallet APIs out", () => {
     const html = readWebFile("public/landing.html");
     const source = readWebFile("public/landing.js");
@@ -75,27 +80,43 @@ describe("production landing presentation", () => {
     );
   });
 
-  it("uses the approved editorial tokens and accessibility fallbacks", () => {
+  it("uses the approved editorial tokens and responsive fallbacks", () => {
     const css = readWebFile("public/landing.css");
     expect(css).toContain('"Pretendard Variable"');
     expect(css).toContain("--paper: #f7f6f1");
     expect(css).toContain("--ink: #171916");
     expect(css).toContain("--verified: #0b5f43");
+    expect(css).toContain("--control-radius: 10px");
+    expect(css).toContain("@media (max-width: 1180px)");
     expect(css).toContain("@media (max-width: 760px)");
     expect(css).toContain("(max-height: 640px)");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(css).toContain(":focus-visible");
     expect(css).toContain("overflow-wrap: anywhere");
-    expect(css).toMatch(/\.story-steps\s*\{[\s\S]*display:\s*grid/iu);
-    expect(css).toMatch(/\.story-steps\s*\{[\s\S]*padding-bottom:\s*72px/iu);
-    expect(css).toMatch(/\.story-step\s*\{[\s\S]*display:\s*contents/iu);
-    expect(css).toMatch(/\.story-proof[\s\S]*position:\s*sticky/iu);
-    expect(css).toMatch(/\.story-proof[\s\S]*grid-row:\s*1\s*\/\s*5/iu);
+    expect(css).toContain(
+      "grid-template-columns: minmax(78px, 0.55fr) minmax(118px, 1fr) minmax(118px, 1fr) auto"
+    );
+    expect(css).toContain(".ledger-manifest::before");
+    expect(css).toContain(".ledger-onchain::before");
     expect(css).toMatch(
-      /@media\s*\(max-width:\s*980px\)[\s\S]*\.story-step[\s\S]*display:\s*grid[\s\S]*\.story-proof[\s\S]*position:\s*relative/iu
+      /\.flow-section\s*\{[\s\S]*width:\s*100%/iu
+    );
+    expect(css).not.toContain("width: 100vw");
+    expect(css).not.toContain("margin-left: calc(50% - 50vw)");
+    expect(css).toMatch(
+      /@media\s*\(max-width:\s*1180px\)[\s\S]*\.hero\s*\{[\s\S]*grid-template-columns:\s*1fr/iu
+    );
+    expect(css).toMatch(
+      /:root\s*\{[\s\S]*font-family:\s*"Pretendard Variable"/iu
+    );
+    expect(css).toMatch(
+      /\.proof-ledger,[\s\S]*font-family:\s*ui-monospace/iu
     );
     expect(css).not.toMatch(
-      /backdrop-filter|linear-gradient|radial-gradient|scroll-snap/iu
+      /\.wordmark,\s*[\s\S]*font-family:\s*ui-monospace/iu
+    );
+    expect(css).not.toMatch(
+      /backdrop-filter|linear-gradient|radial-gradient|scroll-snap|proof-shadow|surface-radius/iu
     );
   });
 });
