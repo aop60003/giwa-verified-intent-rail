@@ -9,6 +9,20 @@ function readWebFile(path: string): string {
 }
 
 describe("production landing presentation", () => {
+  it("publishes the requested Looprail social preview identity", () => {
+    const html = readWebFile("public/landing.html");
+    expect(html).toContain(
+      '<meta property="og:site_name" content="GIWA Looprail" />'
+    );
+    expect(html).toContain(
+      '<meta property="og:title" content="Looprail Demo" />'
+    );
+    expect(html).toContain(
+      '<meta name="twitter:title" content="Looprail Demo" />'
+    );
+    expect(html).toContain("<title>Looprail Demo</title>");
+  });
+
   it("is Korean-first, concise, and demo-directed", () => {
     const html = readWebFile("public/landing.html");
     expect(html).toContain('<html lang="ko">');
