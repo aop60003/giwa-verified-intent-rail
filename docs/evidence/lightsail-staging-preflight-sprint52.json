@@ -99,22 +99,22 @@
     "boundedUpstreamErrorsRequired": true
   },
   "envContract": {
-    "variableNamesOnly": true,
+    "variableNamesOnly": false,
     "valuesIncluded": false,
-    "serverOnlyNames": [
-      "HOST",
-      "PORT",
-      "GIWA_LIVE_MODE",
-      "GIWA_LIVE_DB_PATH",
-      "GIWA_LIVE_ALLOWED_ORIGINS",
-      "GIWA_LIVE_PARTNER_TENANT_ID",
-      "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES",
-      "GIWA_SEPOLIA_RPC_URL",
-      "GIWA_EXPLORER_TX_URL_TEMPLATE",
-      "GIWA_EXPLORER_ADDRESS_URL_TEMPLATE",
-      "CAMPAIGN_SIGNER_PRIVATE_KEY",
-      "INTENT_SUBMITTER_PRIVATE_KEY",
-      "VERIFIER_PRIVATE_KEY"
+    "publicEvidenceUsesCategoriesOnly": true,
+    "serverOnlyNameCategories": [
+      "host binding category",
+      "service port category",
+      "live runtime mode category",
+      "local data path category",
+      "origin allowlist category",
+      "partner tenant category",
+      "partner credential hash category",
+      "standard RPC endpoint category",
+      "explorer URL template category",
+      "campaign signer material category",
+      "intent submitter material category",
+      "verifier operator material category"
     ],
     "publicSafeCategories": [
       "product name",

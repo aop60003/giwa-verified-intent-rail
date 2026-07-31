@@ -1,6 +1,7 @@
 const app = document.querySelector("#app");
 const GIWA_CHAIN_ID = 91342;
 const GIWA_CHAIN_HEX = "0x164ce";
+const REQUEST_TIMEOUT_MS = 8000;
 const addChainRequest = {
   chainId: GIWA_CHAIN_HEX,
   chainName: "GIWA Sepolia",
@@ -74,6 +75,22 @@ function publicErrorNotice(kind) {
 
 function apiErrorCode(body) {
   return typeof body?.error === "string" ? body.error : "request_failed";
+}
+
+async function fetchWithTimeout(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(path, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function readApiJson(path, options = {}) {
+  const response = await fetchWithTimeout(path, options);
+  const body = await response.json();
+  return { response, body };
 }
 
 function primaryButtonLabel() {
@@ -372,7 +389,7 @@ async function switchToGiwa(provider) {
 
 async function issueManifest() {
   if (walletState.account === null || walletState.chainId !== GIWA_CHAIN_ID) return;
-  const response = await fetch("/api/runs", {
+  const { response, body } = await readApiJson("/api/runs", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -383,7 +400,6 @@ async function issueManifest() {
       referralCode: null
     })
   });
-  const body = await response.json();
   if (!response.ok) {
     notice = `Manifest request could not be created: ${apiErrorCode(body)}`;
     return;
@@ -404,7 +420,7 @@ async function sendWalletTransaction(request) {
 
 async function submitEvidence() {
   if (!runState?.runId || !runState.depositTxHash) return;
-  const response = await fetch(`/api/runs/${runState.runId}/evidence`, {
+  const { response, body } = await readApiJson(`/api/runs/${runState.runId}/evidence`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -412,7 +428,6 @@ async function submitEvidence() {
       depositTxHash: runState.depositTxHash
     })
   });
-  const body = await response.json();
   if (!response.ok) {
     notice = `Evidence submit could not be saved: ${apiErrorCode(body)}`;
     return;
@@ -423,12 +438,11 @@ async function submitEvidence() {
 
 async function verifyReceipt() {
   if (!canRequestVerify()) return;
-  const response = await fetch(`/api/runs/${runState.runId}/verify`, {
+  const { response, body } = await readApiJson(`/api/runs/${runState.runId}/verify`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({})
   });
-  const body = await response.json();
   if (!response.ok) {
     notice = `Verification could not run yet: ${apiErrorCode(body)}`;
     return;
@@ -492,7 +506,7 @@ async function onVerifyAction() {
 
 async function invalidateCurrentRun(reason) {
   if (!runState?.runId) return;
-  await fetch(`/api/runs/${runState.runId}/invalidate`, {
+  await fetchWithTimeout(`/api/runs/${runState.runId}/invalidate`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ reason })

@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-31T11:51:03.166Z",
+  "generatedAt": "2026-07-31T11:57:05.538Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -96,8 +96,8 @@
         "path": "apps/web/public/demo-control-room.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "b3d5291c368489820b52f24feafef019a5069306a0b73f82095bae86fdbbe14a",
-        "bytes": 5061,
+        "sha256": "347c0cd08c5cdfd6bd94ad452c779875921c7b204529a7af8c8ef78deef028bd",
+        "bytes": 5818,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -126,8 +126,8 @@
         "path": "apps/web/public/flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "81864de4e046307c506847b073850557703b3468ca1ac43d5fb357787b36f89c",
-        "bytes": 108481,
+        "sha256": "84c43d7b842b5bfd0f7a22fdc32ce58b7ac6694a06c25de2025b675812d14587",
+        "bytes": 111382,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -206,8 +206,8 @@
         "path": "apps/web/public/live-flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "68152c81af02ffb69b29b5dc6e6edba41abcc35110da847aa9bdeded0e60db02",
-        "bytes": 22338,
+        "sha256": "d5ce9f35f7d630c0fb16278a467f9f28c02155854d5720f0c5573e40c26a3499",
+        "bytes": 23356,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -246,8 +246,8 @@
         "path": "apps/web/public/styles.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "8474d85641dd525b6036efe204373f172fcb14324877ab9278b7b954d7397efa",
-        "bytes": 54817,
+        "sha256": "227bd06dfbf1e714a8918d84475d80a5b868d10c1ae85ae8e9809acef3078677",
+        "bytes": 57935,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -256,8 +256,8 @@
         "path": "apps/web/public/user-flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "98f55495fe9abc52fae9b0d205cdac363c4eb2a6b63c35b1f7c920e51afcf2d7",
-        "bytes": 158873,
+        "sha256": "63117c1b814282b9ba4eca459d468bf4be854bc24efbe3f9c45dd1d5aafe6d3c",
+        "bytes": 163260,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -345,6 +345,26 @@
         "schemaPath": null
       },
       {
+        "path": "docs/evidence/frontend-audit-2026-07-05/notes.md",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "4082291dec104e46789b6f52926f2b73d21961ab8b753037d14895346c62d64e",
+        "bytes": 6601,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/evidence/frontend-redesign-2026-07-05/notes.md",
+        "role": "public-evidence",
+        "required": true,
+        "sha256": "877ff5226c457cab3176ef34beb343d6cb393b8fca8c7ff72bcdfa23350ed0ef",
+        "bytes": 2894,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
         "path": "docs/evidence/gasok-local-rehearsal-2026-07.json",
         "role": "public-evidence",
         "required": true,
@@ -418,8 +438,8 @@
         "path": "docs/evidence/lightsail-staging-preflight-sprint52.json",
         "role": "public-evidence",
         "required": true,
-        "sha256": "1b327cfacb992fd5db9d1720fa109ccc11c4a17c7475e93c1f4f16dc8d5bb408",
-        "bytes": 5747,
+        "sha256": "e076515b5db1c8a3ecdf564ecee1a8aa723befa5838b0b459cb8dc31b3e59052",
+        "bytes": 6010,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1080,8 +1100,8 @@
         "path": "docs/implementation/giwa-release-1-2-local-completion-freeze.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "25b5ecbd1244d6c966b3367e77a9acbed9211b2023af32134e3d9452fa35ed13",
-        "bytes": 6496,
+        "sha256": "b70a5b965e078c584beb52ed2c003da0d601964f7f90c71676d0cc6e058f0122",
+        "bytes": 6217,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1100,8 +1120,8 @@
         "path": "docs/implementation/giwa-staging-blocker-register.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "1fd135409a624c87ef1f77d69b380efd77c4cd7ea39ac15210f85a022403bf37",
-        "bytes": 60057,
+        "sha256": "7e00826cde2d6545d99a04dd85cb5aa1ed4755d846729b6f725466a21dfda4aa",
+        "bytes": 61509,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1295,6 +1315,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "d196e3f4755611f96b3bfe6de41666727df42a2965bd6cd041a5fc0e2e1a278e",
+  "buildTreeSha256": "2b809f5c4fb721f184f2f4839df9445b70decb789b82657c1a867486a859f301",
   "unmanifestedFilePolicy": "fail"
 }

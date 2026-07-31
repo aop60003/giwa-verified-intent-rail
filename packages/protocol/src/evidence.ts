@@ -24,7 +24,12 @@ import {
   computeReceiptHash,
   normalizeReceiptPayload
 } from "./receipt.ts";
-import { normalizeBytes32, requireNonNegativeInteger, requirePositiveInteger } from "./validation.ts";
+import {
+  normalizeBytes32,
+  requireNonNegativeInteger,
+  requirePositiveInteger,
+  requireTrimmedString
+} from "./validation.ts";
 
 const fakeBytes32 = (char: string): Hex => `0x${char.repeat(64)}` as Hex;
 
@@ -65,7 +70,7 @@ export function normalizeVerifierInputPayload(input: VerifierInputPayload): Veri
       input.headBlockNumberAtVerification,
       "headBlockNumberAtVerification"
     ),
-    verifierVersion: input.verifierVersion.trim()
+    verifierVersion: requireTrimmedString(input.verifierVersion, "verifierVersion")
   };
 }
 

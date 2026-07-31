@@ -2,58 +2,59 @@
 
 ## Current Status
 
-Sprint 19 preparation is blocked for staging dry run. The latest protected CI dispatch still returned the account billing annotation before runner steps, so protected CI and release approval remain absent. Sprint 43 freezes the local-advisory handoff state and turns remaining release blockers into monitorable external conditions. Sprint 44 hardens handoff consistency and local guards. Sprint 45 hardens bounded verifier failure redaction, hosted request safety, public artifact credential scanning, telemetry value redaction, and legacy snapshot replay-boundary labeling. Sprint 46 hardens public read paths, readiness metadata, public evidence scanning, and standard RPC block evidence wording. Sprint 47 hardens client-side public error-copy fallback paths without changing the external blocker state:
+Current `main` is a local-review handoff freeze after Sprint 53. Sprint 48 defines the commercial user-facing UX, Sprint 49 implements the local `/user` route family, Sprint 50 records local responsive visual QA, Sprint 51 plans the Lightsail staging architecture, Sprint 52 records the deploy preflight package, and Sprint 53 records an explicit-approval deploy execution plan. None of those sprints creates infrastructure, deploys, configures DNS/HTTPS, connects managed infrastructure, dispatches protected CI, reads env values, sends wallet actions, runs GIWA chain-operation package commands, or installs dependencies.
+
+The latest recorded protected CI evidence remains the stale billing-lock failure class from run `27873338373` on `2b414c91b1da6ed64287dbf7b2635be7586e287d`. Current HEAD `def44988784e387f0ebce1ddf99bd739c9f5d34d` has no release-grade protected CI evidence recorded in this repository. Protected artifact metadata, branch-protection satisfaction, release approval, partner/customer signoff, external hosting approval, managed infrastructure approval, and staging execution remain blocked.
 
 ```text
 .git=True
 .github=True
 .github/workflows=True
 workflowPath=.github/workflows/ci.yml
-handoffInputMainHead=db9e6a8ec321f7d0223b49cb733c8b983698e3ae
-currentMainCheckRuns=0
-latestRealActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
+currentMainHead=def44988784e387f0ebce1ddf99bd739c9f5d34d
+currentMainAuthority=local-advisory
+currentMainCheckRuns=0-recorded-in-repo
+latestRecordedActionsRun=27873338373
+latestRecordedActionsRunHeadSha=2b414c91b1da6ed64287dbf7b2635be7586e287d
+latestRecordedActionsConclusion=failure
+latestRecordedActionsFirstJob=source-provenance
+latestRecordedActionsDownstreamJobs=9-skipped
+latestRecordedActionsArtifactTotalCount=0
+latestRecordedActionsFailureClass=github-account-billing-lock
 remoteGitHubRepository=https://github.com/aop60003/giwa-verified-intent-rail
 repositoryVisibility=public
 remotePushApproval=approved-2026-06-20
 remotePush=complete
-githubActionsRun=27873338373
-githubActionsEvent=workflow_dispatch
-githubActionsConclusion=failure
-githubActionsFirstJob=source-provenance
-githubActionsDownstreamJobs=9-skipped
-githubActionsLog=not-found
-githubActionsFailureClass=github-account-billing-lock
-requiredCheckStatuses=created-but-failing
-protectedArtifactGeneration=absent
+requiredCheckContexts=10
+requiredCheckStatuses=absent-for-current-head
+protectedCI=blocked-external-github-account
+protectedArtifactMetadata=absent
 protectedArtifactUploadMetadata=absent
+branchProtectionSatisfaction=blocked-current-head-checks-absent
 releaseApproval=absent
 rollbackOwner=absent
-protected-ci=blocked-billing-lock-after-dispatch
-branch-protection=configured-required-checks-failing
-hostedAdapterLocalContract=blocked-local-advisory
-stagingDryRunSimulation=blocked-local-advisory
-protectedArtifactMetadata=mixed-repo-workflow-blocker
+partnerCustomerSignoff=absent
+externalHostingApproval=absent
+managedInfrastructureApproval=absent
+lightsailInstanceCreated=false
+publicDeployExecuted=false
+dnsConfigured=false
+httpsConfigured=false
+managedInfrastructureConnected=false
+stagingDryRunExecution=blocked
+commercialReadiness=blocked
+goNoGo=no-go
 partnerHandoffPacket=local-advisory-ready
-externalBlockerMonitoring=complete-local-advisory
 commercialReadyLocalHandoffFreeze=true
 localReadinessFreeze=docs/evidence/commercial-readiness-sprint40-freeze.json
 partnerCustomerHandoffPackage=docs/evidence/partner-customer-handoff-sprint41.json
-partnerCustomerHandoffState=local-advisory-finalized
-hostedAdapterCommercialBoundary=docs/evidence/hosted-adapter-commercial-boundary-sprint42.json
 stagingHandoffEvidence=docs/evidence/staging-handoff-sprint43-external-blockers.json
-commercialHandoffConsistencyEvidence=docs/evidence/commercial-handoff-consistency-sprint44.json
-boundedFailureRedactionEvidence=docs/evidence/bounded-failure-redaction-sprint45.json
-publicBoundaryFinalHardeningEvidence=docs/evidence/public-boundary-final-hardening-sprint46.json
 clientSidePublicErrorCopyEvidence=docs/evidence/client-side-public-error-copy-sprint47.json
-commercialReadiness=blocked
-stagingDryRunExecution=blocked
-external partner signoff=absent
-public host approval=absent
-managed infrastructure approval=absent
-durable staging storage=absent
-explicit tenant mapping=absent
-hosted DB probe=absent
-backup restore drill=absent
+commercialUserFlowEvidence=docs/evidence/commercial-user-flow-sprint49.json
+commercialUserFlowVisualQaEvidence=docs/evidence/commercial-user-flow-sprint50-visual-qa.json
+lightsailStagingPlanEvidence=docs/evidence/lightsail-staging-plan-sprint51.json
+lightsailStagingPreflightEvidence=docs/evidence/lightsail-staging-preflight-sprint52.json
+lightsailStagingExecutionPlanEvidence=docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json
 ```
 
 ## Blocker Register

@@ -75,6 +75,15 @@ export function normalizeReceiptPayload(input: ReceiptPayload): ReceiptPayload {
   if (!["verified", "guest", "unavailable"].includes(input.verifiedState)) {
     throw new Error("verifiedState must be verified, guest, or unavailable");
   }
+  if (typeof input.approvalRequired !== "boolean") {
+    throw new Error("approvalRequired must be boolean");
+  }
+  if (
+    input.verifiedProvider !== undefined &&
+    !["Dojang", "up.id"].includes(input.verifiedProvider)
+  ) {
+    throw new Error("verifiedProvider must be Dojang or up.id");
+  }
 
   const payload: ReceiptPayload = {
     schemaVersion: RECEIPT_SCHEMA_VERSION,

@@ -722,15 +722,15 @@ describe("public Campaign Studio presentation", () => {
       1
     );
     expect(proofSource).toContain('id: "proof-negative-control-slot"');
-    expect(proofSource).toContain(
-      'renderVerificationBundle(proof, { replayId: "copy-proof-replay" }),\n      negativeControlSlot'
+    expect(proofSource).toMatch(
+      /renderVerificationBundle\(proof, \{ replayId: "copy-proof-replay" \}\),\r?\n\s+negativeControlSlot/u
     );
   });
 
   it("renders matched proof before a deferred secondary control resolves", async () => {
     expect(source).toContain("function loadPublicEvidenceRoute");
-    expect(source).toContain(
-      'new URLSearchParams(location.search).get("proof") ??\n      new URLSearchParams(location.search).get("hash")'
+    expect(source).toMatch(
+      /new URLSearchParams\(location\.search\)\.get\("proof"\) \?\?\r?\n\s+new URLSearchParams\(location\.search\)\.get\("hash"\)/u
     );
     expect(source).toContain('name: "proof"');
     const loadRoute = standaloneFunction<

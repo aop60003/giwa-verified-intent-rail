@@ -73,6 +73,15 @@ describe("receipt canonical identity", () => {
     expect(receiptIdempotencyKey(receiptFixture.intentHash)).toBe(`proofkpi-receipt:${h1}`);
   });
 
+  it("rejects non-boolean approvalRequired and unknown verified providers", () => {
+    expect(() =>
+      normalizeReceiptPayload({ ...receiptFixture, approvalRequired: "false" } as unknown as ReceiptPayload)
+    ).toThrow("approvalRequired must be boolean");
+    expect(() =>
+      normalizeReceiptPayload({ ...receiptFixture, verifiedProvider: "Other" } as unknown as ReceiptPayload)
+    ).toThrow("verifiedProvider must be Dojang or up.id");
+  });
+
   it("creates an envelope without changing the canonical receipt hash", () => {
     const envelope = createReceiptEnvelope(receiptFixture, {
       decisionTxHash: h4,

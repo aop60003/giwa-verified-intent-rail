@@ -389,8 +389,46 @@ describe("live API contracts", () => {
       selector: "0x47e7ef24",
       intentHash: mockIntentHash
     });
-    expect(response.body.approveAction).toMatchObject({ enabled: true, nextSprint: null });
-    expect(response.body.depositAction).toMatchObject({ enabled: true, nextSprint: null });
+    expect(response.body.approveAction).toMatchObject({ enabled: true, capability: "ready" });
+    expect(response.body.depositAction).toMatchObject({ enabled: true, capability: "ready" });
+  });
+
+  it("rejects malformed manifest issue input at the API boundary", async () => {
+    const api = createLiveApiHandler({
+      store: createMemoryLiveStore(),
+      now: () => "2026-06-17T00:00:00.000Z",
+      issueManifest: async () => {
+        throw new Error("issuer should not run for invalid input");
+      }
+    });
+
+    const badWallet = await api({
+      method: "POST",
+      pathname: "/api/runs",
+      body: {
+        wallet: "not-an-address",
+        chainId: 91342,
+        campaignId: "gasok-demo",
+        missionId: "first-mock-vault-deposit",
+        referralCode: null
+      }
+    });
+    const badCampaign = await api({
+      method: "POST",
+      pathname: "/api/runs",
+      body: {
+        wallet: "0x1111111111111111111111111111111111111111",
+        chainId: 91342,
+        campaignId: "gasok-demo\nhidden",
+        missionId: "first-mock-vault-deposit",
+        referralCode: null
+      }
+    });
+
+    expect(badWallet.status).toBe(400);
+    expect(badWallet.body.error).toBe("wallet must be a valid address");
+    expect(badCampaign.status).toBe(400);
+    expect(badCampaign.body.error).toBe("fixed_policy_override_not_allowed");
   });
 
   it("stores evidence hashes without verifying", async () => {
@@ -546,7 +584,7 @@ describe("live API contracts", () => {
       status: "depositSubmitted",
       receiptReady: false,
       receiptHash: null,
-      nextSprint: "Sprint 11"
+      verification: { status: "not_started", reason: "deposit_evidence_stored" }
     });
     expect(store.getRun("run-1")?.status).toBe("depositSubmitted");
   });
@@ -606,7 +644,7 @@ describe("live API contracts", () => {
     expect(duplicate.body.error).toBe("deposit_tx_hash_already_used");
   });
 
-  it("blocks chain-bound intent relay until Sprint 11", async () => {
+  it("blocks server-side chain-bound intent relay", async () => {
     const api = createLiveApiHandler({
       store: createMemoryLiveStore(),
       now: () => "2026-06-17T00:00:00.000Z",
@@ -634,11 +672,11 @@ describe("live API contracts", () => {
     const response = await api({ method: "POST", pathname: "/api/runs/run-1/intent-submit", body: {} });
 
     expect(response.status).toBe(409);
-    expect(response.body.error).toBe("chain_action_disabled_until_sprint_11");
-    expect(response.body.nextSprint).toBe("Sprint 11");
+    expect(response.body.error).toBe("chain_action_unavailable");
+    expect(response.body.reason).toBe("server_wallet_actions_are_disabled");
   });
 
-  it("blocks verifier transaction path until Sprint 11", async () => {
+  it("reports verifier unavailable when no verifier dependency is configured", async () => {
     const api = createLiveApiHandler({
       store: createMemoryLiveStore(),
       now: () => "2026-06-17T00:00:00.000Z",
@@ -666,8 +704,8 @@ describe("live API contracts", () => {
     const response = await api({ method: "POST", pathname: "/api/runs/run-1/verify", body: {} });
 
     expect(response.status).toBe(409);
-    expect(response.body.error).toBe("chain_action_disabled_until_sprint_11");
-    expect(response.body.nextSprint).toBe("Sprint 11");
+    expect(response.body.error).toBe("verifier_unavailable");
+    expect(response.body.reason).toBe("local_verifier_not_configured");
   });
 
   it("runs local verifier and unlocks a dynamic receipt after a matched deposit", async () => {
@@ -2167,7 +2205,7 @@ describe("live API contracts", () => {
     expect(store.getSubmittedTx("run-status-lag")).toBeUndefined();
   });
 
-  it("keeps receipt route locked after Sprint 10 deposit evidence submission", async () => {
+  it("keeps receipt route locked after deposit evidence submission", async () => {
     const store = createMemoryLiveStore();
     const api = createLiveApiHandler({
       store,

@@ -42,6 +42,11 @@ import {
 import { replayPublicVerificationBundle } from "./publicVerificationReplay.ts";
 
 const GIWA_SEPOLIA_CHAIN_ID = 91342;
+const SAFE_MANIFEST_INPUT_ERRORS = new Set([
+  "wallet must be a valid address",
+  "referralCode is too long",
+  "referralCode contains unsupported characters"
+]);
 
 export type LiveApiRequest = {
   method: string;
@@ -175,6 +180,28 @@ function optionalString(body: Record<string, unknown>, key: string): string | nu
   return value.trim();
 }
 
+function optionalBoundedString(
+  body: Record<string, unknown>,
+  key: string,
+  maxLength: number
+): string | null {
+  const value = optionalString(body, key);
+  if (value === null || value.length === 0) return null;
+  if (value.length > maxLength) throw new Error(`${key} is too long`);
+  if (/[\u0000-\u001f\u007f]/u.test(value)) {
+    throw new Error(`${key} contains unsupported characters`);
+  }
+  return value;
+}
+
+function requiredAddress(body: Record<string, unknown>, key: string): string {
+  const value = requiredString(body, key).toLowerCase();
+  if (!/^0x[a-f0-9]{40}$/u.test(value)) {
+    throw new Error(`${key} must be a valid address`);
+  }
+  return value;
+}
+
 function optionalNumber(body: Record<string, unknown>, key: string): number | null {
   const value = body[key];
   if (value === null || value === undefined || value === "") return null;
@@ -243,12 +270,12 @@ function runResponse(
     approveAction: {
       enabled: transactionReady,
       reason: transactionReady ? null : "manifest_preview_required",
-      nextSprint: null
+      capability: transactionReady ? "ready" : "manifest_preview_required"
     },
     depositAction: {
       enabled: transactionReady,
       reason: transactionReady ? null : "manifest_preview_required",
-      nextSprint: null
+      capability: transactionReady ? "ready" : "manifest_preview_required"
     },
     approveTxHash: state?.submittedTx?.approveTxHash ?? null,
     depositTxHash: state?.submittedTx?.depositTxHash ?? null,
@@ -443,10 +470,10 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
         const body = objectBody(request.body);
         assertFixedRunPolicy(body);
         const input: ManifestIssueInput = {
-          wallet: requiredString(body, "wallet").toLowerCase(),
+          wallet: requiredAddress(body, "wallet"),
           campaignId: GASOK_CAMPAIGN_ID,
           missionId: GASOK_MISSION_ID,
-          referralCode: optionalString(body, "referralCode")
+          referralCode: optionalBoundedString(body, "referralCode", 96)
         };
         const chainId = optionalNumber(body, "chainId");
         if (chainId !== null && chainId !== GIWA_SEPOLIA_CHAIN_ID) {
@@ -546,7 +573,10 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             status: updated.status,
             receiptReady: false,
             receiptHash: null,
-            nextSprint: "Sprint 11"
+            verification: {
+              status: "not_started",
+              reason: "deposit_evidence_stored"
+            }
           }
         };
       }
@@ -569,7 +599,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
         }
         return {
           status: 409,
-          body: { error: "chain_action_disabled_until_sprint_11", runId: intentRelayRunId, nextSprint: "Sprint 11" }
+          body: {
+            error: "chain_action_unavailable",
+            runId: intentRelayRunId,
+            reason: "server_wallet_actions_are_disabled"
+          }
         };
       }
 
@@ -580,7 +614,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
         if (deps.verifyRun === undefined) {
           return {
             status: 409,
-            body: { error: "chain_action_disabled_until_sprint_11", runId: verifyRunId, nextSprint: "Sprint 11" }
+            body: {
+              error: "verifier_unavailable",
+              runId: verifyRunId,
+              reason: "local_verifier_not_configured"
+            }
           };
         }
         const submittedTx = deps.store.getSubmittedTx(verifyRunId);
@@ -850,7 +888,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
     } catch (error) {
       if (
         error instanceof Error &&
-        (error.message === "fixed_policy_override_not_allowed" || error.message === "run_capability_required")
+        (
+          error.message === "fixed_policy_override_not_allowed" ||
+          error.message === "run_capability_required" ||
+          SAFE_MANIFEST_INPUT_ERRORS.has(error.message)
+        )
       ) {
         return { status: 400, body: errorBody(error.message, request.requestId) };
       }

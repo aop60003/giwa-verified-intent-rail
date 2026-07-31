@@ -8,8 +8,8 @@ This document records the local-advisory completion boundary for:
 - Release 2 — Public Verifiability and Partner Evidence.
 
 It moves the durable outcome out of ignored local execution logs and into the
-versioned documentation set. It does not claim a clean source commit, protected
-CI, public deployment, remote migration, backfill, wallet action, or chain
+versioned documentation set. It does not claim protected CI, public deployment,
+remote migration, backfill, wallet action, or chain
 transaction.
 
 ```text
@@ -19,8 +19,8 @@ releaseGrade=false
 release1=complete-local
 release2=complete-local
 baseHead=3b2acbcbb47fe1966e330f2080284e62c848fb6a
-freezeCommit=unassigned
-originIntegration=pending
+freezeCommit=7207be914ebc0558b8269b84271e005b40cc0d16
+originIntegration=6f8974e-integrated-locally
 deploymentAuthorized=false
 ```
 
@@ -45,7 +45,7 @@ Fresh local verification on 2026-07-31 produced:
 
 | Command | Result |
 | --- | --- |
-| `pnpm test` | passed: web 94 files / 713 tests; protocol 5 files / 27 tests; contracts 3 files / 21 tests |
+| `pnpm test` | passed: web 94 files / 714 tests; protocol 5 files / 29 tests; contracts 3 files / 21 tests |
 | `pnpm typecheck` | passed for web, protocol, and contracts |
 | `pnpm build` | passed for web, protocol, and contracts; owning web export refreshed `flow-data.json` and `partner-snapshot.json` |
 | `git diff --check` | passed; line-ending conversion warnings only |
@@ -94,25 +94,16 @@ packet, the exact source commit, and final verification evidence.
 
 ## Working Tree and Git Integration Boundary
 
-At capture time, local `main` is based on `3b2acbc` and the locally known
-`origin/main` has one unique commit, `6f8974e`. The branches overlap in
-`AGENTS.md`, browser runtime/CSS files, `liveApi.ts`, and related tests. The
-working tree also contains the full uncommitted Release 1 and Release 2 change
-set plus earlier approved presentation work.
+The Release 1 and Release 2 source freeze is commit `7207be9`. After that local
+commit made the work recoverable, the previously unique `origin/main` commit
+`6f8974e` was integrated locally under explicit user direction. Overlapping
+browser and live API changes retained the current Release 1/2 trust, replay,
+privacy, and public-boundary contracts; remote protocol and evidence additions
+were preserved. Workspace verification and artifact provenance must pass on the
+resulting merge before the integration is considered complete.
 
-Therefore:
-
-1. do not pull, merge, rebase, reset, or cherry-pick while the tree is dirty;
-2. review the intentional freeze file set before any staging operation;
-3. assign the work to reviewed release-boundary commit(s) only after explicit
-   user direction;
-4. integrate the unique remote commit only after the local work is recoverable;
-5. resolve overlapping browser/live API changes semantically rather than by
-   choosing one side wholesale; and
-6. rerun workspace tests, typecheck, build, public-boundary checks, and artifact
-   provenance after integration.
-
-No Git integration operation is authorized by this document.
+This record authorizes no additional Git publication, push, deployment, remote
+migration, backfill, wallet action, or chain transaction.
 
 ## Local Artifact Exclusions
 
