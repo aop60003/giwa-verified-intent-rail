@@ -174,7 +174,10 @@ describe("live public Receipt route", () => {
     expect(main.indexOf("await fetchLiveReceiptModel(routeHash)")).toBeLessThan(
       main.indexOf('fetch("/flow-data.json"')
     );
-    expect(main).toContain("renderReceiptRoute(liveModel, true, routeHash)");
+    expect(main).toContain("fetchPublicMatchedProof(routeHash)");
+    expect(main).toContain(
+      "renderReceiptRoute(liveModel, true, routeHash, publicProof)"
+    );
     expect(main).toContain("render(await response.json())");
   });
 
@@ -182,5 +185,37 @@ describe("live public Receipt route", () => {
     expect(source).toContain("Live matched receipt");
     expect(source).toContain("Recorded verified example");
     expect(source).toContain('model.source?.mode === "completed-demo-evidence"');
+  });
+
+  it("explains both signatures before technical proof details", () => {
+    expect(source).toContain("캠페인이 서명한 조건");
+    expect(source).toContain("참여자 지갑이 실행한 트랜잭션");
+    expect(source).toContain("Exact Execution Seal");
+  });
+
+  it("describes the absent decision transaction accurately and keeps the same Receipt in the partner link", () => {
+    expect(source).toContain("별도 decision tx 없음");
+    expect(source).toContain('`/partner?receipt=${receipt.receiptHash}`');
+    expect(source).toContain(
+      'document.title = "Matched Receipt · GIWA Verified Intent Rail"'
+    );
+  });
+
+  it("labels confirmations as a verification snapshot and hides empty logs", () => {
+    expect(source).toContain("Verification snapshot");
+    expect(source).toContain("decodedLogSummary.length > 0");
+    expect(source).not.toContain('field("Confirmation depth"');
+  });
+
+  it("keeps the JSON action unavailable when the matched Receipt has no valid bundle", () => {
+    const receiptRoute = source.slice(
+      source.indexOf("function renderReceiptRoute"),
+      source.indexOf("function projectCampaignHandoffRequest")
+    );
+    expect(receiptRoute).toContain("renderVerificationBundle");
+    expect(source).toContain("검증 번들을 사용할 수 없습니다");
+    expect(source).toContain("disabled: true");
+    expect(receiptRoute).toContain("Campaign");
+    expect(receiptRoute).toContain("GIWA Explorer");
   });
 });

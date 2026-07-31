@@ -1,8 +1,16 @@
-import type { Hex, VerifierDecision } from "../../../../../packages/protocol/src/index.ts";
+import type {
+  ActionManifest,
+  Address,
+  Hex,
+  ReceiptPayload,
+  VerifierDecision,
+  VerifierInputPayload
+} from "../../../../../packages/protocol/src/index.ts";
 import { normalizeAddress } from "../../../../../packages/protocol/src/validation.ts";
 
 import type { LiveRunRecord, ReceiptRecord, SubmittedTxRecord } from "../live/liveTypes.ts";
 import { buildLiveVerifierInput } from "./liveVerifierInput.ts";
+import type { DecodedLogSnapshot } from "./decodeEvidence.ts";
 import { decodeDepositReceiptLogs } from "./depositReceiptDecoder.ts";
 import { buildLiveReceipt } from "./liveReceiptBuilder.ts";
 import { normalizeLiveVerifierPolicy, type LiveVerifierPolicyInput } from "./liveVerifierPolicy.ts";
@@ -43,6 +51,37 @@ export type LiveVerifierServiceResult = {
     canonicalPayload: string;
     canonicalPayloadBytesHex: Hex;
     createdAt: string;
+  };
+  publicEvidenceDraft?: LiveVerifierPublicEvidenceDraft;
+};
+
+export type LiveVerifierPublicEvidenceDraft = {
+  manifest: {
+    payload: ActionManifest;
+    signature: Hex;
+    verifyingContract: Address;
+    recoveredSigner: Address;
+  };
+  verifierInput: {
+    payload: VerifierInputPayload;
+    canonicalPayload: string;
+    canonicalPayloadBytesHex: Hex;
+    verifierInputHash: Hex;
+    verifierVersion: string;
+  };
+  verification: {
+    depositBlockNumber: number;
+    depositBlockHash: Hex;
+    headBlockNumberAtVerification: number;
+    confirmationDepth: number;
+    standardRpcReceiptStatus: 1;
+  };
+  decodedLogs: DecodedLogSnapshot[];
+  receipt: {
+    record: ReceiptRecord;
+    payload: ReceiptPayload;
+    schemaVersion: "1";
+    verifierVersion: string;
   };
 };
 
@@ -106,6 +145,13 @@ export async function verifyLiveRun(input: LiveVerifierServiceInput): Promise<Li
     }
     throw error;
   }
+  let verifiedManifest:
+    | {
+        signature: Hex;
+        verifyingContract: Address;
+        recoveredSigner: Address;
+      }
+    | undefined;
   if (policy !== undefined) {
     const manifestSignature = input.manifestSignature ?? (input.run.manifestSignature as Hex);
     const signer = await verifyDeploymentManifestSigner({
@@ -134,6 +180,24 @@ export async function verifyLiveRun(input: LiveVerifierServiceInput): Promise<Li
         }
       };
     }
+    if (signer.recoveredSigner === undefined) {
+      return {
+        decision: "mismatched",
+        failureReason: "SIGNER_MISMATCH",
+        verifierInputHash: verifierInput.verifierInputHash,
+        receiptHash: null,
+        decisionTxHash: null,
+        standardRpcReceiptStatus: depositSnapshot.receipt.status === "success" ? (1 as const) : (0 as const),
+        depositBlockNumber: depositSnapshot.receipt.blockNumber,
+        depositBlockHash: depositSnapshot.receipt.blockHash,
+        confirmationDepth: depositSnapshot.confirmationDepth
+      };
+    }
+    verifiedManifest = {
+      signature: manifestSignature.toLowerCase() as Hex,
+      verifyingContract: policy.intentRailAddress,
+      recoveredSigner: signer.recoveredSigner
+    };
     if (normalizeAddress(verifierInput.manifest.target, "target") !== policy.mockVaultAddress) {
       return {
         decision: "mismatched",
@@ -219,6 +283,39 @@ export async function verifyLiveRun(input: LiveVerifierServiceInput): Promise<Li
   return {
     ...common,
     receiptHash: receipt.receiptHash,
-    receipt: receiptRecord
+    receipt: receiptRecord,
+    ...(verifiedManifest === undefined
+      ? {}
+      : {
+          publicEvidenceDraft: {
+            manifest: {
+              payload: verifierInput.manifest,
+              signature: verifiedManifest.signature,
+              verifyingContract: verifiedManifest.verifyingContract,
+              recoveredSigner: verifiedManifest.recoveredSigner
+            },
+            verifierInput: {
+              payload: verifierInput.payload,
+              canonicalPayload: verifierInput.canonicalPayload,
+              canonicalPayloadBytesHex: verifierInput.canonicalPayloadBytesHex,
+              verifierInputHash: verifierInput.verifierInputHash,
+              verifierVersion
+            },
+            verification: {
+              depositBlockNumber: matched.receiptCandidate.depositBlockNumber,
+              depositBlockHash: matched.receiptCandidate.depositBlockHash,
+              headBlockNumberAtVerification: depositSnapshot.headBlockNumber,
+              confirmationDepth: depositSnapshot.confirmationDepth,
+              standardRpcReceiptStatus: 1 as const
+            },
+            decodedLogs: decodedLogSnapshots,
+            receipt: {
+              record: receiptRecord,
+              payload: receipt.payload,
+              schemaVersion: receipt.payload.schemaVersion,
+              verifierVersion
+            }
+          }
+        })
   };
 }

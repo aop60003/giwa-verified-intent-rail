@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { buildLocalArtifactManifestFromEntries } from "./artifactManifest.ts";
@@ -27,6 +28,20 @@ function variableNameContract(serverOnlyNames: string[] = documentedServerOnlyNa
 }
 
 describe("public artifact scanner", () => {
+  it("keeps the checked-in public proof runtimes scan-safe", () => {
+    for (const path of ["apps/web/public/flow.js", "apps/web/public/user-flow.js"]) {
+      const result = scanPublicArtifactText({
+        path,
+        content: readFileSync(resolve(workspaceRoot, path), "utf8")
+      });
+
+      expect(result, path).toMatchObject({
+        decision: "pass",
+        findings: []
+      });
+    }
+  });
+
   it("blocks credential-like keys without printing synthetic canary values", () => {
     const canary = "CANARY-VALUE-DO-NOT-PRINT";
     const result = scanPublicArtifactText({
@@ -374,6 +389,18 @@ describe("public artifact scanner", () => {
       valuePrinted: false
     });
     expect(JSON.stringify(result)).not.toContain(phrase);
+  });
+
+  it("allows the approved negative settlement and finality disclaimer", () => {
+    const result = scanPublicArtifactText({
+      path: "apps/web/public/flow.js",
+      content: 'const notice = "No settlement or finality claim";'
+    });
+
+    expect(result).toMatchObject({
+      decision: "pass",
+      findings: []
+    });
   });
 
   it("skips excluded local surfaces before reporting content details", () => {

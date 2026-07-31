@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "manifestKind": "local-artifact-manifest",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-27T07:25:44.329Z",
+  "generatedAt": "2026-07-31T11:51:03.166Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "hashPolicy": {
@@ -24,8 +24,8 @@
         "path": "apps/web/package.json",
         "role": "package-metadata",
         "required": true,
-        "sha256": "a9f438f1574fd92a8e9aee1d78b312b6cc4245ad43351e9f1f285e0afdce5338",
-        "bytes": 1355,
+        "sha256": "98f1bb8c6bcbf04aa560522690dd9c9c9eac230200fe73d347e77ca6f19ea7ba",
+        "bytes": 1545,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -126,8 +126,8 @@
         "path": "apps/web/public/flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "d59cd3224c569f6b9387c22170dfec6b87a49520775d4d850bca3e47958fae7e",
-        "bytes": 24910,
+        "sha256": "81864de4e046307c506847b073850557703b3468ca1ac43d5fb357787b36f89c",
+        "bytes": 108481,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -136,8 +136,8 @@
         "path": "apps/web/public/giwa-demo.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "471c0bc4f1c813c7c0141d4620e053f14068c322a13ac09094c5f8aae7fc1ac4",
-        "bytes": 4184,
+        "sha256": "28b996841244763bc98290bf722a46df00bfd93432495ae7605137b0c96c1586",
+        "bytes": 10514,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -146,8 +146,8 @@
         "path": "apps/web/public/giwa-demo.html",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "480c5123b28cf016327c12c5660fa3c1a3b521a15f4613eb3d47a2c98f6f0f84",
-        "bytes": 1371,
+        "sha256": "9a8ffb276bf19352b3949b9e3a0d94749bc964de70a1286a2fa6993a3ce1fd67",
+        "bytes": 1373,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -156,8 +156,8 @@
         "path": "apps/web/public/index.html",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "7e0027a0b3ab591ddc279bf062fdb59ef6eaa7aa0252ad00aec913b2c5a113a3",
-        "bytes": 535,
+        "sha256": "5b0bf7a0b19e3476553c7b9ff5481ab6817b75d7614945e53906102319598ae4",
+        "bytes": 966,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -166,8 +166,8 @@
         "path": "apps/web/public/landing.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "cbff0ba85cec3b0c935b316fda62b946985eac2c02559b2ade4eef4ce094c83b",
-        "bytes": 21726,
+        "sha256": "91a7ba1c96ae95b8a80f407b2706a6b4ea33ca648bb43ac252b0209cae8d1f98",
+        "bytes": 18828,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -176,8 +176,8 @@
         "path": "apps/web/public/landing.html",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "b6faf0873cbfa737c4e5a4eaad20869dd5a5278b9fcdc6ee4a0b5836d85151d4",
-        "bytes": 17847,
+        "sha256": "0463dfdb3d67f925f5eb6e1cead2e68687e925e074c7e8eb48bad1c04e436285",
+        "bytes": 12956,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -223,6 +223,16 @@
         "schemaPath": null
       },
       {
+        "path": "apps/web/public/matched-receipt-seal.png",
+        "role": "public-served-artifact",
+        "required": true,
+        "sha256": "c2cfac01254f83d9c284768d0d77acb75f3423c7920c7fd5b0b4ee72e77f4ddb",
+        "bytes": 373220,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
         "path": "apps/web/public/partner-snapshot.json",
         "role": "public-served-artifact",
         "required": true,
@@ -236,8 +246,8 @@
         "path": "apps/web/public/styles.css",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "8cc0863ebd83f8a2ef4004f05897f4430ce363483e0dd0e847bf2defd1c23eef",
-        "bytes": 10851,
+        "sha256": "8474d85641dd525b6036efe204373f172fcb14324877ab9278b7b954d7397efa",
+        "bytes": 54817,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -246,8 +256,8 @@
         "path": "apps/web/public/user-flow.js",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "649096bf52846452d4523389d0b7ebe3f162462c2ca1f80916032d2a8dd0d73b",
-        "bytes": 71318,
+        "sha256": "98f55495fe9abc52fae9b0d205cdac363c4eb2a6b63c35b1f7c920e51afcf2d7",
+        "bytes": 158873,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -256,8 +266,8 @@
         "path": "apps/web/public/user.html",
         "role": "public-served-artifact",
         "required": true,
-        "sha256": "b81a15ef16dfbc5394120821b7806ee3e4205e48c938d86622cd0459bde56950",
-        "bytes": 583,
+        "sha256": "43d6b6204ebd607acc4ef2d1969c10185462fe6f0291605035c9af2d699108ff",
+        "bytes": 961,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -630,8 +640,8 @@
         "path": "docs/implementation/giwa-gasok-staging-runbook.md",
         "role": "implementation-doc",
         "required": true,
-        "sha256": "3e13acb446993ef13e463cb2e87eb8a3c6c9327865ba67bde55f930a8e745dcb",
-        "bytes": 26513,
+        "sha256": "3890d4b7514d203ce7363a3552eb3ff0c1e00c56fbdd2fbde1f70eae96bd5833",
+        "bytes": 31452,
         "scanDecision": "pass-or-blocked",
         "generatedBy": "checked-in-public-safe-input",
         "schemaPath": null
@@ -1057,6 +1067,26 @@
         "schemaPath": null
       },
       {
+        "path": "docs/implementation/giwa-public-verification-bundle.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "0a9c0ea81c2bbf5a606d40948ea2d47b3a7fea12ebfa6541d439c5cb95966b5d",
+        "bytes": 5652,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
+        "path": "docs/implementation/giwa-release-1-2-local-completion-freeze.md",
+        "role": "implementation-doc",
+        "required": true,
+        "sha256": "25b5ecbd1244d6c966b3367e77a9acbed9211b2023af32134e3d9452fa35ed13",
+        "bytes": 6496,
+        "scanDecision": "pass-or-blocked",
+        "generatedBy": "checked-in-public-safe-input",
+        "schemaPath": null
+      },
+      {
         "path": "docs/implementation/giwa-release-approval-checklist.md",
         "role": "implementation-doc",
         "required": true,
@@ -1265,6 +1295,6 @@
     "scanner": "public-artifact-scanner",
     "decision": "pass-or-blocked"
   },
-  "buildTreeSha256": "bf35876f6265b21620e8f434c8e6951ba58023facc8fbd850407142062aeed07",
+  "buildTreeSha256": "d196e3f4755611f96b3bfe6de41666727df42a2965bd6cd041a5fc0e2e1a278e",
   "unmanifestedFilePolicy": "fail"
 }

@@ -13,6 +13,8 @@
     "artifact:scan": "node --experimental-strip-types scripts/export-artifact-manifest.mjs --scan",
     "artifact:local": "node --experimental-strip-types scripts/export-artifact-manifest.mjs",
     "artifact:provenance:verify": "node --experimental-strip-types scripts/verify-provenance-report.mjs",
+    "evidence:backfill": "node --experimental-strip-types scripts/backfill-public-evidence.mjs",
+    "evidence:replay": "node --experimental-strip-types scripts/replay-public-evidence.mjs",
     "serve": "node --experimental-strip-types scripts/serve-static.mjs",
     "serve:live": "node --experimental-strip-types scripts/serve-live.mjs",
     "smoke:staging": "node scripts/smoke-staging.mjs",

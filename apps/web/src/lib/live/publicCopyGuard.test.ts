@@ -38,7 +38,11 @@ describe("public commercial copy", () => {
     const copy = publicCopyCorpus();
 
     expect(copy).toContain("GIWA Verified Intent Rail");
-    expect(copy).not.toMatch(/Loop Rail|GIWA Verified Activation Rail/u);
+    expect(copy).not.toMatch(
+      /Loop Rail|Looprail|GIWA Verified Activation Rail/u
+    );
+    expect(copy).not.toContain("사용자가 Manifest에 서명");
+    expect(copy).not.toContain("Manifest에 서명하세요");
     expect(copy).not.toMatch(/Sprint 10|Sprint 11|Sprint 12/u);
     expect(copy).not.toMatch(/Commercial receipt|Sprint 4 verifier/u);
     expect(copy).not.toContain("Receipt route is enabled only when receiptHash and decisionTxHash exist.");
@@ -57,12 +61,13 @@ describe("public commercial copy", () => {
         "real y" + "ield",
         "real f" + "unds",
         "payment set" + "tled",
-        "set" + "tlement"
+        "set" + "tlement (?:complete|completed|confirmed|final)"
       ].join("|"),
       "i"
     );
 
     expect(copy).not.toMatch(forbiddenClaimPattern);
+    expect(copy).toContain("No settlement or finality claim");
   });
 
   it("keeps raw exception fallback copy out of public browser surfaces", () => {

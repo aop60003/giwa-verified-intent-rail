@@ -8,6 +8,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import { exportFlowData } from "./export-flow-data.mjs";
 import { createLiveApiHandler } from "../src/lib/live/liveApi.ts";
+import { PUBLIC_CAMPAIGN_EVENT_BODY_MAX_BYTES } from "../src/lib/live/publicCampaignAnalytics.ts";
 import {
   buildRedactedHostedEnvReadiness,
   buildRedactedLiveEnvReadiness,
@@ -55,6 +56,137 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8"
 };
+
+export function derivePublicEvidenceDownloadRequested(url) {
+  const downloadValues = url.searchParams.getAll("download");
+  return downloadValues.length === 1 && downloadValues[0] === "1";
+}
+
+export function writeLiveJsonResponse(
+  response,
+  status,
+  body,
+  headers = {},
+  onFinished
+) {
+  response.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store",
+    ...headers
+  });
+  const payload = JSON.stringify(body);
+  if (typeof onFinished === "function") {
+    response.end(payload, onFinished);
+  } else {
+    response.end(payload);
+  }
+}
+
+export function writeLiveRequestBodyError(
+  request,
+  response,
+  status,
+  body
+) {
+  if (status !== 413) {
+    writeLiveJsonResponse(response, status, body);
+    return;
+  }
+  response.shouldKeepAlive = false;
+  writeLiveJsonResponse(
+    response,
+    status,
+    body,
+    { connection: "close" },
+    () => {
+      request.destroy();
+    }
+  );
+}
+
+export async function readLiveJsonBody(request, pathname) {
+  const maxBytes =
+    pathname === "/api/public/events"
+      ? PUBLIC_CAMPAIGN_EVENT_BODY_MAX_BYTES
+      : 64 * 1024;
+  const declaredLength = request.headers?.["content-length"];
+  if (
+    typeof declaredLength === "string" &&
+    /^\d+$/u.test(declaredLength) &&
+    BigInt(declaredLength) > BigInt(maxBytes)
+  ) {
+    const error = new Error("request_body_too_large");
+    error.statusCode = 413;
+    throw error;
+  }
+
+  return await new Promise((resolveBody, rejectBody) => {
+    const chunks = [];
+    let totalBytes = 0;
+    let settled = false;
+
+    const detach = (removeErrorListener) => {
+      request.removeListener("data", onData);
+      request.removeListener("end", onEnd);
+      request.removeListener("aborted", onAborted);
+      if (removeErrorListener) {
+        request.removeListener("error", onError);
+      }
+    };
+    const rejectOnce = (error, options = {}) => {
+      if (settled) return;
+      settled = true;
+      if (options.pause === true) request.pause();
+      detach(options.keepErrorListener !== true);
+      rejectBody(error);
+    };
+    const resolveOnce = (value) => {
+      if (settled) return;
+      settled = true;
+      detach(true);
+      resolveBody(value);
+    };
+    const bodyError = (message, statusCode) => {
+      const error = new Error(message);
+      error.statusCode = statusCode;
+      return error;
+    };
+    function onData(chunk) {
+      const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      totalBytes += bytes.byteLength;
+      if (totalBytes > maxBytes) {
+        rejectOnce(bodyError("request_body_too_large", 413), {
+          pause: true,
+          keepErrorListener: true
+        });
+        return;
+      }
+      chunks.push(bytes);
+    }
+    function onEnd() {
+      if (chunks.length === 0) {
+        resolveOnce(undefined);
+        return;
+      }
+      try {
+        resolveOnce(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+      } catch {
+        rejectOnce(bodyError("malformed_json", 400));
+      }
+    }
+    function onError(error) {
+      rejectOnce(error);
+    }
+    function onAborted() {
+      rejectOnce(bodyError("malformed_json", 400));
+    }
+
+    request.on("data", onData);
+    request.once("end", onEnd);
+    request.once("error", onError);
+    request.once("aborted", onAborted);
+  });
+}
 
 function parseEnvFileContent(content) {
   const parsed = {};
@@ -325,14 +457,6 @@ async function startLiveServer() {
             })
   });
 
-  function sendJson(response, status, body) {
-    response.writeHead(status, {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    });
-    response.end(JSON.stringify(body));
-  }
-
   function requestId() {
     return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
@@ -380,7 +504,7 @@ async function startLiveServer() {
     for (const input of inputs) {
       const decision = rateLimiter.consume(input);
       if (!decision.allowed) {
-        sendJson(response, 429, { error: decision.code, retryAfterMs: decision.retryAfterMs, requestId: id });
+        writeLiveJsonResponse(response, 429, { error: decision.code, retryAfterMs: decision.retryAfterMs, requestId: id });
         return false;
       }
     }
@@ -418,36 +542,13 @@ async function startLiveServer() {
     return join(publicDir, normalized);
   }
 
-  async function readBody(request) {
-    const maxBytes = 64 * 1024;
-    const chunks = [];
-    let totalBytes = 0;
-    for await (const chunk of request) {
-      totalBytes += chunk.length;
-      if (totalBytes > maxBytes) {
-        const error = new Error("request_body_too_large");
-        error.statusCode = 413;
-        throw error;
-      }
-      chunks.push(chunk);
-    }
-    if (chunks.length === 0) return undefined;
-    try {
-      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    } catch {
-      const error = new Error("malformed_json");
-      error.statusCode = 400;
-      throw error;
-    }
-  }
-
   const server = createServer(async (request, response) => {
     const startedAt = Date.now();
     const id = requestId();
     const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
 
     if (request.method === "GET" && url.pathname === "/healthz") {
-      sendJson(response, 200, buildLiveHealthBody());
+      writeLiveJsonResponse(response, 200, buildLiveHealthBody());
       return;
     }
 
@@ -490,7 +591,7 @@ async function startLiveServer() {
         missingKeys: [...readiness.missing, ...hostedReadiness.missing],
         invalidKeys: [...readiness.invalid, ...hostedReadiness.invalid]
       });
-      sendJson(response, body.ready ? 200 : 503, body);
+      writeLiveJsonResponse(response, body.ready ? 200 : 503, body);
       return;
     }
 
@@ -505,7 +606,7 @@ async function startLiveServer() {
         contentType: typeof request.headers["content-type"] === "string" ? request.headers["content-type"] : undefined
       });
       if (!safety.ok) {
-        sendJson(response, safety.status, { error: safety.code, requestId: id });
+        writeLiveJsonResponse(response, safety.status, { error: safety.code, requestId: id });
         return;
       }
 
@@ -513,7 +614,7 @@ async function startLiveServer() {
       if (routeClass === "partner" && liveMode !== "local") {
         const authResult = authenticateLiveRequest({ headers: request.headers, credentials });
         if (!authResult.ok) {
-          sendJson(response, authResult.status, { error: authResult.code, requestId: id });
+          writeLiveJsonResponse(response, authResult.status, { error: authResult.code, requestId: id });
           return;
         }
         auth = authResult.context;
@@ -521,15 +622,23 @@ async function startLiveServer() {
       }
       let parsedBody;
       try {
-        parsedBody = request.method === "POST" ? await readBody(request) : undefined;
+        parsedBody =
+          request.method === "POST"
+            ? await readLiveJsonBody(request, url.pathname)
+            : undefined;
       } catch (error) {
         const status =
           typeof error === "object" && error !== null && "statusCode" in error ? Number(error.statusCode) : 400;
         const message = error instanceof Error ? error.message : "malformed_json";
-        sendJson(response, status, {
+        const body = {
           error: message === "request_body_too_large" ? "request_body_too_large" : "malformed_json",
           requestId: id
-        });
+        };
+        if (message === "request_body_too_large") {
+          writeLiveRequestBodyError(request, response, status, body);
+        } else {
+          writeLiveJsonResponse(response, status, body);
+        }
         return;
       }
       const result = await api({
@@ -538,9 +647,11 @@ async function startLiveServer() {
         body: parsedBody,
         auth,
         runCapability: readRunCapabilityHeader(request.headers["x-giwa-run-capability"]),
-        requestId: id
+        requestId: id,
+        downloadRequested:
+          derivePublicEvidenceDownloadRequested(url)
       });
-      sendJson(response, result.status, result.body);
+      writeLiveJsonResponse(response, result.status, result.body, result.headers);
       console.log(
         JSON.stringify(
           redactLiveLogEvent({
@@ -617,7 +728,11 @@ async function startLiveServer() {
   });
 }
 
-startLiveServer().catch((_error) => {
-  process.exitCode = 1;
-  console.error("Live server startup failed");
-});
+const invokedPath =
+  process.argv[1] === undefined ? null : resolve(process.argv[1]);
+if (invokedPath === resolve(fileURLToPath(import.meta.url))) {
+  startLiveServer().catch((_error) => {
+    process.exitCode = 1;
+    console.error("Live server startup failed");
+  });
+}

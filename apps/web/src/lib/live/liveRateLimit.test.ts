@@ -58,6 +58,21 @@ describe("createMemoryLiveRateLimiter", () => {
     expect(classifyLiveRateLimitRoute("GET", "/api/runs/run_alpha/verify")).toBeNull();
   });
 
+  it("keeps public event abuse prevention keyed only by the selected client IP", () => {
+    const route = classifyLiveRateLimitRoute("POST", "/api/public/events");
+    expect(route).toBeNull();
+    expect(LIVE_RATE_LIMIT_POLICY.generalPerIpPerMinute).toBeGreaterThan(0);
+
+    const selectedIp = selectLiveClientIp({
+      socketAddress: "127.0.0.1",
+      realIpHeader: "203.0.113.22",
+      isIp: testIsIp
+    });
+    const bucket = liveRateLimitBucket({ kind: "ip", value: selectedIp });
+    expect(bucket).not.toContain(selectedIp);
+    expect(bucket).not.toMatch(/session|wallet|campaign/iu);
+  });
+
   it("hashes every bucket identity instead of exposing raw participant or partner values", () => {
     const rawValues = ["203.0.113.44", "partner-alpha", "0x1111111111111111111111111111111111111111"];
     const buckets = [

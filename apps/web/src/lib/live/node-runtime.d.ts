@@ -25,8 +25,9 @@ declare module "node:child_process" {
     command: string,
     args: readonly string[],
     options: {
+      cwd?: string;
       encoding: "utf8";
-      env: Record<string, string | undefined>;
+      env?: Record<string, string | undefined>;
     }
   ): {
     status: number | null;

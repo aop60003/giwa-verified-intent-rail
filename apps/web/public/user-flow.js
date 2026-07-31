@@ -5,6 +5,8 @@ const GIWA_EXPLORER_TX_BASE = "https://sepolia-explorer.giwa.io/tx/";
 const USER_RUN_KEY = "giwa:userRunState";
 const USER_WALLET_TX_KEY = "giwa:userWalletTxState";
 const USER_RECEIPTS_KEY = "giwa:userReceipts";
+const CAMPAIGN_HANDOFF_RECEIPT_KEY = "giwa:campaignHandoffReceipt";
+const USER_MISSION_REVIEW_KEY = "giwa:userMissionReviewed";
 const BALANCE_OF_SELECTOR = "0x70a08231";
 const ALLOWANCE_SELECTOR = "0xdd62ed3e";
 const MINT_SELECTOR = "0x40c10f19";
@@ -34,9 +36,10 @@ let publicConfig = null;
 let assetState = { next: "gas_required", approveRequired: true, gasWei: null, tokenBalance: null, allowance: null };
 let inFlight = false;
 let contextGeneration = 0;
+let missionReviewed = sessionStorage.getItem(USER_MISSION_REVIEW_KEY) === "true";
 const activeRequestControllers = new Set();
 const contextChangeListeners = new Set();
-let notice = "지갑을 연결해 GIWA Sepolia 테스트넷 액션을 시작하세요.";
+let notice = "먼저 미션 조건을 확인하세요.";
 
 function projectFailureCode(value) {
   const allowed = new Set([
@@ -125,6 +128,7 @@ function projectSessionRun(value) {
     capability === null ||
     wallet === null ||
     intentHash === null ||
+    value.campaignSigned !== true ||
     !statuses.has(value.status) ||
     !Number.isSafeInteger(expiryUnix) ||
     expiryUnix <= 0 ||
@@ -171,6 +175,7 @@ function projectSessionRun(value) {
   return {
     runId,
     runCapability: capability,
+    campaignSigned: true,
     wallet,
     status: value.status,
     intentHash,
@@ -226,9 +231,14 @@ function runMatchesContext(run, account, config) {
 
 function projectIssuedRun(value, expectedContext) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const manifestSignatureValid =
+    typeof value.manifestSignature === "string" &&
+    /^0x[a-fA-F0-9]{130}$/u.test(value.manifestSignature);
+  if (!manifestSignatureValid) return null;
   const candidate = projectSessionRun({
     runId: value.runId,
     runCapability: value.runCapability,
+    campaignSigned: true,
     wallet: value.wallet,
     status: value.status,
     intentHash: value.intentHash,
@@ -299,6 +309,7 @@ function mergeRunResponse(current, response) {
   return projectSessionRun({
     runId: base.runId,
     runCapability: base.runCapability,
+    campaignSigned: base.campaignSigned,
     wallet: base.wallet,
     status,
     intentHash: base.intentHash,
@@ -394,8 +405,32 @@ function readReceiptHistory() {
 function writeReceiptHistory(value) {
   try {
     localStorage.setItem(USER_RECEIPTS_KEY, JSON.stringify(value.slice(0, 12)));
+    return true;
   } catch {
     notice = "이 브라우저의 Receipt 목록을 저장할 수 없습니다. 공개 Receipt 링크는 계속 사용할 수 있습니다.";
+    return false;
+  }
+}
+
+function readCampaignHandoffReceipt() {
+  try {
+    const receiptHash = sessionStorage.getItem(CAMPAIGN_HANDOFF_RECEIPT_KEY);
+    return /^0x[a-fA-F0-9]{64}$/u.test(receiptHash ?? "")
+      ? receiptHash.toLowerCase()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCampaignHandoffReceipt(receiptHash) {
+  if (!/^0x[a-fA-F0-9]{64}$/u.test(receiptHash ?? "")) return false;
+  const normalizedReceiptHash = receiptHash.toLowerCase();
+  try {
+    sessionStorage.setItem(CAMPAIGN_HANDOFF_RECEIPT_KEY, normalizedReceiptHash);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -437,6 +472,149 @@ function routeName() {
 function isGiwaDemoRoute() {
   return location.pathname === "/giwa-demo";
 }
+
+function isRecordedMismatchExample() {
+  return (
+    isGiwaDemoRoute() &&
+    new URLSearchParams(location.search).get("example") === "mismatch"
+  );
+}
+
+function projectJourneyStageState(input) {
+  const activeStage = input.receiptReady
+    ? "collect"
+    : input.depositSubmitted || input.verifying || input.mismatched
+      ? "match"
+      : input.manifestReady
+        ? "execute"
+        : input.missionReviewed
+          ? "signedMission"
+          : "prepare";
+  const order = ["prepare", "signedMission", "execute", "match", "collect"];
+  const activeIndex = order.indexOf(activeStage);
+  const stages = order.map((id, index) => ({
+    id,
+    state:
+      id === "match" && input.mismatched
+        ? "blocked"
+        : index < activeIndex
+          ? "complete"
+          : index === activeIndex
+            ? "active"
+            : "pending"
+  }));
+  return { activeStage, stages };
+}
+
+function projectProtocolConsoleState(input) {
+  const activeView = input.receiptReady
+    ? "receipt"
+    : input.depositSubmitted || input.verifying || input.mismatched
+      ? "execution"
+      : "mission";
+  const publicOrder = ["mission", "execution", "receipt"];
+  const publicIndex = publicOrder.indexOf(activeView);
+  return {
+    activeView,
+    publicStages: publicOrder.map((id, index) => ({
+      id,
+      state:
+        id === "execution" && input.mismatched
+          ? "blocked"
+          : index < publicIndex
+            ? "complete"
+            : index === publicIndex
+              ? "active"
+              : "pending"
+    })),
+    executionStages: [
+      { id: "prepare", state: "complete" },
+      {
+        id: "wallet",
+        state: input.approvalSubmitted ? "complete" : "active"
+      },
+      {
+        id: "submit",
+        state: input.depositSubmitted ? "complete" : "pending"
+      },
+      {
+        id: "match",
+        state: input.mismatched
+          ? "blocked"
+          : input.receiptReady
+            ? "complete"
+            : input.verifying
+              ? "active"
+              : "pending"
+      },
+      {
+        id: "receipt",
+        state: input.receiptReady ? "complete" : "pending"
+      }
+    ]
+  };
+}
+
+function journeyProjection() {
+  const walletReady =
+    walletState.account !== null && walletState.chainId === GIWA_CHAIN_ID;
+  const assetsReady =
+    assetState.next === "approval_required" ||
+    assetState.next === "deposit_ready";
+  const manifestReady =
+    runState?.manifestPreview !== null &&
+    runState?.manifestPreview !== undefined &&
+    runState?.status !== "manifestInvalidated" &&
+    !isExpired();
+  const depositSubmitted = typeof runState?.depositTxHash === "string";
+  const mismatched = ["mismatched", "notMatched", "failed"].includes(
+    runState?.status
+  );
+  return projectJourneyStageState({
+    missionReviewed,
+    walletReady,
+    assetsReady,
+    manifestReady,
+    approvalSubmitted: typeof runState?.approveTxHash === "string",
+    depositSubmitted,
+    verifying:
+      depositSubmitted && !mismatched && runState?.status !== "matched",
+    receiptReady:
+      runState?.status === "matched" &&
+      typeof runState?.receiptHash === "string",
+    mismatched
+  });
+}
+
+function protocolConsoleProjection() {
+  const depositSubmitted = typeof runState?.depositTxHash === "string";
+  const mismatched = ["mismatched", "notMatched", "failed"].includes(
+    runState?.status
+  );
+  return projectProtocolConsoleState({
+    missionReviewed,
+    approvalSubmitted:
+      typeof runState?.approveTxHash === "string" ||
+      assetState.next === "deposit_ready",
+    depositSubmitted,
+    verifying:
+      depositSubmitted &&
+      !mismatched &&
+      runState?.status !== "matched",
+    mismatched,
+    receiptReady:
+      runState?.status === "matched" &&
+      typeof runState?.receiptHash === "string"
+  });
+}
+
+const journeyStageCopy = {
+  prepare: ["준비", "네트워크와 테스트 자산을 확인합니다."],
+  signedMission: ["서명된 미션", "캠페인이 고정한 실행 조건을 확인합니다."],
+  execute: ["실행", "지갑에서 승인과 예치를 진행합니다."],
+  match: ["대조", "Manifest와 GIWA 실행 증거를 비교합니다."],
+  collect: ["Receipt", "일치한 실행 기록을 받습니다."]
+};
 
 function projectDemoStageState(states) {
   if (states.includes("blocked")) return "attention";
@@ -772,9 +950,33 @@ function beginContextChange() {
   return stale;
 }
 
-function publicNotice(kind) {
+function walletRequestFailureCode(error) {
+  const code =
+    error !== null && typeof error === "object" && "code" in error
+      ? error.code
+      : null;
+  return code === 4001 || code === "ACTION_REJECTED"
+    ? "wallet_rejected"
+    : "wallet_unavailable";
+}
+
+function walletRequestNotice(code) {
+  const copy = {
+    provider_missing:
+      "이 브라우저에서 지갑을 찾지 못했습니다. 지원되는 브라우저 지갑을 설치하거나 활성화해 주세요.",
+    wallet_rejected:
+      "지갑 연결 요청을 거절했습니다. 준비되면 연결을 다시 요청해 주세요.",
+    wallet_unavailable:
+      "지갑 요청을 완료하지 못했습니다. 지갑 창과 연결 상태를 확인한 뒤 다시 시도해 주세요."
+  };
+  return copy[code] ?? copy.wallet_unavailable;
+}
+
+function publicNotice(kind, reason = null) {
+  if (kind === "wallet") {
+    return walletRequestNotice(reason ?? "wallet_unavailable");
+  }
   const notices = {
-    wallet: "지갑 요청이 완료되지 않았습니다. 지갑 상태를 확인하고 다시 시도해 주세요.",
     network: "GIWA Sepolia로 전환한 뒤 다시 시도해 주세요.",
     readiness: "지갑 자산 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.",
     faucet: "공식 테스트 ETH 안내를 새 창에서 열었습니다. 수령 후 다시 확인해 주세요.",
@@ -791,6 +993,7 @@ function publicNotice(kind) {
 }
 
 function nextPrimaryAction() {
+  if (!missionReviewed) return "review_mission";
   if (walletState.account === null) return "connect";
   if (walletState.chainId !== GIWA_CHAIN_ID) return "switch_chain";
   if (assetState.next === "gas_required") return "open_faucet";
@@ -806,6 +1009,7 @@ function nextPrimaryAction() {
 
 function primaryLabel() {
   const labels = {
+    review_mission: "미션 조건 보기",
     connect: "지갑 연결",
     switch_chain: "GIWA Sepolia로 전환",
     open_faucet: "테스트 ETH 받기",
@@ -911,10 +1115,10 @@ function renderDemoTopBar() {
 }
 
 function renderDemoJudgePromise() {
-  const labels = ["Manifest", "GIWA 실행", "Match", "Receipt"];
+  const labels = ["캠페인 서명", "지갑 실행", "Receipt"];
   return view("aside", {
     className: "giwa-demo-judge-promise",
-    "aria-label": "Looprail 작동 방식"
+    "aria-label": "GIWA Verified Intent Rail 작동 방식"
   }, [
     view("div", { className: "giwa-demo-judge-copy" }, [
       view("p", {
@@ -923,7 +1127,7 @@ function renderDemoJudgePromise() {
       }),
       view("p", {
         className: "giwa-demo-promise",
-        text: "Looprail은 실행 전 Manifest와 실제 GIWA 트랜잭션을 대조합니다."
+        text: "GIWA Verified Intent Rail은 실행 전 Manifest와 실제 GIWA 트랜잭션을 대조합니다."
       })
     ]),
     view("ol", { className: "giwa-demo-proof-path" },
@@ -1070,6 +1274,669 @@ function renderExpectedSteps() {
   ]);
 }
 
+function displayMockAmount(value) {
+  if (typeof value !== "string" || !/^[1-9][0-9]*$/u.test(value)) return "확인 중";
+  const baseUnits = BigInt(value);
+  const decimals = 10n ** 18n;
+  const whole = baseUnits / decimals;
+  const fraction = (baseUnits % decimals)
+    .toString()
+    .padStart(18, "0")
+    .replace(/0+$/u, "");
+  return `${whole}${fraction.length > 0 ? `.${fraction}` : ""} Mock Token`;
+}
+
+function formatExpiry(expiryUnix) {
+  if (!Number.isSafeInteger(expiryUnix) || expiryUnix <= 0) return "Manifest 발급 후 60분";
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(expiryUnix * 1_000));
+}
+
+function missionPreview() {
+  if (runState?.manifestPreview) return runState.manifestPreview;
+  if (publicConfig === null) return null;
+  return {
+    target: publicConfig.contracts.mockVault,
+    selector: DEPOSIT_SELECTOR,
+    asset: publicConfig.contracts.mockToken,
+    amountBaseUnits: publicConfig.demoAmountBaseUnits,
+    spender: publicConfig.contracts.mockVault,
+    maxAllowanceBaseUnits: publicConfig.demoAmountBaseUnits,
+    expiryUnix: null,
+    intentHash: null
+  };
+}
+
+function renderJourneyNarrative() {
+  return view("ol", {
+    className: "journey-narrative",
+    "aria-label": "서명과 실행 대조 방식"
+  }, [
+    view("li", {}, [
+      view("strong", { text: "캠페인 서명" }),
+      view("span", { text: "캠페인이 이 실행 조건에 서명했습니다." })
+    ]),
+    view("li", {}, [
+      view("strong", { text: "지갑 실행" }),
+      view("span", { text: "참여자는 지갑에서 실제 트랜잭션에 서명합니다." })
+    ]),
+    view("li", {}, [
+      view("strong", { text: "독립 대조" }),
+      view("span", { text: "GIWA Verified Intent Rail이 두 기록을 대조합니다." })
+    ])
+  ]);
+}
+
+function renderJourneyConditionTable() {
+  const preview = missionPreview();
+  const signed = runState?.campaignSigned === true;
+  if (preview === null) {
+    return view("section", { className: "journey-condition-card" }, [
+      view("p", { className: "eyebrow", text: "발급 전 미리보기" }),
+      view("h2", { text: "미션 조건을 불러오는 중입니다" }),
+      view("p", {
+        className: "muted",
+        text: "지갑 연결 없이 공개 미션 정보를 먼저 확인할 수 있습니다."
+      })
+    ]);
+  }
+
+  return view("section", { className: "journey-condition-card" }, [
+    view("div", { className: "journey-section-heading" }, [
+      view("div", {}, [
+        view("p", {
+          className: "eyebrow",
+          text: signed ? "Campaign-signed Manifest" : "발급 전 미리보기"
+        }),
+        view("h2", { text: "Mock Vault에 테스트 자산 1개 예치" })
+      ]),
+      view("span", {
+        className: `journey-signature-state ${signed ? "is-signed" : ""}`,
+        text: signed ? "캠페인 서명 확인됨" : "Manifest 발급 전"
+      })
+    ]),
+    view("p", {
+      className: signed ? "notice" : "muted",
+      text: signed
+        ? "캠페인이 이 실행 조건에 서명했습니다."
+        : "아래 조건은 공개 미션 미리보기이며 아직 서명된 실행 증거가 아닙니다."
+    }),
+    view("dl", { className: "journey-condition-table" }, [
+      field("네트워크", "GIWA Sepolia · Testnet"),
+      field("실행", "Mock Vault deposit"),
+      field("수량", displayMockAmount(preview.amountBaseUnits)),
+      field("유효 시간", formatExpiry(preview.expiryUnix))
+    ]),
+    view("details", { className: "panel user-technical-details" }, [
+      view("summary", { text: "Technical details" }),
+      field("Target", preview.target),
+      field("Asset", preview.asset),
+      field("Selector", preview.selector ?? DEPOSIT_SELECTOR),
+      field("Spender", preview.spender),
+      field("Max allowance", preview.maxAllowanceBaseUnits),
+      field("Intent hash", preview.intentHash ?? "Manifest 발급 후 생성")
+    ])
+  ]);
+}
+
+function renderJourneyMatchTable(options = {}) {
+  const recordedMismatch = options.recordedMismatch === true;
+  const mismatched =
+    recordedMismatch ||
+    runState?.status === "mismatched" ||
+    runState?.status === "notMatched" ||
+    runState?.status === "failed";
+  const matched = runState?.status === "matched" && Boolean(runState?.receiptHash);
+  const waitingLabel = runState?.depositTxHash ? "대조 중" : "실행 후 대조";
+  const rows = [
+    ["지갑", recordedMismatch ? "조건 일치" : matched ? "일치" : waitingLabel, "wallet"],
+    ["실행 대상", mismatched ? "불일치" : matched ? "일치" : waitingLabel, "target"],
+    ["자산과 수량", recordedMismatch ? "조건 일치" : matched ? "일치" : waitingLabel, "asset"],
+    ["블록 증거", recordedMismatch ? "기록됨" : matched ? "확인됨" : waitingLabel, "block"]
+  ];
+
+  return view("section", { className: "journey-match-card" }, [
+    view("div", { className: "journey-section-heading" }, [
+      view("div", {}, [
+        view("p", { className: "eyebrow", text: "Manifest ↔ GIWA transaction" }),
+        view("h2", {
+          text: mismatched
+            ? "조건이 달라 Receipt를 발급하지 않았습니다"
+            : matched
+              ? "모든 조건이 일치했습니다"
+              : "실행 후 네 가지 조건을 대조합니다"
+        })
+      ]),
+      view("span", {
+        className: `journey-match-state ${mismatched ? "is-blocked" : matched ? "is-matched" : ""}`,
+        text: mismatched ? "Not matched" : matched ? "Matched" : "Waiting"
+      })
+    ]),
+    view("dl", { className: "journey-match-table" },
+      rows.map(([label, value, key]) =>
+        view("div", {
+          className: `journey-match-row ${mismatched && key === "target" ? "is-blocked" : ""}`
+        }, [
+          view("dt", { text: label }),
+          view("dd", { text: value })
+        ])
+      )
+    ),
+    ...(mismatched
+      ? [
+          view("p", {
+            className: "journey-mismatch-note",
+            text: recordedMismatch
+              ? "통제된 대조 결과: Matched Receipt 없음"
+              : mismatchDisplayCopy(runState?.failureCode)
+          })
+        ]
+      : [])
+  ]);
+}
+
+function renderJourneyRail(projection) {
+  const stateLabels = {
+    complete: "완료",
+    active: "현재",
+    blocked: "불일치",
+    pending: "대기"
+  };
+  return view("ol", {
+    className: "journey-stage-rail",
+    "aria-label": "참여 여정"
+  }, projection.stages.map((stage, index) => {
+    const [label, detail] = journeyStageCopy[stage.id];
+    return view("li", {
+      className: `journey-stage-item ${stage.state}`,
+      "aria-current": stage.state === "active" ? "step" : null
+    }, [
+      view("span", { className: "journey-stage-number", text: String(index + 1).padStart(2, "0") }),
+      view("div", {}, [
+        view("strong", { text: label }),
+        view("span", { text: detail })
+      ]),
+      view("em", { text: stateLabels[stage.state] })
+    ]);
+  }));
+}
+
+function renderJourneyCanvas(projection, actions, action) {
+  const activeStage = projection.activeStage;
+  const stageContent = {
+    prepare: () => renderActionSummary(),
+    signedMission: () => renderJourneyConditionTable(),
+    execute: () => renderIntentPanel(),
+    match: () => renderJourneyMatchTable(),
+    collect: () => renderDemoReceiptSummary()
+  }[activeStage]();
+
+  return view("section", { className: "journey-shell" }, [
+    renderJourneyRail(projection),
+    view("div", { className: "journey-canvas" }, [
+      renderJourneyNarrative(),
+      view("div", { className: "journey-current-stage" }, [stageContent]),
+      view("p", {
+        className: "notice",
+        role: "status",
+        "aria-live": "polite",
+        "aria-atomic": "true",
+        text: notice
+      }),
+      view("div", {
+        className: "hero-actions user-cta-cluster",
+        "data-current-action": action
+      }, actions)
+    ])
+  ]);
+}
+
+function renderProtocolTopBar(activeView) {
+  const views = [
+    ["mission", "Mission"],
+    ["execution", "Execution"],
+    ["receipt", "Receipt"]
+  ];
+  return view("header", {
+    className: `protocol-product-bar protocol-product-bar-${activeView}`
+  }, [
+    view("a", {
+      className: "protocol-brand",
+      href: "/",
+      text: "GIWA Verified Intent Rail"
+    }),
+    view(
+      "nav",
+      {
+        className: "protocol-view-nav",
+        "aria-label": "현재 참여 단계"
+      },
+      views.map(([id, label]) =>
+        view("span", {
+          className: id === activeView ? "is-active" : "",
+          "aria-current": id === activeView ? "page" : null,
+          text: label
+        })
+      )
+    ),
+    view("div", { className: "protocol-bar-meta" }, [
+      view("span", {
+        className: "protocol-network",
+        text: "GIWA Sepolia · Testnet"
+      }),
+      view("span", {
+        className: "protocol-wallet",
+        text:
+          walletState.account === null
+            ? "지갑 연결"
+            : shortHash(walletState.account)
+      })
+    ])
+  ]);
+}
+
+function renderPublicJourney(stages) {
+  const copy = {
+    mission: ["조건 확인", "캠페인 약속"],
+    execution: ["지갑 실행", "직접 승인"],
+    receipt: ["결과 공개", "Receipt 발급"]
+  };
+  return view(
+    "ol",
+    {
+      className: "protocol-public-journey",
+      "aria-label": "조건 확인, 지갑 실행, 결과 공개"
+    },
+    stages.map((stage, index) => {
+      const [label, detail] = copy[stage.id];
+      return view(
+        "li",
+        {
+          className: stage.state,
+          "aria-current": stage.state === "active" ? "step" : null
+        },
+        [
+          view("strong", {
+            text: `${String(index + 1).padStart(2, "0")}  ${label}`
+          }),
+          view("span", { text: detail })
+        ]
+      );
+    })
+  );
+}
+
+function renderMissionConditionRows(preview) {
+  const amount =
+    preview?.amountBaseUnits ?? publicConfig?.demoAmountBaseUnits ?? null;
+  const maxApproval =
+    preview?.maxAllowanceBaseUnits ??
+    publicConfig?.demoAmountBaseUnits ??
+    null;
+  const rows = [
+    ["네트워크", "GIWA Sepolia · Testnet"],
+    ["실행", "Mock Vault deposit"],
+    ["대상", shortHash(preview?.target)],
+    ["수량", amount === null ? "확인 중" : displayMockAmount(amount)],
+    [
+      "최대 승인",
+      maxApproval === null ? "확인 중" : displayMockAmount(maxApproval)
+    ],
+    ["예상 시간", "약 30초"]
+  ];
+  return view(
+    "dl",
+    {
+      className: "mission-condition-list",
+      "aria-label": "지갑 요청 전에 고정되는 조건"
+    },
+    rows.map(([label, value]) =>
+      view("div", { className: "mission-condition-row" }, [
+        view("dt", { text: label }),
+        view("dd", {
+          className:
+            label === "대상" ? "mono hash-wrap" : "",
+          text: value
+        })
+      ])
+    )
+  );
+}
+
+function renderPromisedReceipt() {
+  return view("div", { className: "mission-receipt-preview" }, [
+    view("div", {}, [
+      view("strong", { text: "받게 될 결과 · Matched Receipt" }),
+      view("span", { text: "4/4 조건 일치 필요" })
+    ]),
+    view("span", {
+      className: "protocol-status-badge pending",
+      text: "발급 조건"
+    })
+  ]);
+}
+
+function renderMissionCockpitPage(consoleState, actions) {
+  const preview = missionPreview();
+  return view(
+    "section",
+    {
+      className: "protocol-screen protocol-mission",
+      id: "main-content"
+    },
+    [
+      view("div", { className: "protocol-mission-intro" }, [
+        view("p", {
+          className: "eyebrow",
+          text: "MISSION 01 · MOCK VAULT DEPOSIT"
+        }),
+        view("h1", {}, [
+          view("span", { text: "약속한 조건을 확인하고," }),
+          view("span", { text: "내 지갑으로 실행합니다." })
+        ]),
+        view("p", {
+          className: "lead",
+          text: "캠페인이 고정한 실행 조건을 먼저 확인하세요. 내 지갑에서 동일한 조건으로 실행되면, 누구나 검증할 수 있는 Matched Receipt가 발급됩니다."
+        }),
+        renderPublicJourney(consoleState.publicStages),
+        view("p", {
+          className: "protocol-safety",
+          text: "GIWA Sepolia 테스트넷 · Mock 자산만 사용 · 실제 자금 및 수익 없음"
+        })
+      ]),
+      view("section", { className: "mission-cockpit" }, [
+        view("header", { className: "mission-cockpit-header" }, [
+          view("p", {
+            className: "eyebrow",
+            text: "MISSION 01 / MOCK VAULT"
+          }),
+          view("h2", { text: "테스트 자산 1개 예치" }),
+          view("p", {
+            className: "muted",
+            text: "아래 조건은 지갑 요청 전에 고정됩니다."
+          })
+        ]),
+        renderMissionConditionRows(preview),
+        renderPromisedReceipt(),
+        view(
+          "div",
+          {
+            className: "protocol-primary-actions",
+            "data-current-action": nextPrimaryAction()
+          },
+          actions
+        ),
+        view("p", {
+          className: "protocol-action-notice",
+          role: "status",
+          "aria-live": "polite",
+          "aria-atomic": "true",
+          text: notice
+        })
+      ])
+    ]
+  );
+}
+
+function executionStageCopy(stage) {
+  const copy = {
+    prepare: ["실행 준비", "Manifest 조건 고정"],
+    wallet: [
+      stage.state === "complete" ? "지갑 승인 완료" : "지갑 승인 요청",
+      runState?.approveTxHash
+        ? `${shortHash(runState.approveTxHash)} · 정확한 수량 승인`
+        : "1.0 Mock Token 승인"
+    ],
+    submit: [
+      "트랜잭션 제출",
+      runState?.depositTxHash
+        ? `${shortHash(runState.depositTxHash)} · GIWA Sepolia`
+        : "GIWA Sepolia 제출 대기"
+    ],
+    match: [
+      stage.state === "blocked"
+        ? "조건 불일치"
+        : stage.state === "complete"
+          ? "조건 대조 완료"
+          : stage.state === "active"
+            ? "조건 대조 중"
+            : "조건 대조",
+      "지갑 · 대상 · 자산 · 수량을 Manifest와 비교"
+    ],
+    receipt: ["Receipt 발급", "4/4 조건 일치 시 공개 기록 생성"]
+  };
+  return copy[stage.id];
+}
+
+function executionStateLabel(state) {
+  return {
+    complete: "검증 완료",
+    active: "검증 중",
+    blocked: "중단",
+    pending: "대기"
+  }[state];
+}
+
+function renderExecutionLifecycle(stages) {
+  return view("section", { className: "execution-lifecycle" }, [
+    view("header", { className: "execution-panel-heading" }, [
+      view("div", {}, [
+        view("h2", { text: "실행 상태" }),
+        view("p", {
+          className: "muted",
+          text: "체인 이벤트가 확인될 때마다 다음 단계가 열립니다."
+        })
+      ]),
+      view("span", {
+        className: "mono execution-progress",
+        text: `${String(
+          Math.max(
+            1,
+            stages.findIndex((stage) =>
+              ["active", "blocked"].includes(stage.state)
+            ) + 1
+          )
+        ).padStart(2, "0")} / 05`
+      })
+    ]),
+    view(
+      "ol",
+      { className: "execution-stage-list" },
+      stages.map((stage, index) => {
+        const [title, detail] = executionStageCopy(stage);
+        return view("li", { className: `execution-stage ${stage.state}` }, [
+          view("span", {
+            className: "mono execution-stage-index",
+            text: String(index + 1).padStart(2, "0")
+          }),
+          view("div", { className: "execution-stage-copy" }, [
+            view("strong", { text: title }),
+            view("span", { text: detail })
+          ]),
+          view("span", {
+            className: `protocol-status-badge ${stage.state}`,
+            text: executionStateLabel(stage.state)
+          })
+        ]);
+      })
+    )
+  ]);
+}
+
+function renderLiveEvidencePanel(actions) {
+  const transactionHash = runState?.depositTxHash ?? null;
+  const explorerUrl = explorerTxUrl(transactionHash);
+  const evidence = [
+    ["네트워크", "GIWA Sepolia"],
+    ["트랜잭션", transactionHash ? shortHash(transactionHash) : "제출 대기"],
+    ["블록", runState?.status === "matched" ? "확인됨" : "관찰 중"],
+    ["Manifest", shortHash(runState?.intentHash)]
+  ];
+  const panelActions = [...actions];
+  if (explorerUrl !== null) {
+    panelActions.push(
+      view("a", {
+        className: "secondary-link",
+        href: explorerUrl,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        text: "GIWA Explorer에서 보기"
+      })
+    );
+  }
+  return view("aside", { className: "execution-evidence" }, [
+    view("header", { className: "execution-panel-heading" }, [
+      view("h2", { text: "체인 증거" }),
+      view("span", {
+        className: "protocol-live-label",
+        text: "LIVE"
+      })
+    ]),
+    view(
+      "dl",
+      { className: "execution-evidence-list" },
+      evidence.map(([label, value]) =>
+        view("div", {}, [
+          view("dt", { text: label }),
+          view("dd", { className: "mono hash-wrap", text: value })
+        ])
+      )
+    ),
+    view("div", { className: "execution-match-rule" }, [
+      view("strong", { text: "Receipt 발급 조건" }),
+      view("p", {
+        text: "대상 · 액션 · 자산 · 수량 중 하나라도 다르면 Receipt는 발급되지 않습니다."
+      }),
+      view("span", {
+        className: "mono",
+        text: `manifest  ${shortHash(runState?.intentHash)}`
+      })
+    ]),
+    view(
+      "div",
+      {
+        className: "protocol-primary-actions execution-actions",
+        "data-current-action": nextPrimaryAction()
+      },
+      panelActions
+    ),
+    view("p", {
+      className: "protocol-action-notice",
+      role: "status",
+      "aria-live": "polite",
+      "aria-atomic": "true",
+      text: notice
+    })
+  ]);
+}
+
+function renderReceiptUnlockPreview(consoleState) {
+  const receiptStage = consoleState.executionStages.find(
+    (stage) => stage.id === "receipt"
+  );
+  const state = receiptStage?.state ?? "pending";
+  return view("section", { className: "execution-receipt-preview" }, [
+    view("div", {}, [
+      view("strong", { text: "다음 · Matched Receipt 공개" }),
+      view("span", {
+        text: "4/4 조건 대조가 끝나면 검증 가능한 실행 기록이 열립니다."
+      })
+    ]),
+    view("span", {
+      className: `protocol-status-badge ${state}`,
+      text: executionStateLabel(state)
+    })
+  ]);
+}
+
+function renderLiveExecutionPage(consoleState, actions) {
+  return view(
+    "section",
+    {
+      className: "protocol-screen protocol-execution",
+      id: "main-content"
+    },
+    [
+      view("header", { className: "protocol-screen-heading" }, [
+        view("p", {
+          className: "eyebrow",
+          text: "LIVE EXECUTION / GIWA SEPOLIA"
+        }),
+        view("h1", {}, [
+          view("span", { text: "지갑 승인부터 Receipt 발급까지," }),
+          view("span", { text: "모든 단계를 공개합니다." })
+        ])
+      ]),
+      renderPublicJourney(consoleState.publicStages),
+      view("div", { className: "execution-workspace" }, [
+        renderExecutionLifecycle(consoleState.executionStages),
+        renderLiveEvidencePanel(actions)
+      ]),
+      renderReceiptUnlockPreview(consoleState)
+    ]
+  );
+}
+
+function renderRecordedMismatchPage() {
+  app.textContent = "";
+  app.append(
+    renderDemoTopBar(),
+    view("section", { className: "giwa-demo-frame", id: "main-content" }, [
+      view("header", { className: "giwa-demo-intro" }, [
+        view("div", { className: "giwa-demo-intro-heading" }, [
+          view("p", { className: "eyebrow", text: "Recorded negative control" }),
+          view("h1", {}, [
+            view("span", { text: "조건이 다르면," }),
+            view("span", { text: "Receipt는 열리지 않습니다." })
+          ])
+        ]),
+        view("p", {
+          className: "lead",
+          text: "실제 참여 기록이 아닌 통제된 데모 시나리오입니다."
+        })
+      ]),
+      view("section", { className: "journey-shell" }, [
+        renderJourneyRail(projectJourneyStageState({
+          missionReviewed: true,
+          manifestReady: true,
+          depositSubmitted: true,
+          verifying: false,
+          mismatched: true,
+          receiptReady: false
+        })),
+        view("div", { className: "journey-canvas" }, [
+          renderJourneyNarrative(),
+          renderJourneyMatchTable({ recordedMismatch: true }),
+          view("article", {
+            className: "notice negative-control-card",
+            "aria-labelledby": "negative-control-heading"
+          }, [
+            view("p", { className: "eyebrow", text: "Recorded negative control" }),
+            view("h2", {
+              id: "negative-control-heading",
+              text: "불일치 대조 예시"
+            }),
+            view("p", {
+              text: "Manifest는 하나의 실행 대상을 기대했지만, 통제된 실행은 다른 대상을 사용했습니다."
+            }),
+            view("p", {
+              text: "검증기는 Matched Receipt를 발급하지 않았습니다."
+            }),
+            view("p", {
+              text: "따라서 정확한 해시의 공개 Receipt 조회는 사용할 수 없습니다."
+            })
+          ]),
+          view("div", { className: "hero-actions" }, [
+            view("a", { className: "secondary-link", href: "/giwa-demo", text: "다시 실행" })
+          ])
+        ])
+      ])
+    ])
+  );
+}
+
 function renderActionSummary() {
   return view("section", { className: "panel user-action-summary" }, [
     view("p", { className: "eyebrow", text: "Action summary" }),
@@ -1103,25 +1970,20 @@ function renderActionSummary() {
 function renderIntentPanel() {
   const preview = runState?.manifestPreview ?? null;
   if (preview === null) {
-    return view("section", { className: "panel" }, [
-      view("p", { className: "eyebrow", text: "Manifest" }),
-      view("h2", { text: "검토 전 준비 단계" }),
-      view("p", { className: "muted", text: "지갑과 네트워크, 테스트 자산이 준비되면 실행 조건이 고정된 Manifest를 발급합니다." }),
-      field("Required network", "GIWA Sepolia 91342"),
-      field("Technical details", "Manifest 발급 후 표시")
-    ]);
+    return renderJourneyConditionTable();
   }
 
   return view("section", { className: "panel user-intent-panel" }, [
-    view("p", { className: "eyebrow", text: "Manifest" }),
-    view("h2", { text: preview.actionName ?? "Mock vault 테스트넷 액션" }),
-    view("p", { className: "notice", text: "승인이 필요한 경우 Manifest의 정확한 데모 수량만 승인합니다. 실제 자산은 사용하지 않습니다." }),
+    view("p", { className: "eyebrow", text: "Campaign-signed Manifest" }),
+    view("h2", { text: "Mock Vault에 테스트 자산 1개 예치" }),
+    view("p", { className: "notice", text: "캠페인이 이 실행 조건에 서명했습니다. 실제 자산이나 수익은 사용하지 않는 테스트넷 미션입니다." }),
     field("Network", "GIWA Sepolia 91342"),
-    field("Amount", preview.amountBaseUnits),
-    field("Target", preview.target),
-    field("Asset", preview.asset),
+    field("Amount", displayMockAmount(preview.amountBaseUnits)),
+    field("Valid until", formatExpiry(preview.expiryUnix)),
     view("details", { className: "panel user-technical-details" }, [
       view("summary", { text: "Technical details" }),
+      field("Target", preview.target),
+      field("Asset", preview.asset),
       field("Selector", preview.selector ?? DEPOSIT_SELECTOR),
       field("Run", runState.runId),
       field("Spender", preview.spender),
@@ -1136,8 +1998,14 @@ function renderIntentPanel() {
 }
 
 function renderActionPage() {
+  if (isRecordedMismatchExample()) {
+    renderRecordedMismatchPage();
+    return;
+  }
   const action = nextPrimaryAction();
   const demoRoute = isGiwaDemoRoute();
+  const projection = journeyProjection();
+  const consoleState = protocolConsoleProjection();
   const faucetLink = assetState.next === "gas_required" && publicConfig?.faucetHelpUrl
     ? view("a", { className: "secondary-link", href: publicConfig.faucetHelpUrl, target: "_blank", rel: "noopener noreferrer", text: "공식 Faucet 안내" })
     : null;
@@ -1157,6 +2025,7 @@ function renderActionPage() {
     view("a", { className: "secondary-link", href: "/user/help", text: "도움말" }),
     view("a", { className: "secondary-link", href: "/user/receipts", text: "내 Receipt" })
   );
+  const protocolActions = [actions[0]];
 
   app.textContent = "";
   const actionPage = demoRoute
@@ -1178,47 +2047,17 @@ function renderActionPage() {
           })
         ]),
         renderDemoJudgePromise(),
-        renderDemoGuidedFlow(actions, action)
+        renderJourneyCanvas(projection, actions, action)
       ])
-    : view("section", { className: "hero-flow user-action-hero" }, [
-        view("div", { className: "hero-copy" }, [
-          view("p", {
-            className: "eyebrow",
-            text: "GIWA Verified Intent Rail"
-          }),
-          view("h1", {
-            text: "서명 전에 테스트넷 액션을 검토하세요"
-          }),
-          view("p", {
-            className: "lead",
-            text: "한 개의 버튼이 현재 필요한 단계만 안내합니다. Manifest와 일치한 트랜잭션만 공개 Receipt를 받습니다."
-          }),
-          view("p", {
-            className: "notice",
-            role: "status",
-            "aria-live": "polite",
-            "aria-atomic": "true",
-            text: notice
-          }),
-          view("p", {
-            className: flowStateClass(),
-            text: inFlight
-              ? `${primaryLabel()} 작업을 처리하고 있습니다.`
-              : assetCopy()
-          }),
-          view("div", {
-            className: "hero-actions user-cta-cluster",
-            "data-current-action": action
-          }, actions),
-          renderStatusRail()
-        ]),
-        view("div", {}, [
-          renderActionSummary(),
-          renderIntentPanel()
-        ])
-      ]);
+    : consoleState.activeView === "mission"
+      ? renderMissionCockpitPage(consoleState, protocolActions)
+      : renderLiveExecutionPage(consoleState, protocolActions);
 
-  app.append(...(demoRoute ? [renderDemoTopBar(), actionPage] : [actionPage]));
+  app.append(
+    ...(demoRoute
+      ? [renderDemoTopBar(), actionPage]
+      : [renderProtocolTopBar(consoleState.activeView), actionPage])
+  );
   document.querySelector("#user-primary-action")?.addEventListener("click", onPrimaryAction);
 }
 
@@ -1232,7 +2071,9 @@ async function connectWallet(currentProvider) {
   );
   assertContext(context);
   walletState = { status: chainId === GIWA_CHAIN_ID ? "connected" : "wrongChain", account, chainId };
-  if (chainId === GIWA_CHAIN_ID) await inspectWalletAssets(captureContext());
+  if (chainId === GIWA_CHAIN_ID) {
+    await inspectWalletAssets(captureContext());
+  }
 }
 
 async function switchToGiwa(currentProvider) {
@@ -1658,9 +2499,13 @@ async function onPrimaryAction() {
   const action = nextPrimaryAction();
   let context = captureContext();
   const currentProvider = provider();
-  if (currentProvider === null && action !== "open_receipt") {
+  if (
+    currentProvider === null &&
+    action !== "open_receipt" &&
+    action !== "review_mission"
+  ) {
     walletState = { status: "providerMissing", account: null, chainId: null };
-    notice = publicNotice("wallet");
+    notice = publicNotice("wallet", "provider_missing");
     render();
     return;
   }
@@ -1668,7 +2513,11 @@ async function onPrimaryAction() {
   inFlight = true;
   render();
   try {
-    if (action === "connect") {
+    if (action === "review_mission") {
+      missionReviewed = true;
+      sessionStorage.setItem(USER_MISSION_REVIEW_KEY, "true");
+      notice = "미션 조건을 확인했습니다. 이제 지갑을 연결해 참여할 수 있습니다.";
+    } else if (action === "connect") {
       await connectWallet(currentProvider);
       context = captureContext();
     } else if (action === "switch_chain") {
@@ -1695,7 +2544,7 @@ async function onPrimaryAction() {
       (context.account !== walletState.account || context.chainId !== walletState.chainId);
     if (error instanceof Error && error.message === "context_changed" && !isGenerationCurrent(context)) return;
     if (action === "connect") {
-      notice = actionCommittedWalletContext ? publicNotice("readiness") : publicNotice("wallet");
+      notice = actionCommittedWalletContext ? publicNotice("readiness") : publicNotice("wallet", walletRequestFailureCode(error));
     }
     else if (action === "switch_chain") notice = publicNotice("network");
     else if (action === "open_faucet") notice = publicNotice("readiness");
@@ -1718,12 +2567,57 @@ function receiptStateFromRun() {
   return "pending";
 }
 
+function upsertReceiptHistory(items, next) {
+  const keys = (item) =>
+    [item?.runId, item?.depositTxHash, item?.receiptHash]
+      .filter((value) => typeof value === "string" && value.length > 0);
+  const nextKeys = new Set(keys(next));
+  const terminalStates = new Set(["verified", "notMatched"]);
+  const existingTerminal =
+    next?.state === "pending"
+      ? items.find(
+          (item) =>
+            terminalStates.has(item?.state) &&
+            keys(item).some((key) => nextKeys.has(key))
+        )
+      : undefined;
+  if (existingTerminal !== undefined) return items.slice(0, 12);
+  const filtered = items.filter(
+    (item) => !keys(item).some((key) => nextKeys.has(key))
+  );
+  return [next, ...filtered].slice(0, 12);
+}
+
+function projectCampaignHandoffReceipt(items, next) {
+  if (
+    next?.state !== "verified" ||
+    !/^0x[a-fA-F0-9]{64}$/u.test(next?.receiptHash ?? "")
+  ) {
+    return null;
+  }
+  const keys = (item) =>
+    [item?.runId, item?.depositTxHash, item?.receiptHash]
+      .filter((value) => typeof value === "string" && value.length > 0);
+  const nextKeys = new Set(keys(next));
+  const previous = items.filter((item) =>
+    keys(item).some((key) => nextKeys.has(key))
+  );
+  return previous.length > 0 &&
+    previous.every((item) => item?.state === "pending")
+    ? next.receiptHash.toLowerCase()
+    : null;
+}
+
 function storeReceiptProjection(state = receiptStateFromRun()) {
   const items = readReceiptHistory();
-  const id = runState?.receiptHash ?? runState?.depositTxHash ?? runState?.runId;
+  const id =
+    runState?.runId ??
+    runState?.depositTxHash ??
+    runState?.receiptHash;
   if (!id) return;
   const next = {
     id,
+    runId: runState?.runId ?? null,
     state,
     actionName: runState?.manifestPreview?.actionName ?? "Mock vault 테스트넷 액션",
     receiptHash: runState?.receiptHash ?? null,
@@ -1731,8 +2625,13 @@ function storeReceiptProjection(state = receiptStateFromRun()) {
     networkName: "GIWA Sepolia",
     savedAt: new Date().toISOString()
   };
-  const filtered = items.filter((item) => item.id !== id);
-  writeReceiptHistory([next, ...filtered].slice(0, 12));
+  const handoffReceiptHash = projectCampaignHandoffReceipt(items, next);
+  const historyWritten = writeReceiptHistory(
+    upsertReceiptHistory(items, next)
+  );
+  if (historyWritten && handoffReceiptHash !== null) {
+    writeCampaignHandoffReceipt(handoffReceiptHash);
+  }
 }
 
 function renderReceiptCard(item) {
@@ -1753,10 +2652,32 @@ function filterReceipts(items, filter) {
   return items.filter((item) => item.state === filter);
 }
 
+function partitionReceiptHistory(items) {
+  return {
+    acquired: items.filter((item) => item.state === "verified"),
+    recovery: items.filter((item) => item.state !== "verified")
+  };
+}
+
+function renderReceiptHistorySection(title, description, items, emptyCopy) {
+  return view("section", { className: "user-receipt-history-section" }, [
+    view("div", { className: "section-heading" }, [
+      view("div", {}, [
+        view("h2", { text: title }),
+        view("p", { className: "muted", text: description })
+      ])
+    ]),
+    items.length === 0
+      ? view("p", { className: "notice", text: emptyCopy })
+      : view("div", { className: "proof-grid" }, items.map(renderReceiptCard))
+  ]);
+}
+
 function renderReceiptsList() {
   const params = new URLSearchParams(location.search);
   const filter = params.get("filter") ?? "all";
   const items = filterReceipts(readReceiptHistory(), filter);
+  const partitioned = partitionReceiptHistory(items);
   app.textContent = "";
   app.append(
     view("section", { className: "band user-list-band" }, [
@@ -1777,9 +2698,22 @@ function renderReceiptsList() {
         view("a", { className: "secondary-link", href: "/user/receipts?filter=pending", text: "검증 중" }),
         view("a", { className: "secondary-link", href: "/user/receipts?filter=notMatched", text: "불일치" })
       ]),
-      items.length === 0
-        ? view("p", { className: "notice", text: "이 브라우저에 저장된 실행 기록이 없습니다." })
-        : view("div", { className: "proof-grid" }, items.map(renderReceiptCard))
+      renderReceiptHistorySection(
+        "획득한 Receipt",
+        "Manifest와 실제 GIWA Sepolia 실행이 일치해 발급된 공개 기록입니다.",
+        partitioned.acquired,
+        filter === "all" || filter === "verified"
+          ? "아직 획득한 Receipt가 없습니다."
+          : "현재 필터에는 획득한 Receipt가 없습니다."
+      ),
+      renderReceiptHistorySection(
+        "복구가 필요한 실행",
+        "검증 중이거나 조건이 일치하지 않은 테스트넷 실행입니다.",
+        partitioned.recovery,
+        filter === "all" || filter !== "verified"
+          ? "복구가 필요한 실행이 없습니다."
+          : "Matched 필터에서는 복구 실행을 표시하지 않습니다."
+      )
     ])
   );
 }
@@ -1852,6 +2786,976 @@ function projectMatchedReceiptBody(body, expectedHash) {
   };
 }
 
+function keccak256Utf8(value) {
+  const mask = (1n << 64n) - 1n;
+  const rotations = [
+    0, 1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39,
+    41, 45, 15, 21, 8, 18, 2, 61, 56, 14
+  ];
+  const constants = [
+    0x0000000000000001n, 0x0000000000008082n,
+    0x800000000000808an, 0x8000000080008000n,
+    0x000000000000808bn, 0x0000000080000001n,
+    0x8000000080008081n, 0x8000000000008009n,
+    0x000000000000008an, 0x0000000000000088n,
+    0x0000000080008009n, 0x000000008000000an,
+    0x000000008000808bn, 0x800000000000008bn,
+    0x8000000000008089n, 0x8000000000008003n,
+    0x8000000000008002n, 0x8000000000000080n,
+    0x000000000000800an, 0x800000008000000an,
+    0x8000000080008081n, 0x8000000000008080n,
+    0x0000000080000001n, 0x8000000080008008n
+  ];
+  const rotate = (lane, count) => {
+    const shift = BigInt(count);
+    return shift === 0n
+      ? lane & mask
+      : ((lane << shift) | (lane >> (64n - shift))) & mask;
+  };
+  const permute = (state) => {
+    for (const roundConstant of constants) {
+      const column = Array(5).fill(0n);
+      for (let x = 0; x < 5; x += 1) {
+        for (let y = 0; y < 5; y += 1) {
+          column[x] ^= state[x + 5 * y];
+        }
+      }
+      const delta = column.map(
+        (_, x) =>
+          column[(x + 4) % 5] ^ rotate(column[(x + 1) % 5], 1)
+      );
+      for (let x = 0; x < 5; x += 1) {
+        for (let y = 0; y < 5; y += 1) {
+          state[x + 5 * y] =
+            (state[x + 5 * y] ^ delta[x]) & mask;
+        }
+      }
+      const shifted = Array(25).fill(0n);
+      for (let x = 0; x < 5; x += 1) {
+        for (let y = 0; y < 5; y += 1) {
+          shifted[y + 5 * ((2 * x + 3 * y) % 5)] = rotate(
+            state[x + 5 * y],
+            rotations[x + 5 * y]
+          );
+        }
+      }
+      for (let x = 0; x < 5; x += 1) {
+        for (let y = 0; y < 5; y += 1) {
+          state[x + 5 * y] =
+            (shifted[x + 5 * y] ^
+              ((~shifted[((x + 1) % 5) + 5 * y]) &
+                shifted[((x + 2) % 5) + 5 * y])) &
+            mask;
+        }
+      }
+      state[0] = (state[0] ^ roundConstant) & mask;
+    }
+  };
+  const rate = 136;
+  const input = new TextEncoder().encode(value);
+  const padded = new Uint8Array(
+    Math.ceil((input.length + 1) / rate) * rate
+  );
+  padded.set(input);
+  padded[input.length] = 0x01;
+  padded[padded.length - 1] |= 0x80;
+  const state = Array(25).fill(0n);
+  for (let offset = 0; offset < padded.length; offset += rate) {
+    for (let index = 0; index < rate; index += 1) {
+      state[Math.floor(index / 8)] ^=
+        BigInt(padded[offset + index]) << BigInt((index % 8) * 8);
+    }
+    permute(state);
+  }
+  const output = Array.from({ length: 32 }, (_, index) =>
+    Number(
+      (state[Math.floor(index / 8)] >> BigInt((index % 8) * 8)) & 0xffn
+    )
+      .toString(16)
+      .padStart(2, "0")
+  ).join("");
+  return `0x${output}`;
+}
+
+function normalizePublicVerificationResponse(body, expectedHash) {
+  const object = (value) =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const exact = (value, fields, optional = []) =>
+    object(value) &&
+    fields.every((key) => Object.prototype.hasOwnProperty.call(value, key)) &&
+    Object.keys(value).every((key) => [...fields, ...optional].includes(key));
+  const project = (value, fields, optional = []) => {
+    if (!exact(value, fields, optional)) return null;
+    return Object.fromEntries(
+      [...fields, ...optional]
+        .filter((key) => Object.prototype.hasOwnProperty.call(value, key))
+        .map((key) => [key, value[key]])
+    );
+  };
+  const hash = (value) =>
+    typeof value === "string" && /^0x[a-f0-9]{64}$/u.test(value)
+      ? value
+      : null;
+  const address = (value) =>
+    typeof value === "string" && /^0x[a-f0-9]{40}$/u.test(value)
+      ? value
+      : null;
+  const bytes4 = (value) =>
+    typeof value === "string" && /^0x[a-f0-9]{8}$/u.test(value)
+      ? value
+      : null;
+  const units = (value) =>
+    typeof value === "string" && /^(?:0|[1-9][0-9]*)$/u.test(value);
+  const integer = (value, positive = false) =>
+    Number.isSafeInteger(value) && value >= (positive ? 1 : 0);
+  const version = (value) =>
+    typeof value === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(value);
+  const text = (value) =>
+    typeof value === "string" && value.length > 0 && value.trim() === value;
+  const utf8Hex = (value) =>
+    `0x${Array.from(new TextEncoder().encode(value))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")}`;
+  const forbidden = (value, seen = new WeakSet()) => {
+    if (value === null || typeof value !== "object") return false;
+    if (seen.has(value)) return true;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      return value.some((entry) => forbidden(entry, seen));
+    }
+    return Object.entries(value).some(([key, entry]) => {
+      const normalized = key.replace(/[^a-z0-9]/giu, "").toLowerCase();
+      return (
+        [
+          "runid", "capability", "runaccess", "session", "credential",
+          "private", "visibility", "secret", "token", "author" + "ization",
+          "headers", "database", "dbkey"
+        ].some((part) => normalized.includes(part)) ||
+        normalized === "env" ||
+        normalized.startsWith("environment") ||
+        forbidden(entry, seen)
+      );
+    });
+  };
+  const canonical = (section, payload) => {
+    const json = JSON.stringify(payload);
+    return section.canonicalPayload === json &&
+      section.canonicalPayloadBytesHex === utf8Hex(json)
+      ? {
+          canonicalPayload: json,
+          canonicalPayloadBytesHex: utf8Hex(json)
+        }
+      : null;
+  };
+  if (forbidden(body)) return null;
+
+  const topFields = [
+    "screenKind", "source", "queryKind", "campaignId", "missionId",
+    "policyVersion", "policyStatus", "networkName", "walletLabel",
+    "receiptHash", "intentHash", "depositTxHash", "verifierInputHash",
+    "blockNumber", "blockHash", "confirmationDepth", "receiptPath",
+    "participantReceiptPath", "explorerUrl", "testnetNotice", "bundle"
+  ];
+  const top = project(body, topFields);
+  if (
+    top === null ||
+    top.screenKind !== "public-matched-proof" ||
+    top.source !== "live" ||
+    !["receipt", "intent", "depositTx"].includes(top.queryKind) ||
+    top.policyVersion !== null ||
+    top.policyStatus !== "fixed-unversioned" ||
+    top.networkName !== "GIWA Sepolia" ||
+    !/^0x[0-9a-f]{6}…[0-9a-f]{4}$/u.test(top.walletLabel ?? "") ||
+    hash(expectedHash) === null
+  ) {
+    return null;
+  }
+  const bundleFields = [
+    "schemaVersion", "source", "generatedAt", "identity", "manifest",
+    "verifierInput", "verification", "decodedLogs", "receipt", "replay",
+    "notice"
+  ];
+  const bundle = project(top.bundle, bundleFields);
+  const generatedAt = new Date(bundle?.generatedAt ?? "");
+  if (
+    bundle === null ||
+    bundle.schemaVersion !== "1" ||
+    bundle.source !== "live" ||
+    Number.isNaN(generatedAt.getTime()) ||
+    generatedAt.toISOString() !== bundle.generatedAt ||
+    bundle.notice !==
+      "GIWA Sepolia testnet · Mock assets only · No settlement or finality claim"
+  ) {
+    return null;
+  }
+  const identity = project(bundle.identity, [
+    "receiptHash", "intentHash", "depositTxHash"
+  ]);
+  if (
+    identity === null ||
+    hash(identity.receiptHash) !== hash(top.receiptHash) ||
+    hash(identity.intentHash) !== hash(top.intentHash) ||
+    hash(identity.depositTxHash) !== hash(top.depositTxHash)
+  ) {
+    return null;
+  }
+
+  const manifestSection = project(bundle.manifest, [
+    "payload", "canonicalPayload", "canonicalPayloadBytesHex", "signature",
+    "signingDomain", "recoveredSigner"
+  ]);
+  const manifestFields = [
+    "manifestVersion", "chainId", "nonce", "expiryUnix", "campaignId",
+    "missionId", "wallet", "actionType", "target", "selector", "asset",
+    "amountBaseUnits", "spender", "maxAllowanceBaseUnits"
+  ];
+  const manifest = project(
+    manifestSection?.payload,
+    manifestFields,
+    ["referralCode"]
+  );
+  const domain = project(manifestSection?.signingDomain, [
+    "name", "version", "chainId", "verifyingContract"
+  ]);
+  const manifestCanonical =
+    manifestSection === null || manifest === null
+      ? null
+      : canonical(manifestSection, manifest);
+  if (
+    manifestSection === null ||
+    manifest === null ||
+    domain === null ||
+    manifestCanonical === null ||
+    manifest.manifestVersion !== "1" ||
+    manifest.chainId !== 91342 ||
+    !text(manifest.nonce) ||
+    !integer(manifest.expiryUnix, true) ||
+    !text(manifest.campaignId) ||
+    !text(manifest.missionId) ||
+    address(manifest.wallet) === null ||
+    manifest.actionType !== "mockVaultDeposit" ||
+    address(manifest.target) === null ||
+    bytes4(manifest.selector) === null ||
+    address(manifest.asset) === null ||
+    !units(manifest.amountBaseUnits) ||
+    address(manifest.spender) === null ||
+    !units(manifest.maxAllowanceBaseUnits) ||
+    (manifest.referralCode !== undefined && !text(manifest.referralCode)) ||
+    !/^0x[a-f0-9]{130}$/u.test(manifestSection.signature ?? "") ||
+    domain.name !== "GIWA Verified Intent Rail" ||
+    domain.version !== "1" ||
+    domain.chainId !== 91342 ||
+    address(domain.verifyingContract) === null ||
+    address(manifestSection.recoveredSigner) === null ||
+    keccak256Utf8(manifestCanonical.canonicalPayload) !== identity.intentHash
+  ) {
+    return null;
+  }
+
+  const verifierSection = project(bundle.verifierInput, [
+    "payload", "canonicalPayload", "canonicalPayloadBytesHex",
+    "verifierInputHash", "verifierVersion"
+  ]);
+  const verifier = project(verifierSection?.payload, [
+    "schemaVersion", "chainId", "intentHash", "depositTxHash",
+    "depositTransactionSnapshotHash", "depositReceiptSnapshotHash",
+    "decodedLogSnapshotHash", "confirmationDepth",
+    "headBlockNumberAtVerification", "verifierVersion"
+  ]);
+  const verifierCanonical =
+    verifierSection === null || verifier === null
+      ? null
+      : canonical(verifierSection, verifier);
+  if (
+    verifierSection === null ||
+    verifier === null ||
+    verifierCanonical === null ||
+    verifier.schemaVersion !== "1" ||
+    verifier.chainId !== 91342 ||
+    [
+      verifier.intentHash, verifier.depositTxHash,
+      verifier.depositTransactionSnapshotHash,
+      verifier.depositReceiptSnapshotHash, verifier.decodedLogSnapshotHash,
+      verifierSection.verifierInputHash
+    ].some((value) => hash(value) === null) ||
+    !integer(verifier.confirmationDepth) ||
+    !integer(verifier.headBlockNumberAtVerification, true) ||
+    !version(verifier.verifierVersion) ||
+    verifierSection.verifierVersion !== verifier.verifierVersion ||
+    keccak256Utf8(verifierCanonical.canonicalPayload) !==
+      verifierSection.verifierInputHash ||
+    verifierSection.verifierInputHash !== top.verifierInputHash
+  ) {
+    return null;
+  }
+
+  if (!Array.isArray(bundle.decodedLogs) || bundle.decodedLogs.length > 20) {
+    return null;
+  }
+  const decodedLogs = [];
+  for (const raw of bundle.decodedLogs) {
+    const log = project(
+      raw,
+      [
+        "eventName", "contractAddress", "logIndex", "sourceTxHash",
+        "blockNumber", "blockHash", "args"
+      ],
+      ["topics"]
+    );
+    const argsFields =
+      log?.eventName === "Approval"
+        ? ["owner", "spender", "amount"]
+        : log?.eventName === "Transfer"
+          ? ["from", "to", "amount"]
+          : log?.eventName === "MockDeposit"
+            ? ["wallet", "asset", "amount"]
+            : null;
+    const args = argsFields === null ? null : project(log.args, argsFields);
+    const topics =
+      log?.topics === undefined
+        ? undefined
+        : Array.isArray(log.topics) && log.topics.every((topic) => hash(topic))
+          ? [...log.topics]
+          : null;
+    if (
+      log === null ||
+      args === null ||
+      address(log.contractAddress) === null ||
+      !integer(log.logIndex) ||
+      hash(log.sourceTxHash) === null ||
+      !integer(log.blockNumber) ||
+      hash(log.blockHash) === null ||
+      topics === null ||
+      Object.entries(args).some(([key, value]) =>
+        key === "amount" ? !units(value) : address(value) === null
+      )
+    ) {
+      return null;
+    }
+    decodedLogs.push({
+      eventName: log.eventName,
+      contractAddress: log.contractAddress,
+      logIndex: log.logIndex,
+      sourceTxHash: log.sourceTxHash,
+      blockNumber: log.blockNumber,
+      blockHash: log.blockHash,
+      args: { ...args },
+      ...(topics === undefined ? {} : { topics })
+    });
+  }
+
+  const receiptSection = project(bundle.receipt, [
+    "payload", "canonicalPayload", "canonicalPayloadBytesHex", "receiptHash",
+    "schemaVersion", "verifierVersion"
+  ]);
+  const receiptFieldsBeforeProvider = [
+    "schemaVersion", "verifierVersion", "intentHash", "chainId",
+    "networkName", "status", "actionType", "asset", "amountBaseUnits",
+    "target", "spender", "maxAllowanceBaseUnits", "allowanceUsedBaseUnits",
+    "approvalRequired", "approveTxHash", "depositTxHash",
+    "depositBlockNumber", "depositBlockHash", "campaignId", "missionId",
+    "wallet", "verifiedState"
+  ];
+  const receiptFieldsAfterProvider = [
+    "testnetDepositAmountDelta", "issuedAt",
+    "issuer", "safetyNotice"
+  ];
+  const receiptFields = [
+    ...receiptFieldsBeforeProvider,
+    ...receiptFieldsAfterProvider
+  ];
+  const rawReceipt = receiptSection?.payload;
+  const receipt =
+    exact(rawReceipt, receiptFields, ["verifiedProvider"])
+      ? Object.fromEntries(
+          [
+            ...receiptFieldsBeforeProvider,
+            ...(Object.prototype.hasOwnProperty.call(
+              rawReceipt,
+              "verifiedProvider"
+            )
+              ? ["verifiedProvider"]
+              : []),
+            ...receiptFieldsAfterProvider
+          ].map((key) => [key, rawReceipt[key]])
+        )
+      : null;
+  const receiptCanonical =
+    receiptSection === null || receipt === null
+      ? null
+      : canonical(receiptSection, receipt);
+  if (
+    receiptSection === null ||
+    receipt === null ||
+    receiptCanonical === null ||
+    receipt.schemaVersion !== "1" ||
+    !version(receipt.verifierVersion) ||
+    receipt.chainId !== 91342 ||
+    receipt.networkName !== "GIWA Sepolia" ||
+    receipt.status !== "matched" ||
+    receipt.actionType !== "mockVaultDeposit" ||
+    [receipt.intentHash, receipt.depositTxHash, receipt.depositBlockHash]
+      .some((value) => hash(value) === null) ||
+    [receipt.asset, receipt.target, receipt.spender, receipt.wallet]
+      .some((value) => address(value) === null) ||
+    [
+      receipt.amountBaseUnits, receipt.maxAllowanceBaseUnits,
+      receipt.allowanceUsedBaseUnits, receipt.testnetDepositAmountDelta
+    ].some((value) => !units(value)) ||
+    typeof receipt.approvalRequired !== "boolean" ||
+    (receipt.approveTxHash !== null && hash(receipt.approveTxHash) === null) ||
+    !integer(receipt.depositBlockNumber, true) ||
+    !integer(receipt.issuedAt, true) ||
+    !text(receipt.campaignId) ||
+    !text(receipt.missionId) ||
+    !["verified", "guest", "unavailable"].includes(receipt.verifiedState) ||
+    (receipt.verifiedProvider !== undefined &&
+      !["Dojang", "up.id"].includes(receipt.verifiedProvider)) ||
+    receipt.issuer !== "GIWA Verified Intent Rail MVP" ||
+    receipt.safetyNotice !==
+      "Testnet-only. No real asset, no yield, no RWA claim." ||
+    receiptSection.schemaVersion !== "1" ||
+    receiptSection.verifierVersion !== receipt.verifierVersion ||
+    hash(receiptSection.receiptHash) !== identity.receiptHash ||
+    keccak256Utf8(receiptCanonical.canonicalPayload) !==
+      identity.receiptHash
+  ) {
+    return null;
+  }
+
+  const verification = project(bundle.verification, [
+    "depositBlockNumber", "depositBlockHash",
+    "headBlockNumberAtVerification", "confirmationDepth",
+    "standardRpcReceiptStatus"
+  ]);
+  const replay = project(bundle.replay, ["algorithm", "command"]);
+  if (
+    verification === null ||
+    !integer(verification.depositBlockNumber) ||
+    hash(verification.depositBlockHash) === null ||
+    !integer(verification.headBlockNumberAtVerification) ||
+    !integer(verification.confirmationDepth) ||
+    verification.standardRpcReceiptStatus !== 1 ||
+    replay === null ||
+    replay.algorithm !== "keccak256-canonical-json+eip712" ||
+    replay.command !==
+      "pnpm --filter @giwa/web evidence:replay -- <bundle.json>"
+  ) {
+    return null;
+  }
+  const approvals = decodedLogs.filter((log) => log.eventName === "Approval");
+  const transfers = decodedLogs.filter((log) => log.eventName === "Transfer");
+  const deposits = decodedLogs.filter((log) => log.eventName === "MockDeposit");
+  const approval = approvals[0];
+  const transfer = transfers[0];
+  const deposit = deposits[0];
+  const identities = {
+    receipt: identity.receiptHash,
+    intent: identity.intentHash,
+    depositTx: identity.depositTxHash
+  };
+  if (
+    identities[top.queryKind] !== expectedHash ||
+    manifest.campaignId !== receipt.campaignId ||
+    manifest.missionId !== receipt.missionId ||
+    manifest.wallet !== receipt.wallet ||
+    manifest.chainId !== receipt.chainId ||
+    manifest.actionType !== receipt.actionType ||
+    manifest.asset !== receipt.asset ||
+    manifest.amountBaseUnits !== receipt.amountBaseUnits ||
+    manifest.target !== receipt.target ||
+    manifest.spender !== receipt.spender ||
+    manifest.maxAllowanceBaseUnits !== receipt.maxAllowanceBaseUnits ||
+    receipt.allowanceUsedBaseUnits !== receipt.amountBaseUnits ||
+    receipt.testnetDepositAmountDelta !== receipt.amountBaseUnits ||
+    receipt.intentHash !== identity.intentHash ||
+    receipt.depositTxHash !== identity.depositTxHash ||
+    receipt.depositBlockNumber !== verification.depositBlockNumber ||
+    receipt.depositBlockHash !== verification.depositBlockHash ||
+    verifier.intentHash !== identity.intentHash ||
+    verifier.depositTxHash !== identity.depositTxHash ||
+    verifier.confirmationDepth !== verification.confirmationDepth ||
+    verifier.headBlockNumberAtVerification !==
+      verification.headBlockNumberAtVerification ||
+    verifier.verifierVersion !== receipt.verifierVersion ||
+    verification.depositBlockNumber !== top.blockNumber ||
+    verification.depositBlockHash !== top.blockHash ||
+    verification.confirmationDepth !== top.confirmationDepth ||
+    verification.confirmationDepth !==
+      Math.max(
+        0,
+        verification.headBlockNumberAtVerification -
+          verification.depositBlockNumber +
+          1
+      ) ||
+    keccak256Utf8(JSON.stringify(decodedLogs)) !==
+      verifier.decodedLogSnapshotHash ||
+    transfers.length !== 1 ||
+    deposits.length !== 1 ||
+    approvals.length !== (receipt.approvalRequired ? 1 : 0) ||
+    (receipt.approvalRequired
+      ? receipt.approveTxHash === null ||
+        approval.sourceTxHash !== receipt.approveTxHash ||
+        approval.contractAddress !== receipt.asset ||
+        approval.args.owner !== receipt.wallet ||
+        approval.args.spender !== receipt.spender ||
+        approval.args.amount !== receipt.maxAllowanceBaseUnits
+      : receipt.approveTxHash !== null) ||
+    transfer.sourceTxHash !== receipt.depositTxHash ||
+    transfer.blockNumber !== receipt.depositBlockNumber ||
+    transfer.blockHash !== receipt.depositBlockHash ||
+    transfer.contractAddress !== receipt.asset ||
+    transfer.args.from !== receipt.wallet ||
+    transfer.args.to !== receipt.target ||
+    transfer.args.amount !== receipt.amountBaseUnits ||
+    deposit.sourceTxHash !== receipt.depositTxHash ||
+    deposit.blockNumber !== receipt.depositBlockNumber ||
+    deposit.blockHash !== receipt.depositBlockHash ||
+    deposit.contractAddress !== receipt.target ||
+    deposit.args.wallet !== receipt.wallet ||
+    deposit.args.asset !== receipt.asset ||
+    deposit.args.amount !== receipt.amountBaseUnits ||
+    top.campaignId !== receipt.campaignId ||
+    top.missionId !== receipt.missionId ||
+    top.walletLabel !==
+      `${receipt.wallet.slice(0, 8)}…${receipt.wallet.slice(-4)}` ||
+    top.receiptPath !== `/receipt/${identity.receiptHash}` ||
+    top.participantReceiptPath !==
+      `/user/receipt/${identity.receiptHash}` ||
+    top.explorerUrl !==
+      `https://sepolia-explorer.giwa.io/tx/${identity.depositTxHash}` ||
+    top.testnetNotice !== "GIWA Sepolia testnet · Mock assets only"
+  ) {
+    return null;
+  }
+
+  return {
+    screenKind: "public-matched-proof",
+    source: "live",
+    queryKind: top.queryKind,
+    campaignId: receipt.campaignId,
+    missionId: receipt.missionId,
+    policyVersion: null,
+    policyStatus: "fixed-unversioned",
+    networkName: "GIWA Sepolia",
+    walletLabel: top.walletLabel,
+    receiptHash: identity.receiptHash,
+    intentHash: identity.intentHash,
+    depositTxHash: identity.depositTxHash,
+    verifierInputHash: verifierSection.verifierInputHash,
+    blockNumber: verification.depositBlockNumber,
+    blockHash: verification.depositBlockHash,
+    confirmationDepth: verification.confirmationDepth,
+    receiptPath: `/receipt/${identity.receiptHash}`,
+    participantReceiptPath: `/user/receipt/${identity.receiptHash}`,
+    explorerUrl:
+      `https://sepolia-explorer.giwa.io/tx/${identity.depositTxHash}`,
+    testnetNotice: "GIWA Sepolia testnet · Mock assets only",
+    bundle: {
+      schemaVersion: "1",
+      source: "live",
+      generatedAt: bundle.generatedAt,
+      identity: { ...identity },
+      manifest: {
+        payload: { ...manifest },
+        ...manifestCanonical,
+        signature: manifestSection.signature,
+        signingDomain: { ...domain },
+        recoveredSigner: manifestSection.recoveredSigner
+      },
+      verifierInput: {
+        payload: { ...verifier },
+        ...verifierCanonical,
+        verifierInputHash: verifierSection.verifierInputHash,
+        verifierVersion: verifier.verifierVersion
+      },
+      verification: { ...verification },
+      decodedLogs,
+      receipt: {
+        payload: { ...receipt },
+        ...receiptCanonical,
+        receiptHash: receiptSection.receiptHash,
+        schemaVersion: "1",
+        verifierVersion: receipt.verifierVersion
+      },
+      replay: { ...replay },
+      notice: bundle.notice
+    }
+  };
+}
+
+function projectPublicVerificationBundleResponse(body, expectedHash) {
+  const strictBody = normalizePublicVerificationResponse(body, expectedHash);
+  if (strictBody === null) return null;
+  body = strictBody;
+  const object = (value) =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const hash = (value) =>
+    typeof value === "string" && /^0x[a-fA-F0-9]{64}$/u.test(value);
+  const address = (value) =>
+    typeof value === "string" && /^0x[a-fA-F0-9]{40}$/u.test(value);
+  const bytes = (value) =>
+    typeof value === "string" && /^0x(?:[a-fA-F0-9]{2})+$/u.test(value);
+  const version = (value) =>
+    typeof value === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(value);
+  const timestamp = (value) => {
+    if (typeof value !== "string") return false;
+    const parsed = new Date(value);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === value;
+  };
+  const hasForbiddenKey = (value, seen = new WeakSet()) => {
+    if (value === null || typeof value !== "object") return false;
+    if (seen.has(value)) return true;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      return value.some((entry) => hasForbiddenKey(entry, seen));
+    }
+    return Object.entries(value).some(([key, entry]) => {
+      const normalized = key.replace(/[^a-z0-9]/giu, "").toLowerCase();
+      return (
+        normalized.includes("runid") ||
+        normalized.includes("capability") ||
+        normalized.includes("session") ||
+        normalized.includes("credential") ||
+        normalized.includes("private" + "key") ||
+        normalized.includes("headers") ||
+        normalized.includes("privateerror") ||
+        normalized.includes("databasekey") ||
+        normalized.includes("dbkey") ||
+        normalized === "env" ||
+        normalized.startsWith("environment") ||
+        hasForbiddenKey(entry, seen)
+      );
+    });
+  };
+  const canonical = (section) => {
+    if (
+      !object(section) ||
+      !object(section.payload) ||
+      typeof section.canonicalPayload !== "string" ||
+      !bytes(section.canonicalPayloadBytesHex)
+    ) {
+      return false;
+    }
+    try {
+      return (
+        JSON.stringify(JSON.parse(section.canonicalPayload)) ===
+        JSON.stringify(section.payload)
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  if (
+    !hash(expectedHash) ||
+    !object(body) ||
+    hasForbiddenKey(body) ||
+    body.screenKind !== "public-matched-proof" ||
+    body.source !== "live" ||
+    !["receipt", "intent", "depositTx"].includes(body.queryKind) ||
+    !hash(body.receiptHash) ||
+    body.receiptHash.toLowerCase() !== expectedHash.toLowerCase() ||
+    !hash(body.intentHash) ||
+    !hash(body.depositTxHash) ||
+    !hash(body.verifierInputHash) ||
+    !Number.isSafeInteger(body.blockNumber) ||
+    body.blockNumber < 0 ||
+    !hash(body.blockHash) ||
+    !Number.isSafeInteger(body.confirmationDepth) ||
+    body.confirmationDepth <= 0 ||
+    body.explorerUrl !==
+      `https://sepolia-explorer.giwa.io/tx/${body.depositTxHash}` ||
+    body.testnetNotice !== "GIWA Sepolia testnet · Mock assets only"
+  ) {
+    return null;
+  }
+
+  const bundle = body.bundle;
+  if (
+    !object(bundle) ||
+    bundle.schemaVersion !== "1" ||
+    bundle.source !== "live" ||
+    !timestamp(bundle.generatedAt) ||
+    !object(bundle.identity) ||
+    !hash(bundle.identity.receiptHash) ||
+    !hash(bundle.identity.intentHash) ||
+    !hash(bundle.identity.depositTxHash) ||
+    bundle.identity.receiptHash.toLowerCase() !== body.receiptHash.toLowerCase() ||
+    bundle.identity.intentHash.toLowerCase() !== body.intentHash.toLowerCase() ||
+    bundle.identity.depositTxHash.toLowerCase() !== body.depositTxHash.toLowerCase() ||
+    !canonical(bundle.manifest) ||
+    !/^0x[a-fA-F0-9]{130}$/u.test(bundle.manifest.signature ?? "") ||
+    !object(bundle.manifest.signingDomain) ||
+    bundle.manifest.signingDomain.name !== "GIWA Verified Intent Rail" ||
+    bundle.manifest.signingDomain.version !== "1" ||
+    bundle.manifest.signingDomain.chainId !== 91342 ||
+    !address(bundle.manifest.signingDomain.verifyingContract) ||
+    !address(bundle.manifest.recoveredSigner) ||
+    !canonical(bundle.verifierInput) ||
+    !hash(bundle.verifierInput.verifierInputHash) ||
+    bundle.verifierInput.verifierInputHash.toLowerCase() !==
+      body.verifierInputHash.toLowerCase() ||
+    !version(bundle.verifierInput.verifierVersion) ||
+    !object(bundle.verification) ||
+    bundle.verification.depositBlockNumber !== body.blockNumber ||
+    !hash(bundle.verification.depositBlockHash) ||
+    bundle.verification.depositBlockHash.toLowerCase() !==
+      body.blockHash.toLowerCase() ||
+    !Number.isSafeInteger(bundle.verification.headBlockNumberAtVerification) ||
+    bundle.verification.headBlockNumberAtVerification < body.blockNumber ||
+    bundle.verification.confirmationDepth !== body.confirmationDepth ||
+    bundle.verification.standardRpcReceiptStatus !== 1 ||
+    !Array.isArray(bundle.decodedLogs) ||
+    bundle.decodedLogs.length > 20 ||
+    !canonical(bundle.receipt) ||
+    !hash(bundle.receipt.receiptHash) ||
+    bundle.receipt.receiptHash.toLowerCase() !== body.receiptHash.toLowerCase() ||
+    bundle.receipt.schemaVersion !== "1" ||
+    !version(bundle.receipt.verifierVersion) ||
+    bundle.receipt.verifierVersion !== bundle.verifierInput.verifierVersion ||
+    !object(bundle.replay) ||
+    bundle.replay.algorithm !== "keccak256-canonical-json+eip712" ||
+    bundle.replay.command !==
+      "pnpm --filter @giwa/web evidence:replay -- <bundle.json>" ||
+    bundle.notice !==
+      "GIWA Sepolia testnet · Mock assets only · No settlement or finality claim"
+  ) {
+    return null;
+  }
+
+  const allowedLogs = new Set(["Approval", "Transfer", "MockDeposit"]);
+  if (
+    bundle.decodedLogs.some(
+      (log) =>
+        !object(log) ||
+        !allowedLogs.has(log.eventName) ||
+        !address(log.contractAddress) ||
+        !Number.isSafeInteger(log.logIndex) ||
+        log.logIndex < 0 ||
+        !hash(log.sourceTxHash) ||
+        !Number.isSafeInteger(log.blockNumber) ||
+        log.blockNumber < 0 ||
+        !hash(log.blockHash) ||
+        !object(log.args)
+    ) ||
+    bundle.verifierInput.payload.intentHash?.toLowerCase() !==
+      body.intentHash.toLowerCase() ||
+    bundle.verifierInput.payload.depositTxHash?.toLowerCase() !==
+      body.depositTxHash.toLowerCase() ||
+    bundle.receipt.payload.intentHash?.toLowerCase() !==
+      body.intentHash.toLowerCase() ||
+    bundle.receipt.payload.depositTxHash?.toLowerCase() !==
+      body.depositTxHash.toLowerCase()
+  ) {
+    return null;
+  }
+
+  return {
+    receiptHash: body.receiptHash.toLowerCase(),
+    explorerUrl: body.explorerUrl,
+    bundle: {
+      schemaVersion: "1",
+      source: "live",
+      generatedAt: bundle.generatedAt,
+      identity: {
+        receiptHash: bundle.identity.receiptHash.toLowerCase(),
+        intentHash: bundle.identity.intentHash.toLowerCase(),
+        depositTxHash: bundle.identity.depositTxHash.toLowerCase()
+      },
+      manifest: bundle.manifest,
+      verifierInput: bundle.verifierInput,
+      verification: bundle.verification,
+      decodedLogs: bundle.decodedLogs,
+      receipt: bundle.receipt,
+      replay: bundle.replay,
+      notice: bundle.notice
+    }
+  };
+}
+
+async function fetchPublicVerificationBundle(receiptHash) {
+  if (!/^0x[a-f0-9]{64}$/u.test(receiptHash ?? "")) return null;
+  try {
+    const result = await apiFetchJson(
+      `/api/public/evidence/${encodeURIComponent(receiptHash)}`
+    );
+    if (!result.response.ok) return null;
+    return projectPublicVerificationBundleResponse(
+      result.body,
+      receiptHash
+    );
+  } catch {
+    return null;
+  }
+}
+
+function verificationBundleMetadata(items) {
+  return items.map(([label, value]) =>
+    view("div", { className: "verification-bundle-meta-item" }, [
+      view("dt", { text: label }),
+      view("dd", { className: "mono hash-wrap", text: String(value) })
+    ])
+  );
+}
+
+function renderVerificationBundle(publicProof) {
+  const bundle = publicProof?.bundle ?? null;
+  const receiptHash = bundle?.identity?.receiptHash ?? null;
+  const downloadPath =
+    /^0x[a-f0-9]{64}$/u.test(receiptHash ?? "")
+      ? `/api/public/evidence/${receiptHash}?download=1`
+      : null;
+  if (bundle === null || downloadPath === null) {
+    return view("section", { className: "verification-bundle panel" }, [
+      view("p", { className: "eyebrow", text: "Independent verification" }),
+      view("h2", { text: "검증 번들을 사용할 수 없습니다" }),
+      view("p", {
+        className: "muted",
+        text: "찾을 수 없거나 공개되지 않은 증거입니다."
+      }),
+      view("div", { className: "verification-bundle-actions" }, [
+        view("span", {
+          className: "disabled-link",
+          text: "검증 번들 JSON 받기"
+        }),
+        view("button", {
+          type: "button",
+          disabled: true,
+          text: "재검증 명령 복사"
+        })
+      ])
+    ]);
+  }
+
+  return view("section", { className: "verification-bundle" }, [
+    view("header", { className: "section-heading" }, [
+      view("div", {}, [
+        view("p", { className: "eyebrow", text: "Independent verification" }),
+        view("h2", { text: "검증 번들로 직접 다시 확인하세요" }),
+        view("p", {
+          className: "muted",
+          text: "6개 무결성 검사를 직접 재계산할 수 있습니다"
+        })
+      ]),
+      view("span", { className: "status-pill", text: "Matched" })
+    ]),
+    view("dl", { className: "verification-bundle-meta" }, [
+      ...verificationBundleMetadata([
+        ["Source", "Live"],
+        ["Generated at", bundle.generatedAt],
+        ["Schema version", bundle.schemaVersion],
+        ["Verifier version", bundle.verifierInput.verifierVersion]
+      ])
+    ]),
+    view("div", { className: "verification-bundle-actions" }, [
+      view("a", {
+        className: "secondary-link",
+        href: publicProof.explorerUrl,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        text: "GIWA Explorer"
+      }),
+      view("a", {
+        className: "primary-link",
+        href: downloadPath,
+        download: "giwa-verification-bundle.json",
+        text: "검증 번들 JSON 받기"
+      })
+    ]),
+    view("p", { className: "notice", text: bundle.notice }),
+    view("div", { className: "verification-bundle-disclosures" }, [
+      view("details", { className: "verification-bundle-disclosure" }, [
+        view("summary", { text: "Manifest 및 서명" }),
+        field("Manifest signature", bundle.manifest.signature),
+        field("Recovered signer", bundle.manifest.recoveredSigner),
+        field(
+          "Verifying contract",
+          bundle.manifest.signingDomain.verifyingContract
+        ),
+        field("Intent hash", bundle.identity.intentHash)
+      ]),
+      view("details", { className: "verification-bundle-disclosure" }, [
+        view("summary", { text: "Verifier input" }),
+        field("Verifier input hash", bundle.verifierInput.verifierInputHash),
+        field("Verifier version", bundle.verifierInput.verifierVersion),
+        field(
+          "Block snapshot",
+          `${bundle.verification.depositBlockNumber} → ${bundle.verification.headBlockNumberAtVerification}`
+        ),
+        field(
+          "Verification snapshot",
+          `${bundle.verification.confirmationDepth} confirmations observed`
+        ),
+        field("Block hash", bundle.verification.depositBlockHash)
+      ]),
+      view("details", { className: "verification-bundle-disclosure" }, [
+        view("summary", { text: "Decoded logs" }),
+        ...(bundle.decodedLogs.length === 0
+          ? [view("p", { className: "muted", text: "공개 가능한 decoded log가 없습니다." })]
+          : bundle.decodedLogs.map((log) =>
+              view("div", { className: "verification-log-row" }, [
+                view("strong", { text: `${log.eventName} #${log.logIndex}` }),
+                view("span", {
+                  className: "mono hash-wrap",
+                  text: log.contractAddress
+                })
+              ])
+            ))
+      ]),
+      view("details", { className: "verification-bundle-disclosure" }, [
+        view("summary", { text: "Receipt canonical payload" }),
+        field("Receipt hash", bundle.receipt.receiptHash),
+        field("Schema version", bundle.receipt.schemaVersion),
+        field("Verifier version", bundle.receipt.verifierVersion)
+      ]),
+      view("details", { className: "verification-bundle-disclosure" }, [
+        view("summary", { text: "독립 재검증" }),
+        view("p", {
+          className: "muted",
+          text: "다운로드한 JSON만 사용하며 DB, RPC 또는 비공개 API에 연결하지 않습니다."
+        }),
+        view("code", {
+          className: "verification-replay-command",
+          text: bundle.replay.command
+        }),
+        view("button", {
+          type: "button",
+          id: "copy-public-replay-command",
+          "data-replay-command": bundle.replay.command,
+          text: "재검증 명령 복사"
+        }),
+        view("span", {
+          className: "sr-only",
+          id: "copy-public-replay-command-feedback",
+          role: "status",
+          "aria-live": "polite",
+          text: ""
+        })
+      ])
+    ])
+  ]);
+}
+
+function bindVerificationReplayCopy() {
+  const button = document.querySelector("#copy-public-replay-command");
+  button?.addEventListener("click", async () => {
+    const command = button.getAttribute("data-replay-command");
+    const feedback = document.querySelector(
+      "#copy-public-replay-command-feedback"
+    );
+    if (command === null) return;
+    try {
+      await navigator.clipboard.writeText(command);
+      if (feedback) feedback.textContent = "재검증 명령을 복사했습니다.";
+    } catch {
+      if (feedback) feedback.textContent = "명령을 복사하지 못했습니다.";
+    }
+  });
+}
+
 function matchedReceiptRows(payload, verification) {
   return [
     {
@@ -1895,7 +3799,7 @@ function renderMatchedReceiptRows(rows) {
   ));
 }
 
-function renderMatchedReceiptSeal() {
+function renderMatchedReceiptSeal(issuedTime = null) {
   return view("figure", {
     className: "matched-receipt-seal",
     "aria-hidden": "true"
@@ -1906,7 +3810,10 @@ function renderMatchedReceiptSeal() {
     }),
     view("figcaption", {}, [
       view("strong", { text: "MATCHED" }),
-      view("span", { text: "GIWA SEPOLIA" })
+      view("span", { text: "GIWA SEPOLIA" }),
+      issuedTime === null
+        ? view("span")
+        : view("span", { text: issuedTime })
     ])
   ]);
 }
@@ -1928,6 +3835,276 @@ function renderMatchedReceiptValue() {
       className: "muted",
       text: "GIWA Wallet 안에서 실행 전 Manifest와 실행 후 Receipt 기록을 연결할 수 있습니다."
     })
+  ]);
+}
+
+function receiptSerial(receiptHash, blockNumber) {
+  const block = Number.isSafeInteger(blockNumber)
+    ? String(blockNumber)
+    : "PENDING";
+  const suffix =
+    typeof receiptHash === "string"
+      ? receiptHash.slice(-3).toUpperCase()
+      : "---";
+  return `GIWA-RCP-${block}-${suffix}`;
+}
+
+function projectReceiptArtifactMetrics(matched) {
+  return matched
+    ? {
+        fieldMatch: "4 / 4",
+        fieldMatchLabel: "조건 일치",
+        coveredFields: "4 / 4",
+        matchDetailsSummary: "조건 대조 결과 4/4 보기",
+        summaryAriaLabel: "Matched Receipt 요약"
+      }
+    : {
+        fieldMatch: "—",
+        fieldMatchLabel: "확인 불가",
+        coveredFields: "—",
+        matchDetailsSummary: "조건 대조 결과 확인 불가",
+        summaryAriaLabel: "Receipt 확인 불가 요약"
+      };
+}
+
+function campaignStudioReceiptPath(
+  receiptHash,
+  matched,
+  handoffReceiptHash
+) {
+  if (
+    !matched ||
+    !/^0x[a-fA-F0-9]{64}$/u.test(receiptHash ?? "")
+  ) {
+    return null;
+  }
+  const normalizedReceiptHash = receiptHash.toLowerCase();
+  const basePath = `/partner?receipt=${normalizedReceiptHash}`;
+  return /^0x[a-fA-F0-9]{64}$/u.test(handoffReceiptHash ?? "") &&
+    handoffReceiptHash.toLowerCase() === normalizedReceiptHash
+    ? `${basePath}&handoff=issued`
+    : basePath;
+}
+
+function renderReceiptNextParticipation(receiptHash, matched) {
+  const studioPath = campaignStudioReceiptPath(
+    receiptHash,
+    matched,
+    readCampaignHandoffReceipt()
+  );
+  const proofPath =
+    matched && receiptHash !== null
+      ? `/evidence?proof=${receiptHash}`
+      : null;
+  const routeCard = (eyebrow, title, description, label, path) =>
+    view("article", { className: "receipt-participation-route" }, [
+      view("p", { className: "eyebrow", text: eyebrow }),
+      view("h3", { text: title }),
+      view("p", { text: description }),
+      path === null
+        ? view("span", { className: "disabled-link", text: label })
+        : view("a", { className: "secondary-link", href: path, text: label })
+    ]);
+
+  return view("section", {
+    className: "receipt-next-participation",
+    "aria-labelledby": "receipt-next-participation-heading"
+  }, [
+    view("header", {}, [
+      view("p", { className: "eyebrow", text: "다음 참여" }),
+      view("h2", {
+        id: "receipt-next-participation-heading",
+        text: "Receipt는 끝이 아니라 다음 참여의 시작입니다."
+      }),
+      view("p", {
+        text: "같은 Receipt를 캠페인 성과와 공개 증거에서 이어서 확인하세요."
+      })
+    ]),
+    routeCard(
+      "ROUTE A",
+      "Campaign Studio",
+      "검증된 조건을 고정하고 다음 테스트넷 Mission을 공개합니다.",
+      "Campaign Studio에서 반영 확인",
+      studioPath
+    ),
+    routeCard(
+      "ROUTE B",
+      "Proof Ledger",
+      "Receipt, Intent 또는 트랜잭션 hash로 같은 공개 증거를 다시 확인합니다.",
+      "Proof Ledger에서 공개 검증",
+      proofPath
+    )
+  ]);
+}
+
+function renderReceiptArtifact(model) {
+  const {
+    matched,
+    receiptHeading,
+    receiptHash,
+    issuedTime,
+    blockNumber,
+    verification,
+    receiptModel,
+    matchedRowsView,
+    txExplorerUrl,
+    technicalDetails
+  } = model;
+  const serial = receiptSerial(receiptHash, blockNumber);
+  const artifactMetrics = projectReceiptArtifactMetrics(matched);
+  const publicReceiptPath =
+    matched && receiptHash !== null
+      ? `/receipt/${receiptHash}`
+      : null;
+
+  return view("section", {
+    className: `matched-receipt-page receipt-artifact ${matched ? "is-matched" : "is-unavailable"}`,
+    id: "main-content"
+  }, [
+    view("header", { className: "receipt-artifact-intro" }, [
+      view("div", {}, [
+        view("p", {
+          className: "eyebrow",
+          text: matched
+            ? "MATCHED RECEIPT / GIWA SEPOLIA"
+            : "RECEIPT UNAVAILABLE"
+        }),
+        receiptHeading,
+        view("p", {
+          className: "lead",
+          text: matched
+            ? "Manifest와 일치한 GIWA Sepolia 테스트넷 실행 기록입니다."
+            : "일치가 확인된 공개 Receipt만 이 경로에서 볼 수 있습니다."
+        })
+      ]),
+      view("div", { className: "receipt-artifact-utilities" }, [
+        view("button", {
+          type: "button",
+          id: "copy-receipt-link",
+          disabled: !matched,
+          text: "Receipt 링크 복사"
+        }),
+        publicReceiptPath === null
+          ? view("span", {
+              className: "disabled-link",
+              text: "공개 Receipt 보기"
+            })
+          : view("a", {
+              className: "secondary-link",
+              href: publicReceiptPath,
+              text: "공개 Receipt 보기"
+            }),
+        txExplorerUrl === null
+          ? view("span", { className: "disabled-link", text: "Explorer에서 보기" })
+          : view("a", {
+              className: "primary-link",
+              href: txExplorerUrl,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              text: "Explorer에서 보기"
+            })
+      ])
+    ]),
+    view("article", {
+      className: "receipt-artifact-summary",
+      "aria-label": artifactMetrics.summaryAriaLabel
+    }, [
+      view("header", { className: "receipt-artifact-summary-header" }, [
+        view("strong", { text: "GIWA VERIFIED INTENT RAIL" }),
+        view("div", {}, [
+          view("span", { className: "mono", text: "GIWA SEPOLIA · TESTNET" }),
+          view("span", { className: "mono", text: serial })
+        ])
+      ]),
+      view("div", { className: "receipt-artifact-main" }, [
+        view("div", { className: "receipt-artifact-copy" }, [
+          view("p", {
+            className: "eyebrow",
+            text: matched
+              ? "4개 조건 모두 일치 · Receipt 발급됨"
+              : "Receipt 발급 조건 미충족"
+          }),
+          view("h2", {
+            text: matched
+              ? "약속한 조건대로 실행됐습니다."
+              : "Receipt를 확인할 수 없습니다."
+          }),
+          view("p", {
+            text: matched
+              ? "Manifest와 GIWA Sepolia 트랜잭션을 대조해 일치한 실행 기록을 발급했습니다."
+              : "완료된 공개 검증 기록이 없습니다."
+          }),
+          view("dl", { className: "receipt-artifact-metrics" }, [
+            view("div", {}, [
+              view("dt", { text: artifactMetrics.fieldMatch }),
+              view("dd", { text: artifactMetrics.fieldMatchLabel })
+            ]),
+            view("div", {}, [
+              view("dt", { text: String(blockNumber ?? "—") }),
+              view("dd", { text: "Block" })
+            ]),
+            view("div", {}, [
+              view("dt", {
+                text: String(verification.confirmationDepth ?? "—")
+              }),
+              view("dd", { text: "confirmations" })
+            ]),
+            view("div", {}, [
+              view("dt", {
+                className: "mono",
+                text: shortHash(receiptModel?.intentHash)
+              }),
+              view("dd", { text: "Manifest" })
+            ])
+          ])
+        ]),
+        matched ? renderMatchedReceiptSeal(issuedTime) : view("span")
+      ]),
+      view("footer", { className: "receipt-artifact-footer" }, [
+        view("span", {
+          text: "GIWA Sepolia 테스트넷 · Mock 자산만 사용 · 실제 자금 및 수익 없음"
+        }),
+        view("span", {
+          className: "mono",
+          text: shortHash(receiptHash)
+        })
+      ])
+    ]),
+    view("dl", { className: "receipt-artifact-meta" }, [
+      view("div", {}, [
+        view("dt", { text: "Receipt serial" }),
+        view("dd", { className: "mono", text: serial })
+      ]),
+      view("div", {}, [
+        view("dt", { text: "Issued time" }),
+        view("dd", { className: "mono", text: issuedTime })
+      ]),
+      view("div", {}, [
+        view("dt", { text: "Network" }),
+        view("dd", { text: "GIWA Sepolia · Testnet" })
+      ]),
+      view("div", {}, [
+        view("dt", { text: "Covered fields" }),
+        view("dd", {
+          className: "mono",
+          text: artifactMetrics.coveredFields
+        })
+      ])
+    ]),
+    view("details", { className: "receipt-match-details" }, [
+      view("summary", { text: artifactMetrics.matchDetailsSummary }),
+      matchedRowsView
+    ]),
+    view("p", {
+      id: "copy-receipt-feedback",
+      className: "sr-only",
+      role: "status",
+      "aria-live": "polite",
+      text: ""
+    }),
+    renderReceiptNextParticipation(receiptHash, matched),
+    model.verificationBundleView,
+    technicalDetails
   ]);
 }
 
@@ -1955,6 +4132,9 @@ async function renderReceiptRoute() {
       ? projectMatchedReceiptBody(body, hash)
       : null;
   const matched = receiptModel !== null;
+  const publicProof = matched
+    ? await fetchPublicVerificationBundle(hash)
+    : null;
   const payload = receiptModel?.payload ?? null;
   const receiptHash = receiptModel?.receiptHash ?? null;
   const wallet = payload?.wallet ?? null;
@@ -2003,96 +4183,55 @@ async function renderReceiptRoute() {
     id: "matched-receipt-heading",
     tabindex: "-1",
     text: matched
-      ? "확인한 조건대로 실행됐습니다."
+      ? "약속한 조건대로 실행됐습니다."
       : "Receipt를 확인할 수 없습니다."
   });
+  const matchedRowsView = matched
+    ? renderMatchedReceiptRows(matchRows)
+    : view("span");
+  const technicalDetails = view("details", {
+    className: "matched-receipt-technical"
+  }, [
+    view("summary", { text: "Technical details" }),
+    field("Receipt hash", receiptHash),
+    field("Intent hash", receiptModel?.intentHash ?? null),
+    field("Deposit transaction", depositTxHash),
+    field("Wallet", wallet),
+    field("Target", target),
+    field("Asset", asset),
+    field("Amount", amountBaseUnits),
+    field("Network", networkName),
+    field("Block number", blockNumber),
+    field("Block hash", blockHash),
+    field("Verification snapshot", matched ? `${verification.confirmationDepth} confirmations observed` : null),
+    field("Verifier input hash", matched ? verification.verifierInputHash : null),
+    field("Issued time", issuedTime),
+    view("p", {
+      className: "notice user-safety-notice",
+      text: safetyNotice ?? "Testnet-only. No real asset, no yield, no RWA claim."
+    })
+  ]);
 
   app.textContent = "";
   app.append(
-    view("section", {
-      className: `matched-receipt-page ${matched ? "is-matched" : "is-unavailable"}`,
-      id: "main-content"
-    }, [
-      view("header", { className: "matched-receipt-header" }, [
-        view("div", { className: "matched-receipt-copy" }, [
-          view("p", {
-            className: "eyebrow",
-            text: matched ? "Manifest matched · Matched Receipt" : "Receipt unavailable"
-          }),
-          receiptHeading,
-          view("p", {
-            className: "lead",
-            text: matched
-              ? "GIWA Sepolia 트랜잭션과 Manifest를 대조해, 일치한 실행 기록을 발급했습니다."
-              : "일치가 확인된 공개 Receipt만 이 경로에서 볼 수 있습니다."
-          }),
-          view("p", {
-            className: matched ? "user-state complete" : "user-state blocked",
-            role: "status",
-            "aria-live": "polite",
-            text: matched ? "Matched Receipt 발급 완료" : "공개 Receipt 없음"
-          })
-        ]),
-        matched ? renderMatchedReceiptSeal() : view("span")
-      ]),
-      matched ? renderMatchedReceiptRows(matchRows) : view("span"),
-      view("div", { className: "hero-actions user-receipt-actions" }, [
-        txExplorerUrl === null
-          ? view("span", { className: "disabled-link", text: "GIWA Explorer에서 보기" })
-          : view("a", {
-              className: "primary-link",
-              href: txExplorerUrl,
-              target: "_blank",
-              rel: "noopener noreferrer",
-              text: "GIWA Explorer에서 보기"
-            }),
-        view("button", {
-          type: "button",
-          id: "copy-receipt-link",
-          disabled: !matched,
-          text: "Receipt 링크 복사"
-        }),
-        matched
-          ? view("a", {
-              className: "secondary-link",
-              href: `/receipt/${receiptHash}`,
-              text: "검증 증거 보기"
-            })
-          : view("span", { className: "disabled-link", text: "검증 증거 보기" }),
-        view("a", { className: "secondary-link", href: "/giwa-demo", text: "다시 실행" })
-      ]),
-      view("p", {
-        id: "copy-receipt-feedback",
-        className: "sr-only",
-        role: "status",
-        "aria-live": "polite",
-        text: ""
-      }),
-      matched ? renderMatchedReceiptValue() : view("span"),
-      view("details", { className: "matched-receipt-technical" }, [
-        view("summary", { text: "Technical details" }),
-        field("Receipt hash", receiptHash),
-        field("Intent hash", receiptModel?.intentHash ?? null),
-        field("Deposit transaction", depositTxHash),
-        field("Wallet", wallet),
-        field("Target", target),
-        field("Asset", asset),
-        field("Amount", amountBaseUnits),
-        field("Network", networkName),
-        field("Block number", blockNumber),
-        field("Block hash", blockHash),
-        field("Confirmation depth", matched ? verification.confirmationDepth : null),
-        field("Verifier input hash", matched ? verification.verifierInputHash : null),
-        field("Issued time", issuedTime),
-        view("p", {
-          className: "notice user-safety-notice",
-          text: safetyNotice ?? "Testnet-only. No real asset, no yield, no RWA claim."
-        })
-      ])
-    ])
+    renderProtocolTopBar("receipt"),
+    renderReceiptArtifact({
+      matched,
+      receiptHeading,
+      receiptHash,
+      issuedTime,
+      blockNumber,
+      verification,
+      receiptModel,
+      matchedRowsView,
+      txExplorerUrl,
+      verificationBundleView: renderVerificationBundle(publicProof),
+      technicalDetails
+    })
   );
 
   receiptHeading.focus({ preventScroll: true });
+  bindVerificationReplayCopy();
   document.querySelector("#copy-receipt-link")?.addEventListener("click", async () => {
     const copyFeedback = document.querySelector("#copy-receipt-feedback");
     try {
@@ -2220,6 +4359,20 @@ function render() {
   else renderActionPage();
 }
 
+async function initializePublicMission() {
+  if (routeName() !== "action" || isRecordedMismatchExample()) return;
+  const context = captureContext();
+  try {
+    await loadPublicConfig(context);
+    if (contextIsCurrent(context)) render();
+  } catch {
+    if (contextIsCurrent(context)) {
+      notice = "공개 미션 조건을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+      render();
+    }
+  }
+}
+
 const currentProvider = provider();
 if (currentProvider?.on) {
   currentProvider.on("accountsChanged", (accounts) => void handleAccountsChanged(accounts));
@@ -2231,3 +4384,4 @@ if (restoredSession.invalidation !== null) {
 }
 
 render();
+void initializePublicMission();

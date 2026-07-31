@@ -1,3 +1,7 @@
+import {
+  canonicalManifestPayload,
+  canonicalManifestPayloadBytesHex
+} from "../../../../../packages/protocol/src/index.ts";
 import type { LiveStore } from "./liveStore.ts";
 import type { HostedRuntimeMode } from "./hostedMode.ts";
 import { hasLiveAuthScope, type LiveAuthContext } from "./liveAuth.ts";
@@ -5,14 +9,15 @@ import type {
   DecisionRecord,
   LiveRunRecord,
   PartnerRunProjection,
+  PublicEvidenceRecord,
   ReceiptRecord,
   SubmittedTxRecord,
   VerifierInputRecord
 } from "./liveTypes.ts";
+import type { LiveVerifierPublicEvidenceDraft } from "../verifier/liveVerifierService.ts";
 import { DEFAULT_LIVE_TENANT_ID, isTerminalLiveRunStatus } from "./liveTypes.ts";
 import type { LiveManifestPreview } from "./liveManifestIssuer.ts";
 import type { VerificationJobQueue } from "./verificationJobQueue.ts";
-import { evaluateCommercialReceiptGate } from "./commercialReceiptGate.ts";
 import { toLiveApiErrorBody } from "./liveApiErrors.ts";
 import { failureCodeDisplayCopy, toBoundedFailureCode, toSafeFailureReason } from "../verifier/liveFailureCode.ts";
 import { buildLiveDemoControlRoom, selectLatestRun } from "./liveDemoControlRoom.ts";
@@ -27,6 +32,14 @@ import {
   type LivePublicConfig
 } from "./livePublicConfig.ts";
 import { classifyLiveApiRoute } from "./liveRoutePolicy.ts";
+import { buildPublicCampaignStudio } from "../partner/publicCampaignStudio.ts";
+import { lookupPublicMatchedProof } from "./publicProofLookup.ts";
+import {
+  PUBLIC_VERIFICATION_NOTICE,
+  PUBLIC_VERIFICATION_REPLAY_COMMAND,
+  normalizePublicVerificationBundle
+} from "./publicVerificationBundle.ts";
+import { replayPublicVerificationBundle } from "./publicVerificationReplay.ts";
 
 const GIWA_SEPOLIA_CHAIN_ID = 91342;
 
@@ -37,11 +50,13 @@ export type LiveApiRequest = {
   auth?: LiveAuthContext | null;
   runCapability?: string | null;
   requestId?: string;
+  downloadRequested?: boolean;
 };
 
 export type LiveApiResponse = {
   status: number;
   body: Record<string, unknown>;
+  headers?: Record<string, string>;
 };
 
 export type ManifestIssueInput = {
@@ -82,7 +97,9 @@ export type LiveApiDependencies = {
     confirmationDepth: number;
     receipt?: ReceiptRecord;
     verifierInputRecord?: VerifierInputRecord;
+    publicEvidenceDraft?: LiveVerifierPublicEvidenceDraft;
   }>;
+  replayPublicEvidence?: typeof replayPublicVerificationBundle;
 };
 
 function errorBody(error: string, requestId: string | undefined): Record<string, unknown> {
@@ -192,6 +209,7 @@ function runResponse(
   state?: {
     submittedTx?: SubmittedTxRecord | undefined;
     decision?: DecisionRecord | undefined;
+    publicEvidence?: PublicEvidenceRecord | undefined;
     verificationJob?: ReturnType<LiveStore["getVerificationJobForRun"]> | undefined;
   }
 ): Record<string, unknown> {
@@ -237,13 +255,35 @@ function runResponse(
     decision: state?.decision?.decision ?? null,
     failureReason: safeFailureReason,
     verifierInputHash: state?.decision?.verifierInputHash ?? null,
-    receiptReady: state?.decision?.decision === "matched" && state.decision.receiptHash !== null,
+    receiptReady:
+      state?.decision?.decision === "matched" &&
+      state.decision.receiptHash !== null &&
+      state.publicEvidence !== undefined,
     receiptHash: state?.decision?.receiptHash ?? null,
     decisionTxHash: state?.decision?.decisionTxHash ?? null,
     verification,
     createdAt: run.createdAt,
     updatedAt: run.updatedAt
   };
+}
+
+function matchingPublicEvidence(
+  store: LiveStore,
+  decision: DecisionRecord | undefined
+): PublicEvidenceRecord | undefined {
+  if (decision?.decision !== "matched" || decision.receiptHash === null) {
+    return undefined;
+  }
+  const evidence = store.getPublicEvidenceByReceiptHash(decision.receiptHash);
+  if (
+    evidence === undefined ||
+    evidence.receiptHash.toLowerCase() !== decision.receiptHash.toLowerCase() ||
+    evidence.intentHash.toLowerCase() !== decision.intentHash.toLowerCase() ||
+    evidence.depositTxHash.toLowerCase() !== decision.depositTxHash.toLowerCase()
+  ) {
+    return undefined;
+  }
+  return evidence;
 }
 
 function partnerRunProjection(run: LiveRunRecord, receiptHash: string | null): PartnerRunProjection {
@@ -268,6 +308,53 @@ function runIdFrom(pathname: string, suffix = ""): string | undefined {
   return undefined;
 }
 
+function buildPublicVerificationBundle(
+  draft: LiveVerifierPublicEvidenceDraft,
+  generatedAt: string
+) {
+  return normalizePublicVerificationBundle({
+    schemaVersion: "1",
+    source: "live",
+    generatedAt,
+    identity: {
+      receiptHash: draft.receipt.record.receiptHash,
+      intentHash: draft.receipt.record.intentHash,
+      depositTxHash: draft.receipt.payload.depositTxHash
+    },
+    manifest: {
+      payload: draft.manifest.payload,
+      canonicalPayload: canonicalManifestPayload(draft.manifest.payload),
+      canonicalPayloadBytesHex: canonicalManifestPayloadBytesHex(
+        draft.manifest.payload
+      ),
+      signature: draft.manifest.signature,
+      signingDomain: {
+        name: "GIWA Verified Intent Rail",
+        version: "1",
+        chainId: 91342,
+        verifyingContract: draft.manifest.verifyingContract
+      },
+      recoveredSigner: draft.manifest.recoveredSigner
+    },
+    verifierInput: draft.verifierInput,
+    verification: draft.verification,
+    decodedLogs: draft.decodedLogs,
+    receipt: {
+      payload: draft.receipt.payload,
+      canonicalPayload: draft.receipt.record.canonicalPayload,
+      canonicalPayloadBytesHex: draft.receipt.record.canonicalPayloadBytesHex,
+      receiptHash: draft.receipt.record.receiptHash,
+      schemaVersion: draft.receipt.schemaVersion,
+      verifierVersion: draft.receipt.verifierVersion
+    },
+    replay: {
+      algorithm: "keccak256-canonical-json+eip712",
+      command: PUBLIC_VERIFICATION_REPLAY_COMMAND
+    },
+    notice: PUBLIC_VERIFICATION_NOTICE
+  });
+}
+
 export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveApiRequest) => Promise<LiveApiResponse> {
   return async function handle(request): Promise<LiveApiResponse> {
     try {
@@ -283,6 +370,73 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           return { status: 503, body: errorBody("public_config_unavailable", request.requestId) };
         }
         return { status: 200, body: deps.publicConfig };
+      }
+
+      if (
+        request.method === "GET" &&
+        request.pathname === "/api/public/campaign-studio"
+      ) {
+        return {
+          status: 200,
+          body: await buildPublicCampaignStudio({
+            store: deps.store,
+            campaignId: GASOK_CAMPAIGN_ID,
+            missionId: GASOK_MISSION_ID,
+            generatedAt: deps.now()
+          })
+        };
+      }
+
+      if (
+        request.method === "POST" &&
+        request.pathname === "/api/public/events"
+      ) {
+        return {
+          status: 503,
+          body: { error: "public_campaign_events_disabled" }
+        };
+      }
+
+      if (
+        request.method === "GET" &&
+        /^\/api\/public\/evidence\/[^/]+$/u.test(request.pathname)
+      ) {
+        const queryHash = request.pathname.slice(
+          "/api/public/evidence/".length
+        );
+        let proof = null;
+        try {
+          proof = await lookupPublicMatchedProof({
+            store: deps.store,
+            queryHash
+          });
+        } catch {
+          proof = null;
+        }
+        if (proof === null) {
+          return {
+            status: 404,
+            body: { error: "proof_not_found" },
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store"
+            }
+          };
+        }
+
+        const headers: Record<string, string> = {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "public, max-age=60, stale-while-revalidate=300"
+        };
+        if (request.downloadRequested === true) {
+          headers["content-disposition"] =
+            `attachment; filename="giwa-receipt-${proof.receiptHash}.json"`;
+        }
+        return {
+          status: 200,
+          body: request.downloadRequested === true ? proof.bundle : proof,
+          headers
+        };
       }
 
       if (request.method === "POST" && request.pathname === "/api/runs") {
@@ -341,11 +495,13 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       if (getRunId !== undefined) {
         const run = participantRun(deps, request, getRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
+        const decision = deps.store.getDecisionByIntentHash(run.intentHash);
         return {
           status: 200,
           body: runResponse(run, undefined, {
             submittedTx: deps.store.getSubmittedTx(run.runId),
-            decision: deps.store.getDecisionByIntentHash(run.intentHash),
+            decision,
+            publicEvidence: matchingPublicEvidence(deps.store, decision),
             verificationJob: deps.store.getVerificationJobForRun(run.runId)
           })
         };
@@ -432,6 +588,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
         const existingDecision = deps.store.getDecisionByIntentHash(run.intentHash);
         if (existingDecision !== undefined) {
+          const publicEvidence = matchingPublicEvidence(deps.store, existingDecision);
+          const receiptReady =
+            existingDecision.decision === "matched" &&
+            existingDecision.receiptHash !== null &&
+            publicEvidence !== undefined;
           const failureCode = toBoundedFailureCode(existingDecision.failureReason);
           const safeFailureReason = toSafeFailureReason(existingDecision.failureReason);
           const failureCopy = failureCode === null ? null : failureCodeDisplayCopy(failureCode);
@@ -444,7 +605,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
               failureCode,
               failureCopy,
               verifierInputHash: existingDecision.verifierInputHash,
-              receiptReady: existingDecision.decision === "matched" && existingDecision.receiptHash !== null,
+              receiptReady,
               receiptHash: existingDecision.receiptHash,
               decisionTxHash: existingDecision.decisionTxHash,
               verification: { status: "terminal" }
@@ -508,12 +669,8 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           };
         }
 
-        if (result.decision === "matched" && result.receipt === undefined) {
-          throw new Error("matched verifier result must include receipt");
-        }
-        if (result.verifierInputRecord !== undefined) deps.store.saveVerifierInput(result.verifierInputRecord);
-        if (result.receipt !== undefined) deps.store.saveReceipt(result.receipt);
-        const decision = deps.store.saveDecision({
+        const decisionTime = deps.now();
+        const decisionInput: DecisionRecord = {
           intentHash: run.intentHash,
           depositTxHash: submittedTx.depositTxHash,
           decision: result.decision,
@@ -521,13 +678,72 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           verifierInputHash: result.verifierInputHash,
           receiptHash: result.receiptHash,
           decisionTxHash: result.decisionTxHash,
-          issuedAt: nowUnix(deps.now()),
+          issuedAt: nowUnix(decisionTime),
           standardRpcReceiptStatus: result.standardRpcReceiptStatus,
           depositBlockNumber: result.depositBlockNumber,
           depositBlockHash: result.depositBlockHash,
           confirmationDepth: result.confirmationDepth
-        });
-        const updated = deps.store.updateRunStatus(verifyRunId, decision.decision, deps.now());
+        };
+        let decision: DecisionRecord;
+        let updated: LiveRunRecord;
+
+        if (result.decision === "matched") {
+          if (result.receipt === undefined) {
+            throw new Error("matched verifier result must include receipt");
+          }
+          if (
+            result.verifierInputRecord === undefined ||
+            result.publicEvidenceDraft === undefined
+          ) {
+            throw new Error("matched verifier result must include public evidence");
+          }
+          if (
+            JSON.stringify(result.receipt) !==
+              JSON.stringify(result.publicEvidenceDraft.receipt.record) ||
+            result.verifierInputRecord.canonicalPayload !==
+              result.publicEvidenceDraft.verifierInput.canonicalPayload ||
+            result.verifierInputRecord.canonicalPayloadBytesHex !==
+              result.publicEvidenceDraft.verifierInput.canonicalPayloadBytesHex ||
+            result.verifierInputRecord.verifierInputHash !==
+              result.publicEvidenceDraft.verifierInput.verifierInputHash
+          ) {
+            throw new Error("matched verifier evidence draft is incoherent");
+          }
+
+          const publicationTime = decisionTime;
+          const bundle = buildPublicVerificationBundle(
+            result.publicEvidenceDraft,
+            publicationTime
+          );
+          const replay = await (
+            deps.replayPublicEvidence ?? replayPublicVerificationBundle
+          )(bundle);
+          if (!replay.ok) {
+            throw new Error("public verification bundle replay failed");
+          }
+          const published = deps.store.publishMatchedEvidence({
+            runId: verifyRunId,
+            updatedAt: publicationTime,
+            verifierInput: result.verifierInputRecord,
+            receipt: result.receipt,
+            decision: decisionInput,
+            publicEvidence: {
+              receiptHash: bundle.identity.receiptHash,
+              intentHash: bundle.identity.intentHash,
+              depositTxHash: bundle.identity.depositTxHash,
+              bundleJson: JSON.stringify(bundle),
+              createdAt: publicationTime
+            }
+          });
+          decision = published.decision;
+          updated = published.run;
+        } else {
+          if (result.verifierInputRecord !== undefined) {
+            deps.store.saveVerifierInput(result.verifierInputRecord);
+          }
+          decision = deps.store.saveDecision(decisionInput);
+          updated = deps.store.updateRunStatus(verifyRunId, decision.decision, decisionTime);
+        }
         return {
           status: 200,
           body: {
@@ -537,7 +753,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             failureCode,
             failureCopy,
             verifierInputHash: decision.verifierInputHash,
-            receiptReady: decision.decision === "matched" && decision.receiptHash !== null,
+            receiptReady: matchingPublicEvidence(deps.store, decision) !== undefined,
             receiptHash: decision.receiptHash,
             decisionTxHash: decision.decisionTxHash,
             standardRpcReceiptStatus: result.standardRpcReceiptStatus,
@@ -550,45 +766,29 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       if (request.method === "GET" && request.pathname.startsWith("/api/receipts/")) {
         const receiptHash = request.pathname.slice("/api/receipts/".length);
-        const receipt = deps.store.getReceipt(receiptHash);
-        if (receipt === undefined) return { status: 404, body: { error: "receipt_not_found" } };
-        const decision = deps.store.getDecisionByIntentHash(receipt.intentHash);
-        const verifierInput =
-          decision === undefined ? undefined : deps.store.getVerifierInput(decision.verifierInputHash);
-        const run = deps.store
-          .listRuns()
-          .find((candidate) => candidate.intentHash.toLowerCase() === receipt.intentHash.toLowerCase());
-        const gate = evaluateCommercialReceiptGate({
-          run,
-          decision,
-          receipt,
-          verifierInput,
-          replay: { requireHashRecomputation: true }
+        const proof = await lookupPublicMatchedProof({
+          store: deps.store,
+          queryHash: receiptHash
         });
-        if (!gate.open) {
+        if (proof === null || proof.queryKind !== "receipt") {
           return { status: 404, body: { error: "receipt_not_found" } };
         }
-        let payload: unknown;
-        try {
-          payload = JSON.parse(receipt.payloadJson);
-        } catch {
-          return { status: 500, body: { error: "receipt_payload_invalid", receiptHash } };
-        }
+        const { bundle } = proof;
         return {
           status: 200,
           body: {
             source: "live",
-            receiptHash: receipt.receiptHash,
-            intentHash: receipt.intentHash,
-            payload,
-            payloadJson: receipt.payloadJson,
-            canonicalPayload: receipt.canonicalPayload,
-            canonicalPayloadBytesHex: receipt.canonicalPayloadBytesHex,
-            verifierInputHash: decision?.verifierInputHash ?? null,
-            standardRpcReceiptStatus: decision?.standardRpcReceiptStatus ?? null,
-            depositBlockNumber: decision?.depositBlockNumber ?? null,
-            depositBlockHash: decision?.depositBlockHash ?? null,
-            confirmationDepth: decision?.confirmationDepth ?? null,
+            receiptHash: bundle.identity.receiptHash,
+            intentHash: bundle.identity.intentHash,
+            payload: bundle.receipt.payload,
+            payloadJson: JSON.stringify(bundle.receipt.payload),
+            canonicalPayload: bundle.receipt.canonicalPayload,
+            canonicalPayloadBytesHex: bundle.receipt.canonicalPayloadBytesHex,
+            verifierInputHash: bundle.verifierInput.verifierInputHash,
+            standardRpcReceiptStatus: bundle.verification.standardRpcReceiptStatus,
+            depositBlockNumber: bundle.verification.depositBlockNumber,
+            depositBlockHash: bundle.verification.depositBlockHash,
+            confirmationDepth: bundle.verification.confirmationDepth,
             testnetNotice: "Testnet-only. No real asset, no yield, no RWA claim."
           }
         };

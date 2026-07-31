@@ -14,10 +14,27 @@ The older [sprint index](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index
 
 Current source of truth for a later approved Lightsail rollout is [the GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md). Public deployment, DNS, HTTPS, fresh staging wallet actions, video capture, and final submission freeze have not occurred. Protected CI evidence is the default release authority; no GASOK-only local-advisory exception is currently recorded. Git push, host package installation, DNS, HTTPS/certificate work, wallet actions, and DB restore remain explicit human approval gates.
 
+## Local Product Evolution Status
+
+The [Release 1 and Release 2 local completion freeze](docs/implementation/giwa-release-1-2-local-completion-freeze.md)
+records the locally verified product state as of 2026-07-31. Release 1 trust and
+data-integrity work and Release 2 public-verifiability and partner-evidence work
+are locally complete. This is local-advisory evidence only: no source freeze
+commit, protected-CI result for that source, deployment approval, public
+staging migration, backfill, or chain transaction is implied.
+
+The [full platform evolution design](docs/superpowers/specs/2026-07-31-giwa-full-platform-evolution-design.md)
+routes later local product work to Release 3 product design and responsive
+accessibility. Release 3 must receive its own reviewed implementation plan and
+must not begin by weakening the Release 1 or Release 2 privacy, replay, or
+evidence-integrity boundaries. The GASOK staging runbook remains the separate
+authority for any later approved public rollout.
+
 ## Current GASOK Staging Pack
 
 Submission and operations documents:
 
+- [Public verification bundle and independent replay guide](docs/implementation/giwa-public-verification-bundle.md)
 - [GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md)
 - [Korean-first 90-second demo script](docs/implementation/giwa-gasok-demo-script.md)
 - [Submission no-go/go checklist](docs/implementation/giwa-gasok-submission-checklist.md)
@@ -39,22 +56,37 @@ Approved public route ownership:
 
 | Route | Owner | Failure behavior |
 | --- | --- | --- |
-| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static service on `127.0.0.1:4176` | production landing, public demo shell, operator control, and recorded evidence |
+| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static service on `127.0.0.1:4176` | production landing, public demo shell, read-only public proof surfaces, and operator control |
 | `/user*` | live service on `127.0.0.1:4177` | compatibility live flow with recorded static fallback |
 | `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | live API and health surfaces |
 
 SQLite storage and the in-memory rate limiter are intentionally one-instance GASOK testnet-staging choices, not horizontal-scaling claims.
 
-`/` is the evergreen production landing. `/giwa-demo` is the public one-screen
-testnet demo, while `/demo` remains the operator Control Room. `/evidence`
-preserves the recorded guided technical projection independently of the live
-adapter.
+Current public experience:
+
+| Route | Purpose |
+| --- | --- |
+| `/` | real GIWA Genesis campaign entry |
+| `/giwa-demo` | GASOK guided entry |
+| `/user` | five-stage participant journey |
+| `/user/receipt/:hash` | participant Receipt and Exact Execution Seal |
+| `/user/receipts` | browser-local matched execution history |
+| `/partner` | public-safe read-only Campaign Studio |
+| `/evidence` | exact-hash public Proof Ledger |
+| `/receipt/:hash` | public technical Receipt |
+
+`/partner` derives its counts from stored evidence, exposes no campaign-management
+mutation, and marks stages that the current evidence model does not capture as
+unavailable instead of estimating them. `/demo` remains the operator Control
+Room and is not part of the participant-to-partner proof narrative.
 
 ```text
 Production landing:   http://127.0.0.1:4176/
 Public GIWA demo:     http://127.0.0.1:4176/giwa-demo
 Operator control:     http://127.0.0.1:4176/demo
 Compatibility user:  http://127.0.0.1:4176/user
+Campaign Studio:      http://127.0.0.1:4176/partner
+Proof Ledger:         http://127.0.0.1:4176/evidence
 ```
 
 ## Current GASOK Final Demo Gate

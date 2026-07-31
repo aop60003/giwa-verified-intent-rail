@@ -41,6 +41,14 @@ export type UserReceiptView = {
     copyLabel: string;
     path: string | null;
   };
+  partner: {
+    label: string;
+    path: string | null;
+  };
+  publicProof: {
+    label: string;
+    path: string | null;
+  };
 };
 
 function display(value: string | number | null): string {
@@ -55,11 +63,26 @@ function stateFor(input: UserReceiptViewInput): UserReceiptState {
 
 export function buildUserReceiptView(input: UserReceiptViewInput): UserReceiptView {
   const state = stateFor(input);
+  const receiptPath =
+    input.receiptHash === null ? null : `/user/receipt/${input.receiptHash}`;
+  const partnerPath =
+    input.receiptHash === null
+      ? null
+      : `/partner?receipt=${input.receiptHash}`;
+  const publicProofPath =
+    input.receiptHash === null
+      ? null
+      : `/evidence?proof=${input.receiptHash}`;
 
   return {
     state,
     summary: {
-      title: state === "verified" ? "Manifest matched" : state === "notMatched" ? "Manifest 불일치" : "Receipt 검증 중",
+      title:
+        state === "verified"
+          ? "약속한 조건대로 실행됐습니다."
+          : state === "notMatched"
+            ? "Manifest 불일치"
+            : "Receipt 검증 중",
       receiptHash: display(input.receiptHash),
       actionName: input.actionName,
       networkName: input.networkName,
@@ -77,7 +100,15 @@ export function buildUserReceiptView(input: UserReceiptViewInput): UserReceiptVi
     },
     share: {
       copyLabel: "Receipt 링크 복사",
-      path: input.receiptHash === null ? null : `/user/receipt/${input.receiptHash}`
+      path: receiptPath
+    },
+    partner: {
+      label: "Campaign Studio에서 반영 확인",
+      path: partnerPath
+    },
+    publicProof: {
+      label: "Proof Ledger에서 공개 검증",
+      path: publicProofPath
     }
   };
 }

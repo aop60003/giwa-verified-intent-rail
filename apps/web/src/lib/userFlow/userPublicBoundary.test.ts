@@ -43,6 +43,7 @@ function standaloneFunctions<T extends Record<string, (...args: never[]) => unkn
 const strictRunFixture = {
   runId: "run_1",
   runCapability: "A".repeat(43),
+  campaignSigned: true,
   wallet: "0x1111111111111111111111111111111111111111",
   status: "manifestIssued",
   intentHash: `0x${"a".repeat(64)}`,
@@ -74,6 +75,38 @@ const strictConfigFixture = {
 };
 
 describe("evaluator public boundary", () => {
+  it("distinguishes missing, rejected, and unavailable wallet requests", () => {
+    const source = readWebFile("public/user-flow.js");
+    const functions = standaloneFunctions<{
+      walletRequestFailureCode: (
+        error: unknown
+      ) => "wallet_rejected" | "wallet_unavailable";
+      walletRequestNotice: (
+        code: "provider_missing" | "wallet_rejected" | "wallet_unavailable"
+      ) => string;
+    }>(source, ["walletRequestFailureCode", "walletRequestNotice"]);
+
+    expect(functions.walletRequestFailureCode({ code: 4001 })).toBe(
+      "wallet_rejected"
+    );
+    expect(functions.walletRequestFailureCode({ code: "ACTION_REJECTED" })).toBe(
+      "wallet_rejected"
+    );
+    expect(functions.walletRequestFailureCode(new Error("other"))).toBe(
+      "wallet_unavailable"
+    );
+    expect(functions.walletRequestNotice("provider_missing")).toContain(
+      "브라우저 지갑을 설치하거나 활성화"
+    );
+    expect(functions.walletRequestNotice("wallet_rejected")).toContain(
+      "연결 요청을 거절"
+    );
+    expect(functions.walletRequestNotice("wallet_unavailable")).toContain(
+      "지갑 창과 연결 상태"
+    );
+    expect(source).toContain('publicNotice("network")');
+  });
+
   it("accepts only normalized HTTPS URLs without URL userinfo", () => {
     const source = readWebFile("public/user-flow.js");
     const implementation = functionSource(source, "isSafeHttpsUrl", "requirePublicConfig");
@@ -100,7 +133,9 @@ describe("evaluator public boundary", () => {
     const projected = functions.projectSessionRun({ ...strictRunFixture, arbitraryServerField: "discard-me" });
 
     expect(projected).not.toBeNull();
+    expect(projected?.campaignSigned).toBe(true);
     expect(projected).not.toHaveProperty("arbitraryServerField");
+    expect(projected).not.toHaveProperty("manifestSignature");
     expect(projected?.manifestPreview).not.toHaveProperty("wallet");
     expect(functions.projectSessionRun({ ...strictRunFixture, runCapability: "short" })).toBeNull();
     expect(functions.projectSessionRun({ ...strictRunFixture, pendingApproveTxHash: "bad" })).toBeNull();
@@ -120,6 +155,7 @@ describe("evaluator public boundary", () => {
     ).toBe(false);
     expect(source).toContain("projectSessionRun(parsed)");
     expect(source).toContain("projectIssuedRun(body, expectedContext)");
+    expect(source).toContain('/^0x[a-fA-F0-9]{130}$/u.test(value.manifestSignature)');
     expect(source.indexOf("projectIssuedRun(body, expectedContext)")).toBeLessThan(source.indexOf("runState = issuedRun"));
     expect(source).toContain("runState.wallet");
     expect(source).not.toContain("manifestPreview?.wallet");
@@ -289,7 +325,10 @@ describe("evaluator public boundary", () => {
     expect(source).toContain("sessionStorage.setItem(USER_RUN_KEY");
     expect(source).toContain("localStorage.getItem(USER_RECEIPTS_KEY)");
     expect(source).toContain(".slice(0, 12)");
-    expect(receiptProjection).not.toMatch(/runCapability|participantHeaders/u);
+    expect(receiptProjection).toContain("runId: runState?.runId ?? null");
+    expect(receiptProjection).toContain("upsertReceiptHistory(items, next)");
+    expect(receiptProjection).not.toMatch(/runCapability|capabilityHash/u);
+    expect(receiptProjection).not.toMatch(/participantHeaders/u);
     expect(supportView).not.toMatch(/runCapability|x-giwa-run-capability/u);
     expect(source).not.toMatch(/console\.(?:log|info|warn|error)/u);
     expect(source).not.toMatch(/[?&](?:capability|runCapability)=/u);
@@ -448,7 +487,7 @@ describe("evaluator public boundary", () => {
     expect(source).toContain("matchedReceiptRows");
     expect(source).toContain("renderMatchedReceiptSeal");
     expect(source).toContain("projectMatchedReceiptBody");
-    expect(source).toContain("확인한 조건대로 실행됐습니다.");
+    expect(source).toContain("약속한 조건대로 실행됐습니다.");
     expect(source).toContain("Matched Receipt");
   });
 
@@ -503,6 +542,33 @@ describe("evaluator public boundary", () => {
         payload: { ...body.payload, allowanceUsedBaseUnits: undefined }
       }, receiptHash)
     ).toBeNull();
+  });
+
+  it("loads verification bundles only through the capability-free public route", () => {
+    const source = readWebFile("public/user-flow.js");
+    const receiptRoute = functionSource(source, "renderReceiptRoute", "renderHelp");
+    const publicBundleFetch = functionSource(
+      source,
+      "fetchPublicVerificationBundle",
+      "renderVerificationBundle"
+    );
+
+    expect(receiptRoute).toContain("fetchPublicVerificationBundle(hash)");
+    expect(publicBundleFetch).toContain("/api/public/evidence/");
+    expect(publicBundleFetch).not.toMatch(
+      /participantApiFetch|runCapability|x-giwa-run-capability|localStorage|sessionStorage/u
+    );
+    expect(source).not.toMatch(
+      /localStorage\.setItem\([^)]*(?:bundle|publicProof|runCapability)/u
+    );
+  });
+
+  it("keeps public campaign-event emission disabled until retention and pruning are approved", () => {
+    const source = readWebFile("public/user-flow.js");
+    expect(source).not.toContain("/api/public/events");
+    expect(source).not.toContain("recordPublicCampaignEvent");
+    expect(source).not.toContain("recordCampaignVisitedOnce");
+    expect(source).not.toContain("PUBLIC_CAMPAIGN_SESSION_KEY");
   });
 
   it("does not expose internal or unsupported claim copy in public assets", () => {

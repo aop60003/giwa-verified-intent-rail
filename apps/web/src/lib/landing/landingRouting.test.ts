@@ -56,8 +56,12 @@ describe("production landing and public demo route ownership", () => {
 
   it("smokes the judge landing and recorded evidence as distinct surfaces", () => {
     const smoke = readWebFile("scripts/smoke-staging.mjs");
-    expect(smoke).toContain('["/",200,"landing.js"]');
-    expect(smoke).toContain('["/giwa-demo",200,"user-flow.js"]');
-    expect(smoke).toContain('["/evidence",200,"flow.js"]');
+    expect(smoke).toContain('["landing","/",200,"landing.js"]');
+    expect(smoke).toContain(
+      '["guided-demo","/giwa-demo",200,"user-flow.js"]'
+    );
+    expect(smoke).toContain(
+      '["proof-ledger","/evidence",200,"flow.js"]'
+    );
   });
 });

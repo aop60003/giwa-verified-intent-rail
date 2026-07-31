@@ -32,7 +32,6 @@ html {
 }
 
 body {
-  min-width: 320px;
   margin: 0;
   overflow-x: hidden;
   background: var(--paper);
@@ -240,11 +239,11 @@ button {
   margin-top: 32px;
 }
 
-.hero-note {
-  margin: 24px 0 0;
+.hero-safety {
+  margin: 18px 0 0;
   color: var(--quiet);
-  font: 500 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: 0.04em;
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .proof-ledger,

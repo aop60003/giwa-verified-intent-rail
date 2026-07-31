@@ -9,50 +9,56 @@ function readWebFile(path: string): string {
 }
 
 describe("production landing presentation", () => {
-  it("publishes the requested Looprail social preview identity", () => {
+  it("publishes the approved GIWA Verified Intent Rail identity", () => {
     const html = readWebFile("public/landing.html");
     expect(html).toContain(
-      '<meta property="og:site_name" content="GIWA Looprail" />'
+      '<meta property="og:site_name" content="GIWA Verified Intent Rail" />'
     );
     expect(html).toContain(
-      '<meta property="og:title" content="Looprail Demo" />'
+      '<meta property="og:title" content="GIWA Genesis Journey" />'
     );
     expect(html).toContain(
-      '<meta name="twitter:title" content="Looprail Demo" />'
+      '<meta name="twitter:title" content="GIWA Genesis Journey" />'
     );
-    expect(html).toContain("<title>Looprail Demo</title>");
+    expect(html).toContain(
+      "<title>GIWA Genesis Journey · GIWA Verified Intent Rail</title>"
+    );
+    expect(html).not.toMatch(
+      /Loop ?Rail|Looprail|GIWA Verified Activation Rail/u
+    );
   });
 
-  it("uses the Looprail Demo description across social previews", () => {
+  it("uses the participant journey description across social previews", () => {
     const html = readWebFile("public/landing.html");
     const description =
-      "서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 Looprail Demo.";
+      "GIWA Sepolia에서 캠페인이 서명한 조건을 확인하고, 지갑으로 실행한 뒤 Matched Receipt를 받는 테스트넷 여정.";
     expect(html).toContain(
       `<meta name="description" content="${description}" />`
     );
     expect(html).toContain(
-      `<meta property="og:description" content="${description}" />`
+      '<meta property="og:description" content="캠페인이 서명한 조건과 GIWA Sepolia 실행이 일치할 때만 Matched Receipt를 발급합니다." />'
     );
     expect(html).toContain(
-      `<meta name="twitter:description" content="${description}" />`
-    );
-    expect(html).not.toContain(
-      "서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 GIWA Verified Intent Rail."
+      '<meta name="twitter:description" content="캠페인이 서명한 조건과 GIWA Sepolia 실행이 일치할 때만 Matched Receipt를 발급합니다." />'
     );
   });
 
-  it("is Korean-first, concise, and demo-directed", () => {
+  it("starts the real participant journey before the judge guide", () => {
     const html = readWebFile("public/landing.html");
     expect(html).toContain('<html lang="ko">');
     expect(html).toContain('class="skip-link"');
     expect(html).toContain('id="main-content"');
-    expect(html).toContain("실행은 기록되고,");
-    expect(html).toContain("약속은 증명됩니다.");
+    expect(html).toContain("조건을 확인하고,");
+    expect(html).toContain("직접 실행해보세요.");
     expect(html).toContain(
-      "서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해"
+      "캠페인이 서명한 실행 조건을 먼저 확인합니다."
     );
-    expect(html).toContain('class="button button-primary" href="/giwa-demo"');
-    expect(html).toContain("데모 실행");
+    expect(html).toContain('class="button button-primary" href="/user"');
+    expect(html).toContain("미션 보기");
+    expect(html).toContain('href="/giwa-demo"');
+    expect(html).toContain("90초 데모");
+    expect(html).toContain("GIWA Sepolia 테스트넷");
+    expect(html).toContain("Mock 자산만 사용");
     expect(html).toContain("Receipt 확인");
     expect(html).not.toMatch(/GASOK|심사|평가자|선발|제출|데모데이/iu);
   });
@@ -134,6 +140,7 @@ describe("production landing presentation", () => {
       /\.flow-section\s*\{[\s\S]*width:\s*100%/iu
     );
     expect(css).not.toContain("width: 100vw");
+    expect(css).not.toContain("min-width: 320px");
     expect(css).not.toContain("margin-left: calc(50% - 50vw)");
     expect(css).toMatch(
       /@media\s*\(max-width:\s*1180px\)[\s\S]*\.hero\s*\{[\s\S]*grid-template-columns:\s*1fr/iu

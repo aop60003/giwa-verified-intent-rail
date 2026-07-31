@@ -68,6 +68,7 @@ const BLOCKED_CLAIM_PATTERN = new RegExp(
   ].join("|"),
   "i"
 );
+const ALLOWED_NEGATIVE_CLAIM_PATTERN = /No settlement or finality claim/giu;
 const VARIABLE_NAME_EVIDENCE_PATH = "docs/evidence/lightsail-staging-preflight-sprint52.json";
 const ALLOWED_SERVER_ONLY_NAMES = new Set([
   "HOST",
@@ -211,12 +212,16 @@ export function scanPublicArtifactText(input: { path: string; content: string })
   }
 
   const findings: PublicArtifactScanFinding[] = [];
-  if (BLOCKED_CLAIM_PATTERN.test(input.content)) {
+  const claimScanContent = input.content.replace(
+    ALLOWED_NEGATIVE_CLAIM_PATTERN,
+    (allowedClaim) => " ".repeat(allowedClaim.length)
+  );
+  if (BLOCKED_CLAIM_PATTERN.test(claimScanContent)) {
     findings.push({
       ruleId: "unsupported-claim",
       severity: "block",
       path,
-      line: lineOf(input.content, BLOCKED_CLAIM_PATTERN),
+      line: lineOf(claimScanContent, BLOCKED_CLAIM_PATTERN),
       matchClass: "claim-boundary",
       decision: "blocked",
       valuePrinted: false

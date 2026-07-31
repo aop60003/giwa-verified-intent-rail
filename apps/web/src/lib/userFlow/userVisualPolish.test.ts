@@ -20,8 +20,10 @@ describe("evaluator visual polish", () => {
     const source = readWebFile("public/user-flow.js");
 
     expect(html).toContain('<html lang="ko">');
-    expect(html).toContain("<title>GIWA Verified Intent Rail</title>");
-    expect(html).toContain("액션 화면을 불러오는 중");
+    expect(html).toContain(
+      "<title>GIWA Genesis Journey · GIWA Verified Intent Rail</title>"
+    );
+    expect(html).toContain("미션을 불러오는 중");
     expect(source).toContain('role: "status", "aria-live": "polite"');
     expect(source).toContain('"aria-label": primaryLabel()');
     expect(source).toContain('type: "button"');
@@ -38,6 +40,15 @@ describe("evaluator visual polish", () => {
     expect(source).toContain("GIWA Verified Intent Rail");
     expect(source).toContain("Manifest");
     expect(source).toContain("Receipt");
+    expect(source).toContain("약속한 조건대로 실행됐습니다.");
+    expect(source).toContain(
+      "Manifest와 GIWA Sepolia 트랜잭션을 대조해 일치한 실행 기록을 발급했습니다."
+    );
+    expect(source).toContain("campaignStudioReceiptPath");
+    expect(source).toContain("readCampaignHandoffReceipt");
+    expect(source).toContain("handoff=issued");
+    expect(source).toContain('`/receipt/${receiptHash}`');
+    expect(source).toContain("Campaign Studio에서 반영 확인");
   });
 
   it("shows pending, blocked and complete states with share-safe receipt actions", () => {
@@ -46,8 +57,8 @@ describe("evaluator visual polish", () => {
     expect(source).toContain("user-state pending");
     expect(source).toContain("user-state blocked");
     expect(source).toContain("user-state complete");
-    expect(source).toContain("user-receipt-actions");
-    expect(source).toContain("GIWA Explorer에서 보기");
+    expect(source).toContain("receipt-next-participation");
+    expect(source).toContain("Explorer에서 보기");
     expect(source).toContain("user-help-card");
     expect(source).not.toMatch(/raw error|upstream|runtime config/iu);
   });
@@ -62,6 +73,13 @@ describe("evaluator visual polish", () => {
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(css).toContain("overflow-wrap: anywhere");
     expect(css).toContain(".user-primary-action:focus-visible");
+    expect(css).toContain(".journey-canvas");
+    expect(css).toContain(".journey-stage-rail");
+    expect(css).toContain(".journey-condition-table");
+    expect(css).toContain(".journey-match-table");
+    expect(css).toContain("@media (max-width: 720px)");
+    expect(css).not.toContain("min-width: 320px");
+    expect(css).not.toMatch(/confetti|particle|trophy/iu);
   });
 
   it("keeps static demo regression smoke quiet with bounded local projections", () => {
@@ -96,6 +114,7 @@ describe("evaluator visual polish", () => {
     expect(source).toContain('tabindex: "-1"');
     expect(css).toContain(".matched-receipt-seal");
     expect(css).toContain(".matched-receipt-rows");
+    expect(css).toContain('[tabindex="-1"]:focus');
     expect(css).toContain("@keyframes matched-receipt-reveal");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect([...seal.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);

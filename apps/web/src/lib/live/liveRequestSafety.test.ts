@@ -86,4 +86,34 @@ describe("evaluateLiveRequestSafety", () => {
       })
     ).toEqual({ ok: false, status: 415, code: "unsupported_media_type" });
   });
+
+  it("applies the same origin and JSON gates to the public event collector", () => {
+    expect(
+      evaluateLiveRequestSafety({
+        method: "POST",
+        pathname: "/api/public/events",
+        origin: "https://unexpected.example",
+        allowedOrigins: ["https://partner.example"],
+        contentType: "application/json"
+      })
+    ).toEqual({ ok: false, status: 403, code: "origin_not_allowed" });
+    expect(
+      evaluateLiveRequestSafety({
+        method: "POST",
+        pathname: "/api/public/events",
+        origin: "https://partner.example",
+        allowedOrigins: ["https://partner.example"],
+        contentType: "text/plain"
+      })
+    ).toEqual({ ok: false, status: 415, code: "unsupported_media_type" });
+    expect(
+      evaluateLiveRequestSafety({
+        method: "POST",
+        pathname: "/api/public/events",
+        origin: "https://partner.example",
+        allowedOrigins: ["https://partner.example"],
+        contentType: "application/json"
+      })
+    ).toEqual({ ok: true });
+  });
 });

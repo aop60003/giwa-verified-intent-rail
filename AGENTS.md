@@ -65,11 +65,20 @@ confirmed facts, not guesses.
     `apps/web/public/flow-data.json` and `apps/web/public/partner-snapshot.json`.
   - `apps/web/scripts/export-artifact-manifest.mjs` owns the local manifest,
     command-evidence, provenance report, and SHA-256 sidecar in `docs/evidence/`.
+  - `apps/web/src/lib/partner/publicCampaignStudio.ts` owns the public-safe,
+    evidence-derived Campaign Studio projection.
+  - `apps/web/src/lib/live/publicProofLookup.ts` owns exact-hash public proof
+    lookup without exposing capabilities or private runtime data.
+  - `docs/implementation/giwa-release-1-2-local-completion-freeze.md` records
+    the local-advisory Release 1 and Release 2 completion boundary and the
+    unresolved Git and deployment gates.
   - `apps/web/.data/` and `docs/evidence/local/` are ignored local-only runtime
     paths and are not release evidence.
 - **Architecture decisions:**
   - Present one flagship mock-vault deposit flow rather than a dashboard-first
     or multi-template product.
+  - Use one deep GIWA Genesis participant journey, joining participant,
+    public-proof, and read-only partner views by the same matched Receipt.
   - ProofKPI reports evidence for manifest-covered testnet actions; it is not a
     security, identity, KYC, RWA issuance, or settlement layer.
   - Static evaluator routes remain available independently of the live adapter;

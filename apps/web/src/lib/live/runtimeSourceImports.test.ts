@@ -120,4 +120,29 @@ describe("live server source imports", () => {
     expect(source).not.toContain("x-forwarded-for");
     expect(source).not.toMatch(/console\.(?:log|error)\([^\n]*(?:credentialHashes|tokenHash)/u);
   });
+
+  it("derives only one bounded download boolean and forwards API-owned response metadata", () => {
+    const source = readRuntimeSource("scripts/serve-live.mjs");
+
+    expect(source).toContain('url.searchParams.getAll("download")');
+    expect(source).toContain("downloadRequested:");
+    expect(source).toMatch(
+      /downloadValues\.length === 1 && downloadValues\[0\] === "1"/u
+    );
+    expect(source).toMatch(
+      /writeLiveJsonResponse\(response, result\.status, result\.body, result\.headers\)/u
+    );
+    expect(source).not.toMatch(
+      /(?:query|string|search|searchParams):\s*(?:url\.search|request\.url)/u
+    );
+  });
+
+  it("can be imported for focused adapter tests without starting the live runtime", () => {
+    const source = readRuntimeSource("scripts/serve-live.mjs");
+
+    expect(source).toMatch(
+      /if \(invokedPath === resolve\(fileURLToPath\(import\.meta\.url\)\)\)/u
+    );
+    expect(source).not.toMatch(/\nstartLiveServer\(\)\.catch/u);
+  });
 });

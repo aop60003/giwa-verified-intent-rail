@@ -81,6 +81,43 @@ export type VerifierInputRecord = {
   createdAt: string;
 };
 
+export type PublicEvidenceRecord = {
+  receiptHash: string;
+  intentHash: string;
+  depositTxHash: string;
+  bundleJson: string;
+  createdAt: string;
+};
+
+export type PublicCampaignEventInput = {
+  eventType: "campaignVisited" | "walletConnected";
+  anonymousSessionId: string;
+  campaignId: "gasok-demo";
+  missionId: "first-mock-vault-deposit";
+};
+
+export type PublicCampaignEventRecord = {
+  eventType: PublicCampaignEventInput["eventType"];
+  sessionHash: string;
+  campaignId: PublicCampaignEventInput["campaignId"];
+  missionId: PublicCampaignEventInput["missionId"];
+  recordedAt: string;
+};
+
+export type PublicCampaignEventAggregate = {
+  uniqueCampaignVisitorCount: number;
+  uniqueWalletConnectSessionCount: number;
+};
+
+export type MatchedEvidencePublication = {
+  runId: string;
+  updatedAt: string;
+  verifierInput: VerifierInputRecord;
+  receipt: ReceiptRecord;
+  decision: DecisionRecord;
+  publicEvidence: PublicEvidenceRecord;
+};
+
 export type PartnerRunProjection = {
   runId: string;
   wallet: string;

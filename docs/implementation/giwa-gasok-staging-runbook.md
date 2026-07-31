@@ -12,6 +12,25 @@
 - Standard RPC confirmation evidence is not finality or settlement.
 - SQLite와 메모리 기반 rate limit은 단일 Lightsail 인스턴스를 위한 스테이징 선택이다. 수평 확장이나 프로덕션 내구성을 주장하지 않는다.
 
+## GASOK 90초 시연 순서
+
+| 시간 | 화면과 설명 |
+| --- | --- |
+| 0–10초 | 참여 신호와 실행 증거의 차이를 설명한다. |
+| 10–25초 | 실제 GIWA Genesis Journey를 연다. |
+| 25–40초 | 캠페인 측이 서명한 실행 조건을 보여준다. |
+| 40–60초 | 참여자가 소유한 지갑으로 테스트넷 트랜잭션을 실행한다. |
+| 60–75초 | Manifest와 실행 필드의 일치 결과 및 Matched Receipt를 보여준다. |
+| 75–85초 | `/partner?receipt=:hash`를 열어 같은 Receipt가 Campaign Studio에서 강조되는 것을 보여준다. |
+| 85–90초 | `/receipt/:hash`를 열고 Receipt가 뒷받침하는 activation이라는 메시지로 마무리한다. |
+
+실패 대비 화면은 `/giwa-demo?example=mismatch`의 recorded example을 사용한다.
+이 화면은 불일치 상태만 설명하며 Receipt나 Exact Execution Seal을 발급하지
+않는다. 시연 중에는 GIWA Sepolia와 mock 자산 표시를 항상 노출한다.
+Flashblocks는 빠른 피드백일 뿐 finality나 settlement로 설명하지 않는다 (`not a finality or settlement claim`).
+fresh live Receipt에는 별도의 on-chain decision transaction이 없으며 이를
+있는 것처럼 표현하지 않는다.
+
 ## 사람 승인 게이트
 
 Codex가 준비와 검증을 수행해도 다음 단계는 해당 권한을 가진 사람이 명시적으로 승인해야 한다.
@@ -28,6 +47,58 @@ Codex가 준비와 검증을 수행해도 다음 단계는 해당 권한을 가�
 | DB restore 또는 파괴적 변경 | write 중지 증거, 호환성 평가, restore owner의 별도 승인 |
 
 승인이 없으면 해당 단계에서 멈춘다. 이 문서는 push, 패키지 설치, DNS, 인증서 발급, 지갑 서명 또는 DB restore 권한을 부여하지 않는다.
+
+## Release 2 public evidence rollout gate
+
+This implementation task authorizes no deployment, host connection, remote
+database access, migration, backfill, DNS/HTTPS change, wallet action, RPC call,
+or public smoke. A release owner must separately approve each remote step.
+When that approval exists, perform and record the steps in this order:
+
+1. **Local schema and test verification.** Verify migrations `006` and `007`,
+   the public evidence lookup/replay tests, the campaign analytics tests, web
+   typecheck, and the staging smoke source contract. Stop on any failure.
+2. **Remote SQLite backup.** Before application or schema mutation, use the
+   versioned backup service and verify the backup with `PRAGMA quick_check`.
+   Record only the bounded backup filename and result, never database content.
+3. **Application and additive schema rollout.** Roll out the approved exact
+   release and apply additive migrations `006_public_evidence_bundles` and
+   `007_public_campaign_events`. Do not drop or rewrite existing tables.
+4. **Read-only readiness.** Use `GET /readyz` to prove the running release sees
+   the required schema. Readiness failure is a no-go; it is not permission to
+   repair the database interactively.
+5. **Separately approved public-evidence backfill.** Only after readiness, a
+   release owner may separately authorize the bounded backfill for existing
+   Matched Receipts. The backfill must not change decisions, run status, or
+   Receipts and must not sign or submit a transaction.
+6. **Read-only exact-hash bundle smoke.** Supply one approved known Receipt,
+   Intent, and deposit transaction hash to the staging smoke. It must prove all
+   three resolve to one replayable Receipt identity, safe download headers,
+   Campaign Studio metric definitions, a bounded random 404, and absence of
+   public authority/session canaries. The smoke uses GET requests only.
+7. **Rollback with additive tables preserved.** Roll back application and
+   routing to the previously approved release after confirming that release is
+   compatible with the additive schema. Preserve tables `006` and `007` by
+   default. Dropping tables or restoring the active database is a separate,
+   destructive approval gate.
+
+### Campaign-event retention no-go (`R2-T7-M1`)
+
+Campaign-event writes are idempotent, but the current implementation has no
+automatic expiry or pruning. Before event ingestion can be enabled for a
+release, the release owner must approve and record:
+
+- the exact retention window;
+- the row and disk capacity threshold;
+- the pruning cadence and accountable owner;
+- how pruning interacts with backups;
+- the monitoring signal;
+- the fail-closed/no-go behavior at the threshold.
+
+This generic runbook intentionally defines no numeric values. If the
+release-specific values and an implemented, verified pruning procedure are
+absent, public event-ingestion rollout is **NO-GO**. Read-only smoke must never
+create an analytics event.
 
 ## Windows PowerShell SSH 접속 인계
 
@@ -394,7 +465,7 @@ Nginx 소유권은 다음과 같다.
 
 | 공개 route | 정상 upstream | live upstream 장애 |
 | --- | --- | --- |
-| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static `127.0.0.1:4176` | production landing, public demo shell, operator Control Room, recorded evidence 유지 |
+| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static `127.0.0.1:4176` | production landing, public demo shell, read-only Campaign Studio·Proof Ledger, operator Control Room 유지 |
 | `/user`와 `/user/...` | live `127.0.0.1:4177` | static `/user*` fallback |
 | `/api/*`, `/healthz`, `/readyz` | live `127.0.0.1:4177` | bounded HTTP `503` JSON `{"error":"service_unavailable"}` |
 
@@ -415,11 +486,21 @@ DNS 확인 후 승인된 certificate 방식만 사용한다. certificate 적용 
 
 ```powershell
 $env:GIWA_SMOKE_BASE_URL="https://$env:GIWA_STAGE_HOST"
+$env:GIWA_SMOKE_RECEIPT_HASH="<approved-lowercase-receipt-hash>"
+$env:GIWA_SMOKE_INTENT_HASH="<approved-lowercase-intent-hash>"
+$env:GIWA_SMOKE_DEPOSIT_TX_HASH="<approved-lowercase-deposit-transaction-hash>"
 pnpm --filter @giwa/web smoke:staging
 ```
 
-`/`, `/giwa-demo`, `/evidence`, `/user`, `/user/help`, `/partner`, `/healthz`,
-`/readyz`, `/api/public/config` 아홉 route가 모두 `pass`여야 한다. 이후
+`/`, `/giwa-demo`, `/evidence`, `/user`, `/user/help`, `/partner`,
+`/api/public/campaign-studio`, `/healthz`, `/readyz`, `/api/public/config`
+열 baseline route와 `receipt-proof`, `intent-proof`, `deposit-proof`,
+`bundle-download`, `bundle-replay`, `campaign-metrics`, `unknown-proof` gate가
+모두 `pass`여야 한다. 세 hash는 정확히 lowercase `0x` + 64자리 16진수여야
+하며 값 자체는 smoke 출력이나 evidence log에 기록하지 않는다. 이 smoke는
+redirect를 따르지 않고, 같은 origin의 bounded GET만 사용하며 run 생성,
+wallet 연결, transaction 제출, backfill, analytics event write를 수행하지
+않는다. 이후
 사용자가 승인한 fresh wallet flow에서만 mint/approve/deposit을 수행한다.
 Receipt는 `matched` 이후 별도 브라우저 context에서 capability 없이
 공개되는지 확인한다.
@@ -445,6 +526,6 @@ live가 내려간 동안 `/user*`는 기록된 static evidence로 fallback하고
 
 ## release evidence와 종료 조건
 
-go를 기록하려면 exact source commit, resolved `/opt/giwa/current`, static/live MainPID와 exact release cwd, authority category, backup filename, schema gate, unit 상태, Nginx candidate/previous/tested target과 `nginx -t` 결과, DNS/HTTPS 결과, 아홉-route smoke, rollback rehearsal, public transaction/Receipt, release owner와 rollback owner가 모두 실제 값으로 있어야 한다.
+go를 기록하려면 exact source commit, resolved `/opt/giwa/current`, static/live MainPID와 exact release cwd, authority category, backup filename, schema gate, unit 상태, Nginx candidate/previous/tested target과 `nginx -t` 결과, DNS/HTTPS 결과, 열-route smoke, rollback rehearsal, public transaction/Receipt, release owner와 rollback owner가 모두 실제 값으로 있어야 한다.
 
 현재 상태는 배포 전이며 외부 공개 URL이나 staging transaction을 생성했다고 주장하지 않는다. 제출 증거 freeze는 `giwa-gasok-submission-checklist.md`의 모든 항목이 실제 값으로 채워진 뒤에만 가능하다.

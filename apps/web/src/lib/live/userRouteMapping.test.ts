@@ -59,7 +59,10 @@ describe("commercial user route mapping", () => {
     const source = readWebFile("scripts/serve-live.mjs");
     const preAuthLimitIndex = source.indexOf("preAuthRateLimitInputs(", source.indexOf("const server ="));
     const safetyIndex = source.indexOf("evaluateLiveRequestSafety(", source.indexOf("const server ="));
-    const readBodyIndex = source.indexOf("await readBody(", source.indexOf("const server ="));
+    const readBodyIndex = source.indexOf(
+      "await readLiveJsonBody(",
+      source.indexOf("const server =")
+    );
     const authenticateIndex = source.indexOf("authenticateLiveRequest(", source.indexOf("const server ="));
     const partnerLimitIndex = source.indexOf("partnerRateLimitInput(", authenticateIndex);
 

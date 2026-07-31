@@ -28,8 +28,9 @@ TypeScript 6, Vitest 4, existing live API and Standard RPC verifier.
 - Pending verification never claims a field is matched.
 - Fresh live runs keep `decisionTxHash: null`; do not add a relay transaction,
   contract call, API endpoint, schema change, or database table.
-- Keep all claims testnet-only. Do not claim real assets, yield, RWA issuance,
-  settlement, finality, KYC, phishing protection, or security guarantees.
+- Keep all claims testnet-only. Do not claim real assets, yield, RWA issuance.
+  Do not claim settlement, finality, KYC, phishing protection, or security
+  guarantees.
 - Label checked-in historical evidence as a recorded verified example; never
   imply that its on-chain decision transaction belongs to a fresh live run.
 - Keep the existing exact approval, deposit calldata, participant capability,

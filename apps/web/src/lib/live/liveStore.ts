@@ -3,10 +3,15 @@ import { DatabaseSync } from "node:sqlite";
 import type {
   DecisionRecord,
   LiveRunRecord,
+  MatchedEvidencePublication,
+  PublicCampaignEventAggregate,
+  PublicCampaignEventRecord,
+  PublicEvidenceRecord,
   ReceiptRecord,
   SubmittedTxRecord,
   VerifierInputRecord
 } from "./liveTypes.ts";
+import { assertPublicCampaignEventRecord } from "./publicCampaignAnalytics.ts";
 import { REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
 import type { LiveSchemaStateInput } from "./liveSchemaMigrations.ts";
 import {
@@ -33,6 +38,22 @@ export type LiveStore = {
   getReceiptForTenant(tenantId: string, receiptHash: string): ReceiptRecord | undefined;
   saveVerifierInput(input: VerifierInputRecord): VerifierInputRecord;
   getVerifierInput(verifierInputHash: string): VerifierInputRecord | undefined;
+  savePublicEvidence(input: PublicEvidenceRecord): PublicEvidenceRecord;
+  getPublicEvidenceByReceiptHash(receiptHash: string): PublicEvidenceRecord | undefined;
+  getPublicEvidenceByIntentHash(intentHash: string): PublicEvidenceRecord | undefined;
+  getPublicEvidenceByDepositTxHash(depositTxHash: string): PublicEvidenceRecord | undefined;
+  publishMatchedEvidence(input: MatchedEvidencePublication): {
+    run: LiveRunRecord;
+    verifierInput: VerifierInputRecord;
+    receipt: ReceiptRecord;
+    decision: DecisionRecord;
+    publicEvidence: PublicEvidenceRecord;
+  };
+  savePublicCampaignEvent(input: PublicCampaignEventRecord): PublicCampaignEventRecord;
+  aggregatePublicCampaignEvents(
+    campaignId: string,
+    missionId: string
+  ): PublicCampaignEventAggregate;
   enqueueVerificationJob(input: {
     tenantId: string;
     runId: string;
@@ -61,6 +82,102 @@ function jobIdFor(tenantId: string, runId: string): string {
   return `job_${tenantId}_${runId}`.replace(/[^A-Za-z0-9_]/gu, "_");
 }
 
+function publicCampaignEventKey(input: PublicCampaignEventRecord): string {
+  return [
+    input.eventType,
+    input.sessionHash,
+    input.campaignId,
+    input.missionId
+  ].join(":");
+}
+
+function publicEvidenceRecordsEqual(
+  left: PublicEvidenceRecord,
+  right: PublicEvidenceRecord
+): boolean {
+  return (
+    left.receiptHash === right.receiptHash &&
+    left.intentHash === right.intentHash &&
+    left.depositTxHash === right.depositTxHash &&
+    left.bundleJson === right.bundleJson &&
+    left.createdAt === right.createdAt
+  );
+}
+
+function verifierInputRecordsEqual(
+  left: VerifierInputRecord,
+  right: VerifierInputRecord
+): boolean {
+  return (
+    left.runId === right.runId &&
+    left.verifierInputHash === right.verifierInputHash &&
+    left.canonicalPayload === right.canonicalPayload &&
+    left.canonicalPayloadBytesHex === right.canonicalPayloadBytesHex &&
+    left.createdAt === right.createdAt
+  );
+}
+
+function receiptRecordsEqual(left: ReceiptRecord, right: ReceiptRecord): boolean {
+  return (
+    left.receiptHash === right.receiptHash &&
+    left.intentHash === right.intentHash &&
+    left.payloadJson === right.payloadJson &&
+    left.canonicalPayload === right.canonicalPayload &&
+    left.canonicalPayloadBytesHex === right.canonicalPayloadBytesHex
+  );
+}
+
+function decisionRecordsEqual(left: DecisionRecord, right: DecisionRecord): boolean {
+  return (
+    left.intentHash === right.intentHash &&
+    left.depositTxHash === right.depositTxHash &&
+    left.decision === right.decision &&
+    left.failureReason === right.failureReason &&
+    left.verifierInputHash === right.verifierInputHash &&
+    left.receiptHash === right.receiptHash &&
+    left.decisionTxHash === right.decisionTxHash &&
+    left.issuedAt === right.issuedAt &&
+    (left.standardRpcReceiptStatus ?? null) ===
+      (right.standardRpcReceiptStatus ?? null) &&
+    (left.depositBlockNumber ?? null) === (right.depositBlockNumber ?? null) &&
+    (left.depositBlockHash ?? null) === (right.depositBlockHash ?? null) &&
+    (left.confirmationDepth ?? null) === (right.confirmationDepth ?? null)
+  );
+}
+
+function sameHash(left: string, right: string): boolean {
+  return left.toLowerCase() === right.toLowerCase();
+}
+
+function assertMatchedEvidencePublication(
+  store: Pick<LiveStore, "getRun" | "getSubmittedTx">,
+  input: MatchedEvidencePublication
+): LiveRunRecord {
+  const run = store.getRun(input.runId);
+  const submittedTx = store.getSubmittedTx(input.runId);
+  const coherent =
+    run !== undefined &&
+    submittedTx !== undefined &&
+    input.decision.decision === "matched" &&
+    input.decision.failureReason === null &&
+    input.decision.receiptHash !== null &&
+    input.decision.standardRpcReceiptStatus === 1 &&
+    sameHash(run.intentHash, input.publicEvidence.intentHash) &&
+    sameHash(submittedTx.depositTxHash, input.publicEvidence.depositTxHash) &&
+    input.verifierInput.runId === input.runId &&
+    sameHash(input.receipt.receiptHash, input.publicEvidence.receiptHash) &&
+    sameHash(input.receipt.intentHash, input.publicEvidence.intentHash) &&
+    sameHash(input.decision.intentHash, input.publicEvidence.intentHash) &&
+    sameHash(input.decision.depositTxHash, input.publicEvidence.depositTxHash) &&
+    sameHash(input.decision.verifierInputHash, input.verifierInput.verifierInputHash) &&
+    sameHash(input.decision.receiptHash, input.publicEvidence.receiptHash);
+  if (!coherent) throw new Error("matched evidence publication is incoherent");
+  if (isTerminalLiveRunStatus(run.status) && run.status !== "matched") {
+    throw new Error("matched evidence publication conflicts with terminal run");
+  }
+  return run;
+}
+
 export function createMemoryLiveStore(): LiveStore {
   const runsById = new Map<string, LiveRunRecord>();
   const runsByIdempotency = new Map<string, LiveRunRecord>();
@@ -70,6 +187,10 @@ export function createMemoryLiveStore(): LiveStore {
   const decisionsByDeposit = new Map<string, DecisionRecord>();
   const receiptsByHash = new Map<string, ReceiptRecord>();
   const verifierInputsByHash = new Map<string, VerifierInputRecord>();
+  const publicEvidenceByReceipt = new Map<string, PublicEvidenceRecord>();
+  const publicEvidenceByIntent = new Map<string, PublicEvidenceRecord>();
+  const publicEvidenceByDeposit = new Map<string, PublicEvidenceRecord>();
+  const publicCampaignEvents = new Map<string, PublicCampaignEventRecord>();
   const verificationJobsById = new Map<string, VerificationJobRecord>();
   const verificationJobIdByRun = new Map<string, string>();
 
@@ -166,6 +287,116 @@ export function createMemoryLiveStore(): LiveStore {
     getVerifierInput(verifierInputHash) {
       return verifierInputsByHash.get(verifierInputHash);
     },
+    savePublicEvidence(input) {
+      const existing =
+        publicEvidenceByReceipt.get(input.receiptHash.toLowerCase()) ??
+        publicEvidenceByIntent.get(input.intentHash.toLowerCase()) ??
+        publicEvidenceByDeposit.get(input.depositTxHash.toLowerCase());
+      if (existing !== undefined) {
+        if (!publicEvidenceRecordsEqual(existing, input)) {
+          throw new Error("public evidence conflict");
+        }
+        return existing;
+      }
+      throw new Error("public evidence must be published atomically");
+    },
+    getPublicEvidenceByReceiptHash(receiptHash) {
+      return publicEvidenceByReceipt.get(receiptHash.toLowerCase());
+    },
+    getPublicEvidenceByIntentHash(intentHash) {
+      return publicEvidenceByIntent.get(intentHash.toLowerCase());
+    },
+    getPublicEvidenceByDepositTxHash(depositTxHash) {
+      return publicEvidenceByDeposit.get(depositTxHash.toLowerCase());
+    },
+    publishMatchedEvidence(input) {
+      const run = assertMatchedEvidencePublication(this, input);
+      const existingVerifierInput = verifierInputsByHash.get(
+        input.verifierInput.verifierInputHash
+      );
+      const existingReceipt = receiptsByHash.get(input.receipt.receiptHash);
+      const existingReceiptByIntent = [...receiptsByHash.values()].find((candidate) =>
+        sameHash(candidate.intentHash, input.receipt.intentHash)
+      );
+      const existingDecisionByIntent = decisionsByIntent.get(input.decision.intentHash);
+      const existingDecisionByDeposit = decisionsByDeposit.get(input.decision.depositTxHash);
+      const existingPublicEvidence =
+        publicEvidenceByReceipt.get(input.publicEvidence.receiptHash.toLowerCase()) ??
+        publicEvidenceByIntent.get(input.publicEvidence.intentHash.toLowerCase()) ??
+        publicEvidenceByDeposit.get(input.publicEvidence.depositTxHash.toLowerCase());
+      if (
+        (existingVerifierInput !== undefined &&
+          !verifierInputRecordsEqual(existingVerifierInput, input.verifierInput)) ||
+        (existingReceipt !== undefined &&
+          !receiptRecordsEqual(existingReceipt, input.receipt)) ||
+        (existingReceiptByIntent !== undefined &&
+          !receiptRecordsEqual(existingReceiptByIntent, input.receipt)) ||
+        (existingDecisionByIntent !== undefined &&
+          !decisionRecordsEqual(existingDecisionByIntent, input.decision)) ||
+        (existingDecisionByDeposit !== undefined &&
+          !decisionRecordsEqual(existingDecisionByDeposit, input.decision)) ||
+        (existingPublicEvidence !== undefined &&
+          !publicEvidenceRecordsEqual(existingPublicEvidence, input.publicEvidence))
+      ) {
+        throw new Error("matched evidence publication conflict");
+      }
+
+      verifierInputsByHash.set(input.verifierInput.verifierInputHash, input.verifierInput);
+      receiptsByHash.set(input.receipt.receiptHash, input.receipt);
+      decisionsByIntent.set(input.decision.intentHash, input.decision);
+      decisionsByDeposit.set(input.decision.depositTxHash, input.decision);
+      publicEvidenceByReceipt.set(
+        input.publicEvidence.receiptHash.toLowerCase(),
+        input.publicEvidence
+      );
+      publicEvidenceByIntent.set(
+        input.publicEvidence.intentHash.toLowerCase(),
+        input.publicEvidence
+      );
+      publicEvidenceByDeposit.set(
+        input.publicEvidence.depositTxHash.toLowerCase(),
+        input.publicEvidence
+      );
+      const updatedRun = { ...run, status: "matched" as const, updatedAt: input.updatedAt };
+      runsById.set(input.runId, updatedRun);
+      runsByIdempotency.set(idempotencyLookupKey(updatedRun), updatedRun);
+      return {
+        run: updatedRun,
+        verifierInput: input.verifierInput,
+        receipt: input.receipt,
+        decision: input.decision,
+        publicEvidence: input.publicEvidence
+      };
+    },
+    savePublicCampaignEvent(input) {
+      assertPublicCampaignEventRecord(input);
+      const key = publicCampaignEventKey(input);
+      const existing = publicCampaignEvents.get(key);
+      if (existing !== undefined) return existing;
+      publicCampaignEvents.set(key, input);
+      return input;
+    },
+    aggregatePublicCampaignEvents(campaignId, missionId) {
+      const visitorSessions = new Set<string>();
+      const walletSessions = new Set<string>();
+      for (const event of publicCampaignEvents.values()) {
+        if (
+          event.campaignId !== campaignId ||
+          event.missionId !== missionId
+        ) {
+          continue;
+        }
+        if (event.eventType === "campaignVisited") {
+          visitorSessions.add(event.sessionHash);
+        } else {
+          walletSessions.add(event.sessionHash);
+        }
+      }
+      return {
+        uniqueCampaignVisitorCount: visitorSessions.size,
+        uniqueWalletConnectSessionCount: walletSessions.size
+      };
+    },
     enqueueVerificationJob(input) {
       const existingId = verificationJobIdByRun.get(input.runId);
       const existing = existingId === undefined ? undefined : verificationJobsById.get(existingId);
@@ -205,6 +436,121 @@ export function createMemoryLiveStore(): LiveStore {
             { name: "depositBlockNumber", notNull: false },
             { name: "depositBlockHash", notNull: false },
             { name: "confirmationDepth", notNull: false }
+          ],
+          public_evidence_bundles: [
+            {
+              name: "receiptHash",
+              declaredType: "TEXT",
+              notNull: false,
+              pkPosition: 1
+            },
+            {
+              name: "intentHash",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            },
+            {
+              name: "depositTxHash",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            },
+            {
+              name: "bundleJson",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            },
+            {
+              name: "createdAt",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            }
+          ],
+          public_campaign_events: [
+            {
+              name: "eventType",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 1
+            },
+            {
+              name: "sessionHash",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 2
+            },
+            {
+              name: "campaignId",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 3
+            },
+            {
+              name: "missionId",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 4
+            },
+            {
+              name: "recordedAt",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            }
+          ]
+        },
+        indexes: {
+          public_evidence_bundles: [
+            {
+              name: "memory_public_evidence_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["receiptHash"]
+            },
+            {
+              name: "memory_public_evidence_intent",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["intentHash"]
+            },
+            {
+              name: "memory_public_evidence_deposit",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["depositTxHash"]
+            }
+          ],
+          public_campaign_events: [
+            {
+              name: "memory_public_campaign_events_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: [
+                "eventType",
+                "sessionHash",
+                "campaignId",
+                "missionId"
+              ]
+            },
+            {
+              name: "memory_public_campaign_events_aggregate",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: [
+                "campaignId",
+                "missionId",
+                "eventType",
+                "sessionHash"
+              ]
+            }
           ]
         },
         requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
@@ -217,6 +563,9 @@ export function createMemoryLiveStore(): LiveStore {
       }
       for (const receipt of receiptsByHash.values()) {
         evidenceIntentHashes.add(receipt.intentHash.toLowerCase());
+      }
+      for (const evidence of publicEvidenceByIntent.values()) {
+        evidenceIntentHashes.add(evidence.intentHash.toLowerCase());
       }
       const staleRuns = [...runsById.values()].filter(
         (run) =>
@@ -357,6 +706,16 @@ function rowToVerifierInput(row: Record<string, unknown>): VerifierInputRecord {
   };
 }
 
+function rowToPublicEvidence(row: Record<string, unknown>): PublicEvidenceRecord {
+  return {
+    receiptHash: stringValue(row, "receiptHash"),
+    intentHash: stringValue(row, "intentHash"),
+    depositTxHash: stringValue(row, "depositTxHash"),
+    bundleJson: stringValue(row, "bundleJson"),
+    createdAt: stringValue(row, "createdAt")
+  };
+}
+
 function rowToVerificationJob(row: Record<string, unknown>): VerificationJobRecord {
   const status = stringValue(row, "status");
   if (status !== "pending" && status !== "leased" && status !== "succeeded" && status !== "retryable" && status !== "dead") {
@@ -438,6 +797,31 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       canonicalPayloadBytesHex text not null,
       createdAt text not null
     );
+
+    create table if not exists public_evidence_bundles (
+      receiptHash text primary key,
+      intentHash text not null unique,
+      depositTxHash text not null unique,
+      bundleJson text not null,
+      createdAt text not null
+    );
+
+    create table if not exists public_campaign_events (
+      eventType text not null,
+      sessionHash text not null,
+      campaignId text not null,
+      missionId text not null,
+      recordedAt text not null,
+      primary key (eventType, sessionHash, campaignId, missionId)
+    );
+
+    create index if not exists idx_public_campaign_events_aggregate
+      on public_campaign_events (
+        campaignId,
+        missionId,
+        eventType,
+        sessionHash
+      );
 
     create table if not exists verification_jobs (
       jobId text primary key,
@@ -631,6 +1015,176 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       const row = db.prepare("select * from verifier_inputs where verifierInputHash = ?").get(verifierInputHash);
       return row === undefined ? undefined : rowToVerifierInput(row);
     },
+    savePublicEvidence(input) {
+      const existing =
+        this.getPublicEvidenceByReceiptHash(input.receiptHash) ??
+        this.getPublicEvidenceByIntentHash(input.intentHash) ??
+        this.getPublicEvidenceByDepositTxHash(input.depositTxHash);
+      if (existing !== undefined) {
+        if (!publicEvidenceRecordsEqual(existing, input)) {
+          throw new Error("public evidence conflict");
+        }
+        return existing;
+      }
+      throw new Error("public evidence must be published atomically");
+    },
+    getPublicEvidenceByReceiptHash(receiptHash) {
+      const row = db
+        .prepare("select * from public_evidence_bundles where lower(receiptHash) = lower(?)")
+        .get(receiptHash);
+      return row === undefined ? undefined : rowToPublicEvidence(row);
+    },
+    getPublicEvidenceByIntentHash(intentHash) {
+      const row = db
+        .prepare("select * from public_evidence_bundles where lower(intentHash) = lower(?)")
+        .get(intentHash);
+      return row === undefined ? undefined : rowToPublicEvidence(row);
+    },
+    getPublicEvidenceByDepositTxHash(depositTxHash) {
+      const row = db
+        .prepare("select * from public_evidence_bundles where lower(depositTxHash) = lower(?)")
+        .get(depositTxHash);
+      return row === undefined ? undefined : rowToPublicEvidence(row);
+    },
+    publishMatchedEvidence(input) {
+      assertMatchedEvidencePublication(this, input);
+      db.exec("begin immediate");
+      try {
+        const existingVerifierInput = this.getVerifierInput(
+          input.verifierInput.verifierInputHash
+        );
+        const existingReceipt = this.getReceipt(input.receipt.receiptHash);
+        const existingReceiptByIntentRow = db
+          .prepare("select * from receipts where lower(intentHash) = lower(?)")
+          .get(input.receipt.intentHash);
+        const existingReceiptByIntent =
+          existingReceiptByIntentRow === undefined
+            ? undefined
+            : rowToReceipt(existingReceiptByIntentRow);
+        const existingDecisionByIntent = this.getDecisionByIntentHash(
+          input.decision.intentHash
+        );
+        const existingDecisionByDepositRow = db
+          .prepare("select * from decisions where lower(depositTxHash) = lower(?)")
+          .get(input.decision.depositTxHash);
+        const existingDecisionByDeposit =
+          existingDecisionByDepositRow === undefined
+            ? undefined
+            : rowToDecision(existingDecisionByDepositRow);
+        const existingPublicEvidence =
+          this.getPublicEvidenceByReceiptHash(input.publicEvidence.receiptHash) ??
+          this.getPublicEvidenceByIntentHash(input.publicEvidence.intentHash) ??
+          this.getPublicEvidenceByDepositTxHash(input.publicEvidence.depositTxHash);
+        if (
+          (existingVerifierInput !== undefined &&
+            !verifierInputRecordsEqual(existingVerifierInput, input.verifierInput)) ||
+          (existingReceipt !== undefined &&
+            !receiptRecordsEqual(existingReceipt, input.receipt)) ||
+          (existingReceiptByIntent !== undefined &&
+            !receiptRecordsEqual(existingReceiptByIntent, input.receipt)) ||
+          (existingDecisionByIntent !== undefined &&
+            !decisionRecordsEqual(existingDecisionByIntent, input.decision)) ||
+          (existingDecisionByDeposit !== undefined &&
+            !decisionRecordsEqual(existingDecisionByDeposit, input.decision)) ||
+          (existingPublicEvidence !== undefined &&
+            !publicEvidenceRecordsEqual(existingPublicEvidence, input.publicEvidence))
+        ) {
+          throw new Error("matched evidence publication conflict");
+        }
+
+        const verifierInput = this.saveVerifierInput(input.verifierInput);
+        const receipt = this.saveReceipt(input.receipt);
+        const decision = this.saveDecision(input.decision);
+        const publicEvidence =
+          existingPublicEvidence === undefined
+            ? input.publicEvidence
+            : this.savePublicEvidence(input.publicEvidence);
+        if (existingPublicEvidence === undefined) {
+          db.prepare(
+            `insert into public_evidence_bundles (
+              receiptHash, intentHash, depositTxHash, bundleJson, createdAt
+            ) values (?, ?, ?, ?, ?)`
+          ).run(
+            publicEvidence.receiptHash,
+            publicEvidence.intentHash,
+            publicEvidence.depositTxHash,
+            publicEvidence.bundleJson,
+            publicEvidence.createdAt
+          );
+        }
+        const run = this.updateRunStatus(input.runId, "matched", input.updatedAt);
+        db.exec("commit");
+        return { run, verifierInput, receipt, decision, publicEvidence };
+      } catch (error) {
+        db.exec("rollback");
+        throw error;
+      }
+    },
+    savePublicCampaignEvent(input) {
+      assertPublicCampaignEventRecord(input);
+      db.prepare(
+        `insert or ignore into public_campaign_events (
+          eventType, sessionHash, campaignId, missionId, recordedAt
+        ) values (?, ?, ?, ?, ?)`
+      ).run(
+        input.eventType,
+        input.sessionHash,
+        input.campaignId,
+        input.missionId,
+        input.recordedAt
+      );
+      const row = db
+        .prepare(
+          `select eventType, sessionHash, campaignId, missionId, recordedAt
+           from public_campaign_events
+           where eventType = ? and sessionHash = ? and campaignId = ? and missionId = ?`
+        )
+        .get(
+          input.eventType,
+          input.sessionHash,
+          input.campaignId,
+          input.missionId
+        );
+      if (row === undefined) {
+        throw new Error("public campaign event persistence failed");
+      }
+      return {
+        eventType: stringValue(row, "eventType") as PublicCampaignEventRecord["eventType"],
+        sessionHash: stringValue(row, "sessionHash"),
+        campaignId: stringValue(row, "campaignId") as PublicCampaignEventRecord["campaignId"],
+        missionId: stringValue(row, "missionId") as PublicCampaignEventRecord["missionId"],
+        recordedAt: stringValue(row, "recordedAt")
+      };
+    },
+    aggregatePublicCampaignEvents(campaignId, missionId) {
+      const row = db
+        .prepare(
+          `select
+             count(distinct case when eventType = 'campaignVisited' then sessionHash end)
+               as uniqueCampaignVisitorCount,
+             count(distinct case when eventType = 'walletConnected' then sessionHash end)
+               as uniqueWalletConnectSessionCount
+           from public_campaign_events
+           where campaignId = ? and missionId = ?`
+        )
+        .get(campaignId, missionId);
+      if (row === undefined) {
+        return {
+          uniqueCampaignVisitorCount: 0,
+          uniqueWalletConnectSessionCount: 0
+        };
+      }
+      return {
+        uniqueCampaignVisitorCount: numberValue(
+          row,
+          "uniqueCampaignVisitorCount"
+        ),
+        uniqueWalletConnectSessionCount: numberValue(
+          row,
+          "uniqueWalletConnectSessionCount"
+        )
+      };
+    },
     enqueueVerificationJob(input) {
       const existing = this.getVerificationJobForRun(input.runId);
       if (existing !== undefined && existing.status !== "dead") return existing;
@@ -704,6 +1258,10 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
             select 1 from receipts
             where lower(receipts.intentHash) = lower(candidate_runs.intentHash)
           )
+          and not exists (
+            select 1 from public_evidence_bundles
+            where lower(public_evidence_bundles.intentHash) = lower(candidate_runs.intentHash)
+          )
       `;
       const incompleteRunFilter = `runId in (${pruneCandidateQuery})`;
       db.exec("begin immediate");
@@ -762,7 +1320,9 @@ function recordLocalMigrations(db: DatabaseSync): void {
     ["002_nullable_decision_tx_hash", "nullable-decision-tx-hash"],
     ["003_verification_jobs", "verification-jobs"],
     ["004_run_capability_hash", "run-capability-hash"],
-    ["005_decision_rpc_metadata", "decision-rpc-metadata"]
+    ["005_decision_rpc_metadata", "decision-rpc-metadata"],
+    ["006_public_evidence_bundles", "public-evidence-bundles"],
+    ["007_public_campaign_events", "public-campaign-events"]
   ] as const;
   const insert = db.prepare("insert or ignore into schema_migrations (id, checksum, appliedAt) values (?, ?, ?)");
   for (const migration of migrations) {
@@ -781,10 +1341,13 @@ function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
     "decisions",
     "receipts",
     "verifier_inputs",
+    "public_evidence_bundles",
+    "public_campaign_events",
     "verification_jobs",
     "schema_migrations"
   ] as const;
   const tables: LiveSchemaStateInput["tables"] = {};
+  const indexes: NonNullable<LiveSchemaStateInput["indexes"]> = {};
 
   for (const tableName of tableNames) {
     tables[tableName] = db
@@ -792,13 +1355,41 @@ function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
       .all()
       .map((row) => ({
         name: stringValue(row, "name"),
-        notNull: numberValue(row, "notnull") === 1
+        declaredType: stringValue(row, "type"),
+        notNull: numberValue(row, "notnull") === 1,
+        pkPosition: numberValue(row, "pk")
       }));
+    const indexRows = db
+      .prepare(
+        `select name, "unique" as isUnique, origin, partial
+         from pragma_index_list(?)
+         order by seq asc`
+      )
+      .all(tableName);
+    indexes[tableName] = indexRows.map((indexRow) => {
+      const indexName = stringValue(indexRow, "name");
+      const columns = db
+        .prepare(
+          `select name
+           from pragma_index_info(?)
+           order by seqno asc`
+        )
+        .all(indexName)
+        .map((columnRow) => stringValue(columnRow, "name"));
+      return {
+        name: indexName,
+        unique: numberValue(indexRow, "isUnique") === 1,
+        origin: stringValue(indexRow, "origin"),
+        partial: numberValue(indexRow, "partial") === 1,
+        columns
+      };
+    });
   }
 
   return {
     migrations,
     tables,
+    indexes,
     requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
   };
 }

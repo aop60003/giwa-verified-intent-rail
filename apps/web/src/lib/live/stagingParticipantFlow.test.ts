@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { keccak256, stringToBytes } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 import {
   canonicalReceiptPayload,
@@ -7,6 +9,9 @@ import {
   canonicalVerifierInputPayloadBytesHex,
   computeReceiptHash,
   computeVerifierInputHash,
+  computeIntentHash,
+  signManifest,
+  type ActionManifest,
   type ReceiptPayload,
   type VerifierInputPayload
 } from "../../../../../packages/protocol/src/index.ts";
@@ -14,11 +19,14 @@ import { createLiveApiHandler, type LiveApiResponse } from "./liveApi.ts";
 import { hashLiveRunCapability } from "./liveParticipantCapability.ts";
 import { buildLivePublicConfig } from "./livePublicConfig.ts";
 import { createMemoryLiveStore } from "./liveStore.ts";
+import {
+  hashEvidenceJson,
+  type DecodedLogSnapshot
+} from "../verifier/decodeEvidence.ts";
 
 const RUN_ID = "run-staging-journey";
 const RUN_CAPABILITY = "A".repeat(43);
 const RUN_CAPABILITY_HASH = hashLiveRunCapability(RUN_CAPABILITY);
-const INTENT_HASH = `0x${"a".repeat(64)}` as `0x${string}`;
 const DEPOSIT_TX_HASH = `0x${"d".repeat(64)}` as `0x${string}`;
 const DEPOSIT_BLOCK_HASH = `0x${"e".repeat(64)}` as `0x${string}`;
 
@@ -34,6 +42,56 @@ const PUBLIC_CONFIG = buildLivePublicConfig({
   }
 });
 
+const ACTION_MANIFEST: ActionManifest = {
+  manifestVersion: "1",
+  chainId: 91342,
+  nonce: "nonce-staging-journey",
+  expiryUnix: 1790003600,
+  campaignId: "gasok-demo",
+  missionId: "first-mock-vault-deposit",
+  wallet: "0x1111111111111111111111111111111111111111",
+  actionType: "mockVaultDeposit",
+  target: PUBLIC_CONFIG.contracts.mockVault,
+  selector: "0x47e7ef24",
+  asset: PUBLIC_CONFIG.contracts.mockToken,
+  amountBaseUnits: PUBLIC_CONFIG.demoAmountBaseUnits,
+  spender: PUBLIC_CONFIG.contracts.mockVault,
+  maxAllowanceBaseUnits: PUBLIC_CONFIG.demoAmountBaseUnits
+};
+const INTENT_HASH = computeIntentHash(ACTION_MANIFEST);
+const MANIFEST_SIGNER = privateKeyToAccount(
+  keccak256(stringToBytes("GIWA staging participant flow fixture signer"))
+);
+const VERIFYING_CONTRACT = PUBLIC_CONFIG.contracts.intentRail;
+const DECODED_LOGS: DecodedLogSnapshot[] = [
+  {
+    eventName: "Transfer",
+    contractAddress: PUBLIC_CONFIG.contracts.mockToken,
+    logIndex: 0,
+    sourceTxHash: DEPOSIT_TX_HASH,
+    blockNumber: 10,
+    blockHash: DEPOSIT_BLOCK_HASH,
+    args: {
+      from: ACTION_MANIFEST.wallet,
+      to: PUBLIC_CONFIG.contracts.mockVault,
+      amount: PUBLIC_CONFIG.demoAmountBaseUnits
+    }
+  },
+  {
+    eventName: "MockDeposit",
+    contractAddress: PUBLIC_CONFIG.contracts.mockVault,
+    logIndex: 1,
+    sourceTxHash: DEPOSIT_TX_HASH,
+    blockNumber: 10,
+    blockHash: DEPOSIT_BLOCK_HASH,
+    args: {
+      wallet: ACTION_MANIFEST.wallet,
+      asset: PUBLIC_CONFIG.contracts.mockToken,
+      amount: PUBLIC_CONFIG.demoAmountBaseUnits
+    }
+  }
+];
+
 const VERIFIER_INPUT_PAYLOAD: VerifierInputPayload = {
   schemaVersion: "1",
   chainId: 91342,
@@ -41,9 +99,9 @@ const VERIFIER_INPUT_PAYLOAD: VerifierInputPayload = {
   depositTxHash: DEPOSIT_TX_HASH,
   depositTransactionSnapshotHash: `0x${"1".repeat(64)}`,
   depositReceiptSnapshotHash: `0x${"2".repeat(64)}`,
-  decodedLogSnapshotHash: `0x${"3".repeat(64)}`,
+  decodedLogSnapshotHash: hashEvidenceJson(DECODED_LOGS),
   confirmationDepth: 4,
-  headBlockNumberAtVerification: 14,
+  headBlockNumberAtVerification: 13,
   verifierVersion: "gasok-staging-1"
 };
 
@@ -104,6 +162,11 @@ function expectCapabilityAbsent(response: LiveApiResponse): void {
 describe("staging participant journey", () => {
   it("retries a timeout and exposes only the matched public receipt", async () => {
     const store = createMemoryLiveStore();
+    const signedManifest = await signManifest({
+      manifest: ACTION_MANIFEST,
+      verifyingContract: VERIFYING_CONTRACT,
+      account: MANIFEST_SIGNER
+    });
     let verificationAttempts = 0;
     const api = createLiveApiHandler({
       store,
@@ -111,13 +174,13 @@ describe("staging participant journey", () => {
       publicConfig: PUBLIC_CONFIG,
       issueRunCapability: () => ({ value: RUN_CAPABILITY, hash: RUN_CAPABILITY_HASH }),
       now: () => "2026-06-19T00:00:00.000Z",
-      issueManifest: async (input) => ({
+      issueManifest: async () => ({
         runId: RUN_ID,
-        nonce: "nonce-staging-journey",
+        nonce: ACTION_MANIFEST.nonce,
         intentHash: INTENT_HASH,
-        manifestJson: JSON.stringify({ chainId: 91342, ...input }),
-        manifestSignature: `0x${"b".repeat(130)}`,
-        expiryUnix: 1790003600,
+        manifestJson: JSON.stringify(ACTION_MANIFEST),
+        manifestSignature: signedManifest.manifestSignature,
+        expiryUnix: ACTION_MANIFEST.expiryUnix,
         preview: null
       }),
       verifyRun: async () => {
@@ -146,7 +209,38 @@ describe("staging participant journey", () => {
           depositBlockHash: DEPOSIT_BLOCK_HASH,
           confirmationDepth: 4,
           receipt: RECEIPT_RECORD,
-          verifierInputRecord: VERIFIER_INPUT_RECORD
+          verifierInputRecord: VERIFIER_INPUT_RECORD,
+          publicEvidenceDraft: {
+            manifest: {
+              payload: ACTION_MANIFEST,
+              signature: signedManifest.manifestSignature,
+              verifyingContract: VERIFYING_CONTRACT,
+              recoveredSigner: signedManifest.recoveredSigner
+            },
+            verifierInput: {
+              payload: VERIFIER_INPUT_PAYLOAD,
+              canonicalPayload: VERIFIER_INPUT_RECORD.canonicalPayload,
+              canonicalPayloadBytesHex:
+                VERIFIER_INPUT_RECORD.canonicalPayloadBytesHex,
+              verifierInputHash: VERIFIER_INPUT_HASH,
+              verifierVersion: VERIFIER_INPUT_PAYLOAD.verifierVersion
+            },
+            verification: {
+              depositBlockNumber: 10,
+              depositBlockHash: DEPOSIT_BLOCK_HASH,
+              headBlockNumberAtVerification:
+                VERIFIER_INPUT_PAYLOAD.headBlockNumberAtVerification,
+              confirmationDepth: VERIFIER_INPUT_PAYLOAD.confirmationDepth,
+              standardRpcReceiptStatus: 1
+            },
+            decodedLogs: DECODED_LOGS,
+            receipt: {
+              record: RECEIPT_RECORD,
+              payload: RECEIPT_PAYLOAD,
+              schemaVersion: RECEIPT_PAYLOAD.schemaVersion,
+              verifierVersion: RECEIPT_PAYLOAD.verifierVersion
+            }
+          }
         };
       }
     });
@@ -250,9 +344,68 @@ describe("staging participant journey", () => {
     });
     expect(JSON.stringify(publicReceipt.body)).not.toMatch(/session|auth/iu);
 
+    const publicProofs = await Promise.all([
+      api({
+        method: "GET",
+        pathname: `/api/public/evidence/${RECEIPT_HASH}`
+      }),
+      api({
+        method: "GET",
+        pathname: `/api/public/evidence/${INTENT_HASH}`
+      }),
+      api({
+        method: "GET",
+        pathname: `/api/public/evidence/${DEPOSIT_TX_HASH}`
+      })
+    ]);
+    for (const [index, proof] of publicProofs.entries()) {
+      expect(proof.status).toBe(200);
+      expect(proof.body).toMatchObject({
+        source: "live",
+        queryKind: ["receipt", "intent", "depositTx"][index],
+        receiptHash: RECEIPT_HASH,
+        intentHash: INTENT_HASH,
+        depositTxHash: DEPOSIT_TX_HASH,
+        bundle: {
+          identity: {
+            receiptHash: RECEIPT_HASH,
+            intentHash: INTENT_HASH,
+            depositTxHash: DEPOSIT_TX_HASH
+          }
+        }
+      });
+      expectCapabilityAbsent(proof);
+    }
+    expect(
+      new Set(
+        publicProofs.map(
+          (proof) =>
+            (
+              proof.body.bundle as {
+                identity: { receiptHash: string };
+              }
+            ).identity.receiptHash
+        )
+      )
+    ).toEqual(new Set([RECEIPT_HASH]));
+
     const rejectedPartnerRead = await api({ method: "GET", pathname: "/api/partner/runs" });
     expect(rejectedPartnerRead).toEqual({ status: 401, body: { error: "unauthorized" } });
     expect(verificationAttempts).toBe(2);
+    const routeOrder = [
+      "/giwa-demo",
+      "/user",
+      `/user/receipt/${RECEIPT_HASH}`,
+      `/partner?receipt=${RECEIPT_HASH}`,
+      `/receipt/${RECEIPT_HASH}`
+    ];
+    expect(routeOrder).toEqual([
+      "/giwa-demo",
+      "/user",
+      `/user/receipt/${RECEIPT_HASH}`,
+      `/partner?receipt=${RECEIPT_HASH}`,
+      `/receipt/${RECEIPT_HASH}`
+    ]);
 
     for (const response of [
       publicConfig,
@@ -261,6 +414,7 @@ describe("staging participant journey", () => {
       timedOut,
       matched,
       publicReceipt,
+      ...publicProofs,
       rejectedPartnerRead
     ]) {
       expectCapabilityAbsent(response);

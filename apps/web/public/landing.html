@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 Looprail Demo." />
-    <meta property="og:site_name" content="GIWA Looprail" />
-    <meta property="og:title" content="Looprail Demo" />
-    <meta property="og:description" content="서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 Looprail Demo." />
-    <meta name="twitter:title" content="Looprail Demo" />
-    <meta name="twitter:description" content="서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만 공개 Receipt로 남기는 Looprail Demo." />
-    <title>Looprail Demo</title>
+    <meta name="description" content="GIWA Sepolia에서 캠페인이 서명한 조건을 확인하고, 지갑으로 실행한 뒤 Matched Receipt를 받는 테스트넷 여정." />
+    <meta property="og:site_name" content="GIWA Verified Intent Rail" />
+    <meta property="og:title" content="GIWA Genesis Journey" />
+    <meta property="og:description" content="캠페인이 서명한 조건과 GIWA Sepolia 실행이 일치할 때만 Matched Receipt를 발급합니다." />
+    <meta name="twitter:title" content="GIWA Genesis Journey" />
+    <meta name="twitter:description" content="캠페인이 서명한 조건과 GIWA Sepolia 실행이 일치할 때만 Matched Receipt를 발급합니다." />
+    <title>GIWA Genesis Journey · GIWA Verified Intent Rail</title>
     <link
       rel="stylesheet"
       as="style"
@@ -40,25 +40,27 @@
         <a href="#how-it-works">검증 방식</a>
         <a href="#why-giwa">GIWA</a>
       </nav>
-      <a class="button button-primary header-cta" href="/giwa-demo">
-        데모 실행
+      <a class="button button-primary header-cta" href="/user">
+        미션 보기
       </a>
     </header>
 
     <main id="main-content" tabindex="-1">
       <section id="product" class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow">GIWA SEPOLIA · VERIFIED INTENT</p>
+          <p class="eyebrow">GIWA Genesis Journey</p>
           <h1 id="hero-title">
-            <span>실행은 기록되고,</span>
-            <span>약속은 증명됩니다.</span>
+            <span>조건을 확인하고,</span>
+            <span>직접 실행해보세요.</span>
           </h1>
           <p class="hero-description">
-            서명된 Manifest와 GIWA Sepolia 트랜잭션을 대조해, 일치한 실행만
-            공개 Receipt로 남깁니다.
+            캠페인이 서명한 실행 조건을 먼저 확인합니다. 지갑으로 GIWA
+            Sepolia 액션을 실행하면, 실제 트랜잭션과 조건이 일치할 때
+            Matched Receipt를 받습니다.
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="/giwa-demo">데모 실행</a>
+            <a class="button button-primary" href="/user">미션 보기</a>
+            <a class="button button-secondary" href="/giwa-demo">90초 데모</a>
             <a
               class="button button-secondary"
               data-recorded-receipt
@@ -67,8 +69,8 @@
               Receipt 확인
             </a>
           </div>
-          <p class="hero-note">
-            GIWA Sepolia · Chain ID 91342 · 테스트넷 전용
+          <p class="hero-safety">
+            GIWA Sepolia 테스트넷 · Mock 자산만 사용 · 실제 자금 및 수익 없음
           </p>
         </div>
 
@@ -195,7 +197,7 @@
               <span class="flow-number">01</span>
               <div>
                 <p>MANIFEST</p>
-                <h3>의도와 조건을 서명합니다.</h3>
+                 <h3>캠페인이 실행 조건을 서명합니다.</h3>
               </div>
               <p>
                 실행할 네트워크, 대상, 액션, 수량을 먼저 고정하고 직접
@@ -329,9 +331,10 @@
           <span>직접 실행하고,</span>
           <span>결과를 확인해보세요.</span>
         </h2>
-        <div class="hero-actions">
-          <a class="button button-primary" href="/giwa-demo">데모 실행</a>
-          <a
+         <div class="hero-actions">
+           <a class="button button-primary" href="/user">미션 보기</a>
+           <a class="button button-secondary" href="/giwa-demo">90초 데모</a>
+           <a
             class="button button-secondary"
             data-recorded-receipt
             href="/evidence"

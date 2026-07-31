@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildUserReceiptView } from "./userReceiptView";
 
@@ -25,6 +27,7 @@ describe("buildUserReceiptView", () => {
 
     expect(receipt.state).toBe("verified");
     expect(receipt.summary).toMatchObject({
+      title: "약속한 조건대로 실행됐습니다.",
       receiptHash: receiptInput.receiptHash,
       depositTxHash: receiptInput.depositTxHash,
       wallet: receiptInput.wallet,
@@ -39,6 +42,14 @@ describe("buildUserReceiptView", () => {
       safetyNotice: receiptInput.safetyNotice
     });
     expect(receipt.share.path).toBe(`/user/receipt/${receiptInput.receiptHash}`);
+    expect(receipt.partner.path).toBe(
+      `/partner?receipt=${receiptInput.receiptHash}`
+    );
+    expect(receipt.publicProof.path).toBe(
+      `/evidence?proof=${receiptInput.receiptHash}`
+    );
+    expect(receipt.partner.label).toBe("Campaign Studio에서 반영 확인");
+    expect(receipt.publicProof.label).toBe("Proof Ledger에서 공개 검증");
   });
 
   it("does not project internal, operator, or capability fields", () => {
@@ -58,9 +69,28 @@ describe("buildUserReceiptView", () => {
     const json = JSON.stringify(receipt);
     expect(json).not.toMatch(/gateReason|localDb|blocker|protectedCI|signer|capability/iu);
     expect(receipt.state).toBe("pending");
+    expect(receipt.partner.path).toBeNull();
+    expect(receipt.publicProof.path).toBeNull();
   });
 
   it("maps failed verification to not matched", () => {
     expect(buildUserReceiptView({ ...receiptInput, status: "failed", receiptHash: null }).state).toBe("notMatched");
+  });
+
+  it("adds a bounded verification bundle action to the public participant Receipt", () => {
+    const direct = join(process.cwd(), "public/user-flow.js");
+    const workspace = join(process.cwd(), "apps/web/public/user-flow.js");
+    const source = readFileSync(existsSync(direct) ? direct : workspace, "utf8");
+
+    expect(source).toContain("검증 번들 JSON 받기");
+    expect(source).toContain(
+      "pnpm --filter @giwa/web evidence:replay -- <bundle.json>"
+    );
+    expect(source).toContain("6개 무결성 검사를 직접 재계산할 수 있습니다");
+    expect(source).toContain('download: "giwa-verification-bundle.json"');
+    expect(source).toContain("?download=1");
+    expect(source).toContain("검증 번들을 사용할 수 없습니다");
+    expect(source).toContain("Manifest 및 서명");
+    expect(source).toContain("Receipt canonical payload");
   });
 });
