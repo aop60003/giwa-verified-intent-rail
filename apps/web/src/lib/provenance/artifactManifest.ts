@@ -120,7 +120,9 @@ const PACKAGE_METADATA_PATHS = new Set([
   "packages/protocol/package.json",
   "packages/contracts/package.json"
 ]);
-const PUBLIC_EXTENSIONS = new Set([".html", ".js", ".css", ".json"]);
+const PUBLIC_EXTENSIONS = new Set([".html", ".js", ".css", ".json", ".png", ".txt", ".woff2"]);
+const PUBLIC_TEXT_FILENAMES = new Set(["LUCIDE-LICENSE"]);
+const PUBLIC_BINARY_EXTENSIONS = new Set([".png", ".woff2"]);
 const EVIDENCE_EXTENSIONS = new Set([".json", ".md"]);
 const IMPLEMENTATION_EXTENSIONS = new Set([".md"]);
 const EQUIVALENCE_GROUPS = [
@@ -157,6 +159,7 @@ export function isExcludedArtifactPath(path: string): boolean {
   if (normalized === ".git" || normalized.startsWith(".git/")) return true;
   if (normalized === ".github" || normalized.startsWith(".github/")) return true;
   if (normalized === "apps/web/.data" || normalized.startsWith("apps/web/.data/")) return true;
+  if (normalized === "docs/evidence/local" || normalized.startsWith("docs/evidence/local/")) return true;
   if (normalized.startsWith("packages/contracts/cache/")) return true;
   if (normalized.startsWith("packages/contracts/artifacts/")) return true;
   if (normalized.startsWith("packages/contracts/typechain-types/")) return true;
@@ -183,7 +186,13 @@ function bytesOf(content: string | Uint8Array): Uint8Array {
 function groupForPath(path: string): ArtifactEntry["role"] | null {
   const extension = extname(path);
   if (PACKAGE_METADATA_PATHS.has(path)) return "package-metadata";
-  if (path.startsWith("apps/web/public/") && PUBLIC_EXTENSIONS.has(extension)) return "public-served-artifact";
+  const publicFileName = path.split("/").at(-1) ?? "";
+  if (
+    path.startsWith("apps/web/public/") &&
+    (PUBLIC_EXTENSIONS.has(extension) || PUBLIC_TEXT_FILENAMES.has(publicFileName))
+  ) {
+    return "public-served-artifact";
+  }
   if (path.startsWith("docs/evidence/") && EVIDENCE_EXTENSIONS.has(extension)) return "public-evidence";
   if (path === "packages/contracts/fixtures/chain-evidence/giwa-sepolia-anchor.json") return "public-evidence";
   if (path.startsWith("docs/implementation/") && IMPLEMENTATION_EXTENSIONS.has(extension)) return "implementation-doc";
@@ -217,7 +226,10 @@ function toArtifactEntry(input: ArtifactInputEntry): ArtifactEntry | null {
     required: true,
     sha256: sha256Hex(bytes),
     bytes: bytes.byteLength,
-    scanDecision: "pass-or-blocked",
+    scanDecision:
+      role === "public-served-artifact" && PUBLIC_BINARY_EXTENSIONS.has(extname(path))
+        ? "pass"
+        : "pass-or-blocked",
     generatedBy: generatedByForPath(path),
     schemaPath: schemaPathForPath(path)
   };

@@ -20,7 +20,25 @@ declare module "node:crypto" {
   };
 }
 
+declare module "node:child_process" {
+  export function spawnSync(
+    command: string,
+    args: readonly string[],
+    options: {
+      cwd?: string;
+      encoding: "utf8";
+      env?: Record<string, string | undefined>;
+    }
+  ): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+    error?: Error;
+  };
+}
+
 declare const process: {
   cwd(): string;
   env: Record<string, string | undefined>;
+  readonly platform: string;
 };

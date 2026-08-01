@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { buildLocalArtifactManifestFromEntries } from "./artifactManifest.ts";
@@ -6,8 +7,41 @@ import { readScanTargetContent, scanPublicArtifactText, selectPublicArtifactScan
 
 const generatedAt = "2026-06-19T00:00:00.000Z";
 const workspaceRoot = resolve(process.cwd(), "../..");
+const documentedServerOnlyNames = [
+  "HOST",
+  "PORT",
+  "GIWA_LIVE_MODE",
+  "GIWA_LIVE_DB_PATH",
+  "GIWA_LIVE_ALLOWED_ORIGINS",
+  "GIWA_LIVE_PARTNER_TENANT_ID",
+  "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES",
+  "GIWA_SEPOLIA_RPC_URL",
+  "GIWA_EXPLORER_TX_URL_TEMPLATE",
+  "GIWA_EXPLORER_ADDRESS_URL_TEMPLATE",
+  "CAMPAIGN_SIGNER_PRIVATE_KEY",
+  "INTENT_SUBMITTER_PRIVATE_KEY",
+  "VERIFIER_PRIVATE_KEY"
+];
+
+function variableNameContract(serverOnlyNames: string[] = documentedServerOnlyNames): Record<string, unknown> {
+  return { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames };
+}
 
 describe("public artifact scanner", () => {
+  it("keeps the checked-in public proof runtimes scan-safe", () => {
+    for (const path of ["apps/web/public/flow.js", "apps/web/public/user-flow.js"]) {
+      const result = scanPublicArtifactText({
+        path,
+        content: readFileSync(resolve(workspaceRoot, path), "utf8")
+      });
+
+      expect(result, path).toMatchObject({
+        decision: "pass",
+        findings: []
+      });
+    }
+  });
+
   it("blocks credential-like keys without printing synthetic canary values", () => {
     const canary = "CANARY-VALUE-DO-NOT-PRINT";
     const result = scanPublicArtifactText({
@@ -76,6 +110,256 @@ describe("public artifact scanner", () => {
     }
   });
 
+  it("keeps blocking credential property markers inside URL parser checks", () => {
+    const result = scanPublicArtifactText({
+      path: "apps/web/public/user-flow.js",
+      content: [
+        "const parsed = new URL(value);",
+        'const safe = parsed.protocol === "https:" && parsed.username === "" && parsed.password === "";'
+      ].join("\n")
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({
+      ruleId: "credential-like-key",
+      matchClass: "credential-key-name",
+      decision: "blocked"
+    });
+  });
+
+  it("keeps blocking JavaScript credential variables, assignments, and markers", () => {
+    for (const content of [
+      "const password = input;",
+      "config.password = input;",
+      "const parsed = new URL(value); parsed.password = input;",
+      'const header = "Authorization: Bearer synthetic";'
+    ]) {
+      const result = scanPublicArtifactText({ path: "apps/web/public/user-flow.js", content });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({ ruleId: "credential-like-key", decision: "blocked" });
+    }
+  });
+
+  it("allows environment variable names only in an explicit public evidence contract", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({
+        envContract: variableNameContract()
+      })
+    });
+
+    expect(result.decision).toBe("pass");
+    expect(result.findings).toEqual([]);
+  });
+
+  it("blocks a variable-name contract in another public evidence file", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/another-preflight.json",
+      content: JSON.stringify({ envContract: variableNameContract() })
+    });
+
+    expect(result.decision).toBe("blocked");
+  });
+
+  it("blocks a variable-name contract outside the root envContract property", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({ nested: { envContract: variableNameContract() } })
+    });
+
+    expect(result.decision).toBe("blocked");
+  });
+
+  it.each(["PASSWORD", "COOKIE", "PRIVATE_KEY_LITERAL"])(
+    "blocks unexpected uppercase token %s inside the evidence exception",
+    (unexpectedName) => {
+      const result = scanPublicArtifactText({
+        path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+        content: JSON.stringify({
+          envContract: variableNameContract([...documentedServerOnlyNames, unexpectedName])
+        })
+      });
+
+      expect(result.decision).toBe("blocked");
+    }
+  );
+
+  it.each([
+    { serverOnlyNames: documentedServerOnlyNames.slice(1) },
+    {
+      serverOnlyNames: [...documentedServerOnlyNames.slice(0, -1), documentedServerOnlyNames[0] ?? "HOST"]
+    }
+  ])("blocks incomplete or duplicate copies of the documented name set", ({ serverOnlyNames }) => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({ envContract: variableNameContract(serverOnlyNames) })
+    });
+
+    expect(result.decision).toBe("blocked");
+  });
+
+  it("continues scanning sibling fields beside the exact name set", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content: JSON.stringify({
+        envContract: { ...variableNameContract(), note: "PASSWORD=synthetic" }
+      })
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: "credential-like-key", matchClass: "credential-marker" })
+      ])
+    );
+  });
+
+  it("blocks duplicate evidence members without printing an overwritten value", () => {
+    const overwrittenValue = "PASSWORD=synthetic";
+    const contract = JSON.stringify(variableNameContract());
+    const content = `{"envContract":${contract.slice(0, -1)},"note":"${overwrittenValue}","note":"safe"}}`;
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/lightsail-staging-preflight-sprint52.json",
+      content
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({
+      ruleId: "duplicate-json-key",
+      matchClass: "duplicate-object-key",
+      valuePrinted: false
+    });
+    expect(JSON.stringify(result)).not.toContain(overwrittenValue);
+  });
+
+  it("blocks duplicate members in nested JSON objects", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/nested.json",
+      content: '{"outer":{"note":"first","note":"second"}}'
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({ ruleId: "duplicate-json-key" });
+  });
+
+  it("blocks escaped-equivalent JSON member names", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/escaped.json",
+      content: '{"\\u006eote":"first","note":"second"}'
+    });
+
+    expect(result.decision).toBe("blocked");
+    expect(result.findings[0]).toMatchObject({ ruleId: "duplicate-json-key" });
+  });
+
+  it("allows the same member name in separate sibling objects", () => {
+    const result = scanPublicArtifactText({
+      path: "docs/evidence/siblings.json",
+      content: '{"left":{"note":"safe"},"right":{"note":"safe"}}'
+    });
+
+    expect(result.decision).toBe("pass");
+    expect(result.findings).toEqual([]);
+  });
+
+  it("blocks malformed server-only name contracts even when their entries are not sensitive", () => {
+    const unsafeCases = [
+      { path: "docs/evidence/preflight.json", value: { serverOnlyNames: ["HOST"] } },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { valuesIncluded: false, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: false, valuesIncluded: false, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: true, serverOnlyNames: ["HOST"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames: ["host"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames: [] }
+      },
+      {
+        path: "apps/web/public/preflight.json",
+        value: { variableNamesOnly: true, valuesIncluded: false, serverOnlyNames: ["HOST"] }
+      }
+    ];
+
+    for (const unsafeCase of unsafeCases) {
+      const result = scanPublicArtifactText({
+        path: unsafeCase.path,
+        content: JSON.stringify(unsafeCase.value)
+      });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({
+        ruleId: "credential-like-key",
+        matchClass: "credential-key-name",
+        decision: "blocked"
+      });
+    }
+  });
+
+  it("blocks evidence variable-name exceptions outside their exact safe context", () => {
+    const safeContract = {
+      variableNamesOnly: true,
+      valuesIncluded: false,
+      serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY"]
+    };
+    const unsafeCases = [
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY=synthetic"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { valuesIncluded: false, serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, variableNamesOnly: false }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { variableNamesOnly: true, serverOnlyNames: ["CAMPAIGN_SIGNER_PRIVATE_KEY"] }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, valuesIncluded: true }
+      },
+      {
+        path: "docs/evidence/preflight.json",
+        value: { ...safeContract, note: "CAMPAIGN_SIGNER_PRIVATE_KEY" }
+      },
+      { path: "apps/web/public/preflight.json", value: safeContract },
+      { path: "docs/implementation/preflight.json", value: safeContract }
+    ];
+
+    for (const unsafeCase of unsafeCases) {
+      const result = scanPublicArtifactText({
+        path: unsafeCase.path,
+        content: JSON.stringify(unsafeCase.value)
+      });
+
+      expect(result.decision).toBe("blocked");
+      expect(result.findings[0]).toMatchObject({
+        ruleId: "credential-like-key",
+        decision: "blocked"
+      });
+    }
+  });
+
   it("allows public addresses, transaction hashes, receipt hashes, and bounded status", () => {
     const result = scanPublicArtifactText({
       path: "apps/web/public/live-demo-snapshot.json",
@@ -105,6 +389,18 @@ describe("public artifact scanner", () => {
       valuePrinted: false
     });
     expect(JSON.stringify(result)).not.toContain(phrase);
+  });
+
+  it("allows the approved negative settlement and finality disclaimer", () => {
+    const result = scanPublicArtifactText({
+      path: "apps/web/public/flow.js",
+      content: 'const notice = "No settlement or finality claim";'
+    });
+
+    expect(result).toMatchObject({
+      decision: "pass",
+      findings: []
+    });
   });
 
   it("skips excluded local surfaces before reporting content details", () => {
@@ -162,6 +458,9 @@ describe("public artifact scanner", () => {
       [
         { path: "apps/web/public/index.html", content: "<html></html>" },
         { path: "apps/web/public/demo-control-room.js", content: "console.log('safe')" },
+        { path: "apps/web/public/fonts/OFL.txt", content: "Open Font License\n" },
+        { path: "apps/web/public/fonts/pretendard-subset.woff2", content: new Uint8Array([0, 1, 2, 3]) },
+        { path: "apps/web/public/matched-receipt-seal.png", content: new Uint8Array([4, 5, 6, 7]) },
         { path: "docs/evidence/giwa-sepolia-mvp-evidence.schema.md", content: "# Schema\n" },
         { path: "docs/evidence/giwa-sepolia-mvp-evidence.json", content: "{\"noPrivateKeys\":true}\n" }
       ],
@@ -170,6 +469,7 @@ describe("public artifact scanner", () => {
 
     expect(selectPublicArtifactScanEntries(manifest).map((entry) => entry.path)).toEqual([
       "apps/web/public/demo-control-room.js",
+      "apps/web/public/fonts/OFL.txt",
       "apps/web/public/index.html",
       "docs/evidence/giwa-sepolia-mvp-evidence.json"
     ]);

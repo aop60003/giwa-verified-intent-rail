@@ -14,10 +14,16 @@ const currentPublicPaths = [
   "apps/web/public/demo.html",
   "apps/web/public/flow-data.json",
   "apps/web/public/flow.js",
+  "apps/web/public/giwa-demo.css",
+  "apps/web/public/giwa-demo.html",
   "apps/web/public/index.html",
+  "apps/web/public/landing.css",
+  "apps/web/public/landing.html",
+  "apps/web/public/landing.js",
   "apps/web/public/live-demo-snapshot.json",
   "apps/web/public/live-flow.js",
   "apps/web/public/live.html",
+  "apps/web/public/matched-receipt-seal.png",
   "apps/web/public/partner-snapshot.json",
   "apps/web/public/styles.css"
 ];
@@ -36,6 +42,10 @@ const manifestEntries = [
   { path: "tsconfig.base.json", content: "{}\n" },
   { path: "docs/evidence/local-command-evidence-report.json", content: "excluded" },
   { path: "docs/evidence/local-provenance-verification.json", content: "excluded" },
+  {
+    path: "docs/evidence/local/lightsail-access-operator-note.md",
+    content: "private operator-only state"
+  },
   { path: "apps/web/.data/live.sqlite", content: "excluded" },
   { path: ".env.local", content: "excluded" },
   { path: "node_modules/example/index.js", content: "excluded" }
@@ -75,6 +85,7 @@ describe("local artifact manifest", () => {
     expect(serialized).not.toContain("node_modules");
     expect(serialized).not.toContain("local-command-evidence-report");
     expect(serialized).not.toContain("local-provenance-verification");
+    expect(serialized).not.toContain("docs/evidence/local/");
   });
 
   it("keeps provenance local-advisory and binds it to the manifest hash without self-reference", () => {
@@ -152,5 +163,28 @@ describe("local artifact manifest", () => {
     );
 
     expect(() => validateLocalArtifactManifest(manifest)).toThrow("artifact_public_file_not_manifested");
+  });
+
+  it("manifests public font binaries and their text licenses without scanning binaries as text", () => {
+    const manifest = buildLocalArtifactManifestFromEntries(
+      [
+        ...manifestEntries,
+        { path: "apps/web/public/fonts/OFL.txt", content: "Open Font License\n" },
+        { path: "apps/web/public/fonts/pretendard-subset.woff2", content: new Uint8Array([0, 1, 2, 3]) },
+        { path: "apps/web/public/icons/LUCIDE-LICENSE", content: "ISC License\n" }
+      ],
+      { generatedAt }
+    );
+
+    expect(manifest.ignoredPublicArtifacts).toEqual([]);
+    expect(
+      manifest.artifactGroups.publicArtifacts
+        .filter((entry) => entry.path.includes("fonts/") || entry.path.includes("icons/"))
+        .map((entry) => ({ path: entry.path, scanDecision: entry.scanDecision }))
+    ).toEqual([
+      { path: "apps/web/public/fonts/OFL.txt", scanDecision: "pass-or-blocked" },
+      { path: "apps/web/public/fonts/pretendard-subset.woff2", scanDecision: "pass" },
+      { path: "apps/web/public/icons/LUCIDE-LICENSE", scanDecision: "pass-or-blocked" }
+    ]);
   });
 });

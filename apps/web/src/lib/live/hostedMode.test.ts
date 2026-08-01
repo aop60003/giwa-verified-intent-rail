@@ -35,6 +35,29 @@ describe("evaluateHostedModePolicy", () => {
     expect(result).toEqual({ ok: false, reason: "hosted_gate_not_ready" });
   });
 
+  it("rejects every hosted mode on loopback before hosted gates are ready", () => {
+    for (const [mode, host] of [
+      ["staging-testnet", "127.0.0.1"],
+      ["staging-testnet", "::1"],
+      ["prod-testnet", "localhost"]
+    ] as const) {
+      expect(
+        evaluateHostedModePolicy({
+          mode,
+          mockMode: false,
+          host,
+          authReady: false,
+          tenantReady: true,
+          rateLimitReady: true,
+          requestSafetyReady: true,
+          repositoryReady: true,
+          telemetryReady: true
+        }),
+        `${mode} on ${host}`
+      ).toEqual({ ok: false, reason: "hosted_gate_not_ready" });
+    }
+  });
+
   it("keeps local mode bound to localhost", () => {
     const result = evaluateHostedModePolicy({
       mode: "local",

@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "reportKind": "local-provenance-report",
   "authority": "local-advisory",
-  "generatedAt": "2026-07-05T05:28:26.179Z",
+  "generatedAt": "2026-07-31T11:57:06.287Z",
   "releaseGrade": false,
   "canUnblockStaging": false,
   "blockedProtectedFields": [
@@ -18,27 +18,27 @@
     "manifestPath": "docs/evidence/local-artifact-manifest.json",
     "manifestKind": "local-artifact-manifest",
     "manifestAuthority": "local-advisory",
-    "artifactManifestSha256": "b2dddb4c37392a1da640699e03d29d14aaf2e8dbe0b47d16df9c4d69d3e7f798",
-    "artifactManifestBytes": 44499,
-    "buildTreeSha256": "ae43821632bdbfaafc1db76b720c24d02b1d85a2dd3f7c59b1025b8b149f44a7",
+    "artifactManifestSha256": "b934865b9cbedcb16e93c6909435436503e247ad43f95cc957cafff41ea68882",
+    "artifactManifestBytes": 50198,
+    "buildTreeSha256": "2b809f5c4fb721f184f2f4839df9445b70decb789b82657c1a867486a859f301",
     "artifactGroupCounts": {
       "packageMetadata": 7,
-      "publicArtifacts": 12,
-      "publicEvidence": 24,
-      "implementationDocs": 64
+      "publicArtifacts": 18,
+      "publicEvidence": 27,
+      "implementationDocs": 69
     },
     "equivalenceGroups": {
       "passed": 2,
       "blocked": 0
     },
-    "domainHashCount": 6,
+    "domainHashCount": 8,
     "decision": "pass"
   },
   "scanBinding": {
     "scanner": "public-artifact-scanner",
     "scope": "served-public-artifacts",
     "decision": "pass",
-    "filesScanned": 34,
+    "filesScanned": 41,
     "blockedCount": 0,
     "skippedCount": 0,
     "findingCount": 0,
@@ -47,7 +47,7 @@
   },
   "commandEvidenceBinding": {
     "path": "docs/evidence/local-command-evidence-report.json",
-    "sha256": "0f9ca0dd0720181bc0d9486f8c4772d29f41fe15b0621994c115f821504c6384",
+    "sha256": "fd9a3ef26ea9180b6d0b88a2c2736f53b12357be755f13415dc179f7eb5637b5",
     "bytes": 1972,
     "decision": "pass"
   },
@@ -93,12 +93,12 @@
       "decision": "pass"
     },
     {
-      "name": "verifierInputHash",
+      "name": "receiptHash",
       "algorithm": "keccak256",
       "source": "public evidence",
       "sourcePath": "docs/evidence/local-artifact-manifest.json",
       "jsonPointer": "/domainHashes/4",
-      "value": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de",
+      "value": "0xd71e0022e8d8911b4a870eaa6ecc3f4f63df0f91764759790b544d49fe2f2a2a",
       "derivation": "extracted",
       "decision": "pass"
     },
@@ -108,6 +108,26 @@
       "source": "public evidence",
       "sourcePath": "docs/evidence/local-artifact-manifest.json",
       "jsonPointer": "/domainHashes/5",
+      "value": "0x107c2a89b0cec1dbb2edeb62e88bfc7c317fa43123793bc5f16384ce119ff4c7",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/6",
+      "value": "0x1ca37e2ff786764bbc84e55df26382a5948e7bf8de279b54c1ac5736366395de",
+      "derivation": "extracted",
+      "decision": "pass"
+    },
+    {
+      "name": "verifierInputHash",
+      "algorithm": "keccak256",
+      "source": "public evidence",
+      "sourcePath": "docs/evidence/local-artifact-manifest.json",
+      "jsonPointer": "/domainHashes/7",
       "value": "0x83a4b7d20d0162affe04be016a68d9711f86eef356cf527620159957c7b2ed04",
       "derivation": "extracted",
       "decision": "pass"

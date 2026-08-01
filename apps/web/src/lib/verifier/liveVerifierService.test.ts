@@ -73,7 +73,7 @@ function log(
   return { address, logIndex, topics, data, transactionHash: sourceTxHash, blockNumber, blockHash };
 }
 
-function makeClient({ reverted = false, wrongWallet = false } = {}) {
+function makeClient({ reverted = false, wrongWallet = false, receiptPending = false, transactionFailure = false } = {}) {
   const amount = BigInt(manifest.amountBaseUnits);
   const depositInput = encodeFunctionData({
     abi: vaultAbi,
@@ -127,6 +127,7 @@ function makeClient({ reverted = false, wrongWallet = false } = {}) {
         return 91342;
       },
       async getTransaction(input) {
+        if (transactionFailure) throw new Error("upstream_failure_canary");
         const hash = input?.hash ?? submittedTx.depositTxHash;
         return {
           hash,
@@ -137,6 +138,11 @@ function makeClient({ reverted = false, wrongWallet = false } = {}) {
         };
       },
       async getTransactionReceipt(input) {
+        if (receiptPending) {
+          const error = new Error("provider detail must not escape");
+          error.name = "TransactionReceiptNotFoundError";
+          throw error;
+        }
         const hash = input?.hash ?? submittedTx.depositTxHash;
         return {
           status: reverted ? "reverted" : "success",
@@ -187,6 +193,53 @@ async function signedRun(verifyingContract = trustPolicy.intentRailAddress): Pro
 }
 
 describe("live verifier service", () => {
+  it("returns public-safe verification-time proof material only for a policy-verified match", async () => {
+    const privateRunIdCanary = "run-private-canary";
+    const capabilityCanary = "capability-private-canary";
+    const verifiedRun = {
+      ...(await signedRun()),
+      runId: privateRunIdCanary,
+      capabilityHash: capabilityCanary
+    };
+    const result = await verifyLiveRun({
+      run: verifiedRun,
+      submittedTx: { ...submittedTx, runId: privateRunIdCanary },
+      receiptClient: makeClient(),
+      nowSeconds: () => 1790000020,
+      verifierVersion: "live-release-2",
+      trustPolicy
+    });
+
+    expect(result.decision).toBe("matched");
+    expect(result.publicEvidenceDraft).toMatchObject({
+      manifest: {
+        payload: manifest,
+        verifyingContract: trustPolicy.intentRailAddress,
+        recoveredSigner: signingAccount.address.toLowerCase()
+      },
+      verifierInput: {
+        verifierInputHash: result.verifierInputHash,
+        verifierVersion: "live-release-2"
+      },
+      verification: {
+        depositBlockNumber: 10,
+        depositBlockHash: `0x${"e".repeat(64)}`,
+        headBlockNumberAtVerification: 13,
+        confirmationDepth: 4,
+        standardRpcReceiptStatus: 1
+      },
+      receipt: {
+        record: result.receipt,
+        verifierVersion: "live-release-2",
+        schemaVersion: "1"
+      }
+    });
+    expect(result.publicEvidenceDraft?.decodedLogs).toHaveLength(3);
+    const serialized = JSON.stringify(result.publicEvidenceDraft);
+    expect(serialized).not.toContain(privateRunIdCanary);
+    expect(serialized).not.toContain(capabilityCanary);
+  });
+
   it("creates a matched local verifier decision and receipt from standard RPC snapshots", async () => {
     const result = await verifyLiveRun({
       run,
@@ -217,6 +270,7 @@ describe("live verifier service", () => {
     expect(result.decision).toBe("mismatched");
     expect(result.failureReason).toBe("MISSING_REQUIRED_LOG");
     expect(result.receipt).toBeUndefined();
+    expect(result.publicEvidenceDraft).toBeUndefined();
   });
 
   it("rejects a manifest when the stored intent hash does not recompute", async () => {
@@ -233,6 +287,7 @@ describe("live verifier service", () => {
     expect(result.decision).toBe("mismatched");
     expect(result.failureReason).toBe("INTENT_HASH_MISMATCH");
     expect(result.receipt).toBeUndefined();
+    expect(result.publicEvidenceDraft).toBeUndefined();
   });
 
   it("rejects a manifest signed for a different verifying contract", async () => {
@@ -249,5 +304,41 @@ describe("live verifier service", () => {
     expect(result.decision).toBe("mismatched");
     expect(result.failureReason).toBe("SIGNER_MISMATCH");
     expect(result.receipt).toBeUndefined();
+    expect(result.publicEvidenceDraft).toBeUndefined();
+  });
+
+  it("returns retryable timeout metadata when the Standard RPC receipt is not available yet", async () => {
+    const result = await verifyLiveRun({
+      run,
+      submittedTx,
+      receiptClient: makeClient({ receiptPending: true }),
+      nowSeconds: () => 1790000020,
+      verifierVersion: "live-sprint-14"
+    });
+
+    expect(result).toMatchObject({
+      decision: "timeout",
+      failureReason: "UNDER_CONFIRMED",
+      standardRpcReceiptStatus: null,
+      depositBlockNumber: null,
+      depositBlockHash: null,
+      confirmationDepth: 0,
+      receiptHash: null,
+      decisionTxHash: null
+    });
+    expect(result.receipt).toBeUndefined();
+    expect(result.publicEvidenceDraft).toBeUndefined();
+  });
+
+  it("does not convert untyped upstream failures into retryable verification results", async () => {
+    await expect(
+      verifyLiveRun({
+        run,
+        submittedTx,
+        receiptClient: makeClient({ transactionFailure: true }),
+        nowSeconds: () => 1790000020,
+        verifierVersion: "live-sprint-14"
+      })
+    ).rejects.toThrow("upstream_failure_canary");
   });
 });

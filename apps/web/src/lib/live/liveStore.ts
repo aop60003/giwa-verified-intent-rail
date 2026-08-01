@@ -3,16 +3,49 @@ import { DatabaseSync } from "node:sqlite";
 import type {
   DecisionRecord,
   LiveRunRecord,
+  MatchedEvidencePublication,
+  PublicCampaignEventAggregate,
+  PublicCampaignEventRecord,
+  PublicEvidenceRecord,
   ReceiptRecord,
   SubmittedTxRecord,
   VerifierInputRecord
 } from "./liveTypes.ts";
-import { DEFAULT_LIVE_TENANT_ID as DEFAULT_TENANT, normalizeLiveRunStatus } from "./liveTypes.ts";
+import { assertPublicCampaignEventRecord } from "./publicCampaignAnalytics.ts";
+import { REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
+import type { LiveSchemaStateInput } from "./liveSchemaMigrations.ts";
+import {
+  createSqliteStudioAuthRepository,
+  installStudioAuthMigration
+} from "./studioAuthSqliteRepository.ts";
+import { createMemoryStudioAuthRepository } from "./studioAuthRepository.ts";
+import type { StudioAuthRepository } from "./studioAuthRepository.ts";
+import {
+  createSqliteStudioCampaignRepository,
+  installStudioCampaignMigration
+} from "./studioCampaignSqliteRepository.ts";
+import { createMemoryStudioCampaignRepository } from "./studioCampaignRepository.ts";
+import type { StudioCampaignRepository } from "./studioCampaignRepository.ts";
+import {
+  createSqliteStudioCampaignVersionRepository,
+  installStudioCampaignVersionMigration
+} from "./studioCampaignVersionSqliteRepository.ts";
+import { createMemoryStudioCampaignVersionRepository } from "./studioCampaignVersionRepository.ts";
+import type { StudioCampaignVersionRepository } from "./studioCampaignVersionRepository.ts";
+import {
+  DEFAULT_LIVE_TENANT_ID as DEFAULT_TENANT,
+  isTerminalLiveRunStatus,
+  normalizeLiveRunStatus
+} from "./liveTypes.ts";
 import type { VerificationJobReason, VerificationJobRecord } from "./verificationJobQueue.ts";
 
 export type LiveStore = {
+  studioAuth: StudioAuthRepository;
+  studioCampaigns: StudioCampaignRepository;
+  studioCampaignVersions: StudioCampaignVersionRepository;
   createRun(input: LiveRunRecord): LiveRunRecord;
   getRun(runId: string): LiveRunRecord | undefined;
+  getRunForCapabilityHash(runId: string, capabilityHash: string): LiveRunRecord | undefined;
   getRunForTenant(tenantId: string, runId: string): LiveRunRecord | undefined;
   listRuns(): LiveRunRecord[];
   listRunsForTenant(tenantId: string): LiveRunRecord[];
@@ -26,6 +59,22 @@ export type LiveStore = {
   getReceiptForTenant(tenantId: string, receiptHash: string): ReceiptRecord | undefined;
   saveVerifierInput(input: VerifierInputRecord): VerifierInputRecord;
   getVerifierInput(verifierInputHash: string): VerifierInputRecord | undefined;
+  savePublicEvidence(input: PublicEvidenceRecord): PublicEvidenceRecord;
+  getPublicEvidenceByReceiptHash(receiptHash: string): PublicEvidenceRecord | undefined;
+  getPublicEvidenceByIntentHash(intentHash: string): PublicEvidenceRecord | undefined;
+  getPublicEvidenceByDepositTxHash(depositTxHash: string): PublicEvidenceRecord | undefined;
+  publishMatchedEvidence(input: MatchedEvidencePublication): {
+    run: LiveRunRecord;
+    verifierInput: VerifierInputRecord;
+    receipt: ReceiptRecord;
+    decision: DecisionRecord;
+    publicEvidence: PublicEvidenceRecord;
+  };
+  savePublicCampaignEvent(input: PublicCampaignEventRecord): PublicCampaignEventRecord;
+  aggregatePublicCampaignEvents(
+    campaignId: string,
+    missionId: string
+  ): PublicCampaignEventAggregate;
   enqueueVerificationJob(input: {
     tenantId: string;
     runId: string;
@@ -33,6 +82,9 @@ export type LiveStore = {
     createdAt: string;
   }): VerificationJobRecord;
   getVerificationJobForRun(runId: string): VerificationJobRecord | undefined;
+  checkWritable(): boolean;
+  getSchemaState(): LiveSchemaStateInput;
+  pruneIncompleteRuns(cutoffIso: string): number;
 };
 
 export type ClosableLiveStore = LiveStore & {
@@ -51,7 +103,106 @@ function jobIdFor(tenantId: string, runId: string): string {
   return `job_${tenantId}_${runId}`.replace(/[^A-Za-z0-9_]/gu, "_");
 }
 
+function publicCampaignEventKey(input: PublicCampaignEventRecord): string {
+  return [
+    input.eventType,
+    input.sessionHash,
+    input.campaignId,
+    input.missionId
+  ].join(":");
+}
+
+function publicEvidenceRecordsEqual(
+  left: PublicEvidenceRecord,
+  right: PublicEvidenceRecord
+): boolean {
+  return (
+    left.receiptHash === right.receiptHash &&
+    left.intentHash === right.intentHash &&
+    left.depositTxHash === right.depositTxHash &&
+    left.bundleJson === right.bundleJson &&
+    left.createdAt === right.createdAt
+  );
+}
+
+function verifierInputRecordsEqual(
+  left: VerifierInputRecord,
+  right: VerifierInputRecord
+): boolean {
+  return (
+    left.runId === right.runId &&
+    left.verifierInputHash === right.verifierInputHash &&
+    left.canonicalPayload === right.canonicalPayload &&
+    left.canonicalPayloadBytesHex === right.canonicalPayloadBytesHex &&
+    left.createdAt === right.createdAt
+  );
+}
+
+function receiptRecordsEqual(left: ReceiptRecord, right: ReceiptRecord): boolean {
+  return (
+    left.receiptHash === right.receiptHash &&
+    left.intentHash === right.intentHash &&
+    left.payloadJson === right.payloadJson &&
+    left.canonicalPayload === right.canonicalPayload &&
+    left.canonicalPayloadBytesHex === right.canonicalPayloadBytesHex
+  );
+}
+
+function decisionRecordsEqual(left: DecisionRecord, right: DecisionRecord): boolean {
+  return (
+    left.intentHash === right.intentHash &&
+    left.depositTxHash === right.depositTxHash &&
+    left.decision === right.decision &&
+    left.failureReason === right.failureReason &&
+    left.verifierInputHash === right.verifierInputHash &&
+    left.receiptHash === right.receiptHash &&
+    left.decisionTxHash === right.decisionTxHash &&
+    left.issuedAt === right.issuedAt &&
+    (left.standardRpcReceiptStatus ?? null) ===
+      (right.standardRpcReceiptStatus ?? null) &&
+    (left.depositBlockNumber ?? null) === (right.depositBlockNumber ?? null) &&
+    (left.depositBlockHash ?? null) === (right.depositBlockHash ?? null) &&
+    (left.confirmationDepth ?? null) === (right.confirmationDepth ?? null)
+  );
+}
+
+function sameHash(left: string, right: string): boolean {
+  return left.toLowerCase() === right.toLowerCase();
+}
+
+function assertMatchedEvidencePublication(
+  store: Pick<LiveStore, "getRun" | "getSubmittedTx">,
+  input: MatchedEvidencePublication
+): LiveRunRecord {
+  const run = store.getRun(input.runId);
+  const submittedTx = store.getSubmittedTx(input.runId);
+  const coherent =
+    run !== undefined &&
+    submittedTx !== undefined &&
+    input.decision.decision === "matched" &&
+    input.decision.failureReason === null &&
+    input.decision.receiptHash !== null &&
+    input.decision.standardRpcReceiptStatus === 1 &&
+    sameHash(run.intentHash, input.publicEvidence.intentHash) &&
+    sameHash(submittedTx.depositTxHash, input.publicEvidence.depositTxHash) &&
+    input.verifierInput.runId === input.runId &&
+    sameHash(input.receipt.receiptHash, input.publicEvidence.receiptHash) &&
+    sameHash(input.receipt.intentHash, input.publicEvidence.intentHash) &&
+    sameHash(input.decision.intentHash, input.publicEvidence.intentHash) &&
+    sameHash(input.decision.depositTxHash, input.publicEvidence.depositTxHash) &&
+    sameHash(input.decision.verifierInputHash, input.verifierInput.verifierInputHash) &&
+    sameHash(input.decision.receiptHash, input.publicEvidence.receiptHash);
+  if (!coherent) throw new Error("matched evidence publication is incoherent");
+  if (isTerminalLiveRunStatus(run.status) && run.status !== "matched") {
+    throw new Error("matched evidence publication conflicts with terminal run");
+  }
+  return run;
+}
+
 export function createMemoryLiveStore(): LiveStore {
+  const studioAuth = createMemoryStudioAuthRepository();
+  const studioCampaigns = createMemoryStudioCampaignRepository();
+  const studioCampaignVersions = createMemoryStudioCampaignVersionRepository(studioCampaigns);
   const runsById = new Map<string, LiveRunRecord>();
   const runsByIdempotency = new Map<string, LiveRunRecord>();
   const submittedByRun = new Map<string, SubmittedTxRecord>();
@@ -60,10 +211,17 @@ export function createMemoryLiveStore(): LiveStore {
   const decisionsByDeposit = new Map<string, DecisionRecord>();
   const receiptsByHash = new Map<string, ReceiptRecord>();
   const verifierInputsByHash = new Map<string, VerifierInputRecord>();
+  const publicEvidenceByReceipt = new Map<string, PublicEvidenceRecord>();
+  const publicEvidenceByIntent = new Map<string, PublicEvidenceRecord>();
+  const publicEvidenceByDeposit = new Map<string, PublicEvidenceRecord>();
+  const publicCampaignEvents = new Map<string, PublicCampaignEventRecord>();
   const verificationJobsById = new Map<string, VerificationJobRecord>();
   const verificationJobIdByRun = new Map<string, string>();
 
   return {
+    studioAuth,
+    studioCampaigns,
+    studioCampaignVersions,
     createRun(input) {
       const normalized = { ...input, tenantId: tenantIdFor(input) };
       const existing = runsByIdempotency.get(idempotencyLookupKey(normalized));
@@ -78,6 +236,11 @@ export function createMemoryLiveStore(): LiveStore {
     },
     getRun(runId) {
       return runsById.get(runId);
+    },
+    getRunForCapabilityHash(runId, capabilityHash) {
+      const run = runsById.get(runId);
+      if (run === undefined || run.capabilityHash !== capabilityHash) return undefined;
+      return run;
     },
     getRunForTenant(tenantId, runId) {
       const run = runsById.get(runId);
@@ -151,6 +314,116 @@ export function createMemoryLiveStore(): LiveStore {
     getVerifierInput(verifierInputHash) {
       return verifierInputsByHash.get(verifierInputHash);
     },
+    savePublicEvidence(input) {
+      const existing =
+        publicEvidenceByReceipt.get(input.receiptHash.toLowerCase()) ??
+        publicEvidenceByIntent.get(input.intentHash.toLowerCase()) ??
+        publicEvidenceByDeposit.get(input.depositTxHash.toLowerCase());
+      if (existing !== undefined) {
+        if (!publicEvidenceRecordsEqual(existing, input)) {
+          throw new Error("public evidence conflict");
+        }
+        return existing;
+      }
+      throw new Error("public evidence must be published atomically");
+    },
+    getPublicEvidenceByReceiptHash(receiptHash) {
+      return publicEvidenceByReceipt.get(receiptHash.toLowerCase());
+    },
+    getPublicEvidenceByIntentHash(intentHash) {
+      return publicEvidenceByIntent.get(intentHash.toLowerCase());
+    },
+    getPublicEvidenceByDepositTxHash(depositTxHash) {
+      return publicEvidenceByDeposit.get(depositTxHash.toLowerCase());
+    },
+    publishMatchedEvidence(input) {
+      const run = assertMatchedEvidencePublication(this, input);
+      const existingVerifierInput = verifierInputsByHash.get(
+        input.verifierInput.verifierInputHash
+      );
+      const existingReceipt = receiptsByHash.get(input.receipt.receiptHash);
+      const existingReceiptByIntent = [...receiptsByHash.values()].find((candidate) =>
+        sameHash(candidate.intentHash, input.receipt.intentHash)
+      );
+      const existingDecisionByIntent = decisionsByIntent.get(input.decision.intentHash);
+      const existingDecisionByDeposit = decisionsByDeposit.get(input.decision.depositTxHash);
+      const existingPublicEvidence =
+        publicEvidenceByReceipt.get(input.publicEvidence.receiptHash.toLowerCase()) ??
+        publicEvidenceByIntent.get(input.publicEvidence.intentHash.toLowerCase()) ??
+        publicEvidenceByDeposit.get(input.publicEvidence.depositTxHash.toLowerCase());
+      if (
+        (existingVerifierInput !== undefined &&
+          !verifierInputRecordsEqual(existingVerifierInput, input.verifierInput)) ||
+        (existingReceipt !== undefined &&
+          !receiptRecordsEqual(existingReceipt, input.receipt)) ||
+        (existingReceiptByIntent !== undefined &&
+          !receiptRecordsEqual(existingReceiptByIntent, input.receipt)) ||
+        (existingDecisionByIntent !== undefined &&
+          !decisionRecordsEqual(existingDecisionByIntent, input.decision)) ||
+        (existingDecisionByDeposit !== undefined &&
+          !decisionRecordsEqual(existingDecisionByDeposit, input.decision)) ||
+        (existingPublicEvidence !== undefined &&
+          !publicEvidenceRecordsEqual(existingPublicEvidence, input.publicEvidence))
+      ) {
+        throw new Error("matched evidence publication conflict");
+      }
+
+      verifierInputsByHash.set(input.verifierInput.verifierInputHash, input.verifierInput);
+      receiptsByHash.set(input.receipt.receiptHash, input.receipt);
+      decisionsByIntent.set(input.decision.intentHash, input.decision);
+      decisionsByDeposit.set(input.decision.depositTxHash, input.decision);
+      publicEvidenceByReceipt.set(
+        input.publicEvidence.receiptHash.toLowerCase(),
+        input.publicEvidence
+      );
+      publicEvidenceByIntent.set(
+        input.publicEvidence.intentHash.toLowerCase(),
+        input.publicEvidence
+      );
+      publicEvidenceByDeposit.set(
+        input.publicEvidence.depositTxHash.toLowerCase(),
+        input.publicEvidence
+      );
+      const updatedRun = { ...run, status: "matched" as const, updatedAt: input.updatedAt };
+      runsById.set(input.runId, updatedRun);
+      runsByIdempotency.set(idempotencyLookupKey(updatedRun), updatedRun);
+      return {
+        run: updatedRun,
+        verifierInput: input.verifierInput,
+        receipt: input.receipt,
+        decision: input.decision,
+        publicEvidence: input.publicEvidence
+      };
+    },
+    savePublicCampaignEvent(input) {
+      assertPublicCampaignEventRecord(input);
+      const key = publicCampaignEventKey(input);
+      const existing = publicCampaignEvents.get(key);
+      if (existing !== undefined) return existing;
+      publicCampaignEvents.set(key, input);
+      return input;
+    },
+    aggregatePublicCampaignEvents(campaignId, missionId) {
+      const visitorSessions = new Set<string>();
+      const walletSessions = new Set<string>();
+      for (const event of publicCampaignEvents.values()) {
+        if (
+          event.campaignId !== campaignId ||
+          event.missionId !== missionId
+        ) {
+          continue;
+        }
+        if (event.eventType === "campaignVisited") {
+          visitorSessions.add(event.sessionHash);
+        } else {
+          walletSessions.add(event.sessionHash);
+        }
+      }
+      return {
+        uniqueCampaignVisitorCount: visitorSessions.size,
+        uniqueWalletConnectSessionCount: walletSessions.size
+      };
+    },
     enqueueVerificationJob(input) {
       const existingId = verificationJobIdByRun.get(input.runId);
       const existing = existingId === undefined ? undefined : verificationJobsById.get(existingId);
@@ -175,6 +448,435 @@ export function createMemoryLiveStore(): LiveStore {
     getVerificationJobForRun(runId) {
       const id = verificationJobIdByRun.get(runId);
       return id === undefined ? undefined : verificationJobsById.get(id);
+    },
+    checkWritable() {
+      return true;
+    },
+    getSchemaState() {
+      return {
+        migrations: [...REQUIRED_LIVE_MIGRATIONS],
+        migrationChecksums: {
+          "008_studio_wallet_auth": "studio-wallet-auth-v1",
+          "009_studio_campaign_drafts": "studio-campaign-drafts-v1",
+          "010_campaign_versions": "campaign-versions-v1"
+        },
+        tables: {
+          runs: [{ name: "capabilityHash", notNull: false }],
+          decisions: [
+            { name: "decisionTxHash", notNull: false },
+            { name: "standardRpcReceiptStatus", notNull: false },
+            { name: "depositBlockNumber", notNull: false },
+            { name: "depositBlockHash", notNull: false },
+            { name: "confirmationDepth", notNull: false }
+          ],
+          public_evidence_bundles: [
+            {
+              name: "receiptHash",
+              declaredType: "TEXT",
+              notNull: false,
+              pkPosition: 1
+            },
+            {
+              name: "intentHash",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            },
+            {
+              name: "depositTxHash",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            },
+            {
+              name: "bundleJson",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            },
+            {
+              name: "createdAt",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            }
+          ],
+          public_campaign_events: [
+            {
+              name: "eventType",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 1
+            },
+            {
+              name: "sessionHash",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 2
+            },
+            {
+              name: "campaignId",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 3
+            },
+            {
+              name: "missionId",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 4
+            },
+            {
+              name: "recordedAt",
+              declaredType: "TEXT",
+              notNull: true,
+              pkPosition: 0
+            }
+          ],
+          organizations: [
+            { name: "id", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "displayName", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "updatedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          organization_members: [
+            { name: "memberId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "organizationId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "walletAddress", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "role", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "status", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "provisioningSource", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "updatedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          auth_challenges: [
+            { name: "challengeId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "expectedWallet", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "nonceHash", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "origin", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "uri", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "chainId", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "issuedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "expiresAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "usedAt", declaredType: "TEXT", notNull: false, pkPosition: 0 },
+            { name: "attemptCount", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          auth_sessions: [
+            { name: "sessionId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "tokenHash", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "memberId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "expiresAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "revokedAt", declaredType: "TEXT", notNull: false, pkPosition: 0 }
+          ],
+          campaigns: [
+            { name: "campaignId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "organizationId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "name", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "summary", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "actionTemplate", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "lifecycleState", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "source", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "revision", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "createdByMemberId", declaredType: "TEXT", notNull: false, pkPosition: 0 },
+            { name: "updatedByMemberId", declaredType: "TEXT", notNull: false, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "updatedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          campaign_versions: [
+            { name: "campaignId", declaredType: "TEXT", notNull: true, pkPosition: 1 },
+            { name: "organizationId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "versionNumber", declaredType: "INTEGER", notNull: true, pkPosition: 2 },
+            { name: "name", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "summary", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "actionTemplate", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "sourceDraftRevision", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "canonicalJson", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "campaignVersionHash", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "publishedByMemberId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "publishedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ]
+        },
+        indexes: {
+          public_evidence_bundles: [
+            {
+              name: "memory_public_evidence_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["receiptHash"]
+            },
+            {
+              name: "memory_public_evidence_intent",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["intentHash"]
+            },
+            {
+              name: "memory_public_evidence_deposit",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["depositTxHash"]
+            }
+          ],
+          public_campaign_events: [
+            {
+              name: "memory_public_campaign_events_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: [
+                "eventType",
+                "sessionHash",
+                "campaignId",
+                "missionId"
+              ]
+            },
+            {
+              name: "memory_public_campaign_events_aggregate",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: [
+                "campaignId",
+                "missionId",
+                "eventType",
+                "sessionHash"
+              ]
+            }
+          ],
+          organizations: [
+            {
+              name: "memory_organizations_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["id"]
+            }
+          ],
+          organization_members: [
+            {
+              name: "memory_organization_members_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["memberId"]
+            },
+            {
+              name: "memory_organization_members_unique",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["organizationId", "walletAddress"]
+            },
+            {
+              name: "idx_organization_members_wallet",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["organizationId", "walletAddress", "status"]
+            },
+            {
+              name: "idx_organization_members_member_organization",
+              unique: true,
+              origin: "c",
+              partial: false,
+              columns: ["memberId", "organizationId"]
+            }
+          ],
+          auth_challenges: [
+            {
+              name: "memory_auth_challenges_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["challengeId"]
+            },
+            {
+              name: "memory_auth_challenges_nonce",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["nonceHash"]
+            },
+            {
+              name: "idx_auth_challenges_expiry",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["expiresAt", "usedAt"]
+            }
+          ],
+          auth_sessions: [
+            {
+              name: "memory_auth_sessions_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["sessionId"]
+            },
+            {
+              name: "memory_auth_sessions_token",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["tokenHash"]
+            },
+            {
+              name: "idx_auth_sessions_expiry",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["expiresAt", "revokedAt"]
+            }
+          ],
+          campaigns: [
+            {
+              name: "memory_campaigns_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["campaignId"]
+            },
+            {
+              name: "idx_campaigns_organization_state_updated",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["organizationId", "lifecycleState", "updatedAt", "campaignId"],
+              descending: [false, false, true, false]
+            },
+            {
+              name: "idx_campaigns_campaign_organization",
+              unique: true,
+              origin: "c",
+              partial: false,
+              columns: ["campaignId", "organizationId"]
+            }
+          ],
+          campaign_versions: [
+            {
+              name: "memory_campaign_versions_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["campaignId", "versionNumber"]
+            },
+            {
+              name: "memory_campaign_versions_revision",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["campaignId", "sourceDraftRevision"]
+            },
+            {
+              name: "memory_campaign_versions_hash",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["campaignVersionHash"]
+            },
+            {
+              name: "idx_campaign_versions_org_campaign_version",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["organizationId", "campaignId", "versionNumber"],
+              descending: [false, false, true]
+            }
+          ]
+        },
+        foreignKeys: {
+          organization_members: [
+            { from: "organizationId", table: "organizations", to: "id", onDelete: "NO ACTION" }
+          ],
+          auth_sessions: [
+            { from: "memberId", table: "organization_members", to: "memberId", onDelete: "NO ACTION" }
+          ],
+          campaigns: [
+            { from: "updatedByMemberId", table: "organization_members", to: "memberId", onDelete: "RESTRICT" },
+            { from: "createdByMemberId", table: "organization_members", to: "memberId", onDelete: "RESTRICT" },
+            { from: "organizationId", table: "organizations", to: "id", onDelete: "RESTRICT" }
+          ],
+          campaign_versions: [
+            { id: 0, sequence: 0, from: "publishedByMemberId", table: "organization_members", to: "memberId", onDelete: "RESTRICT" },
+            { id: 0, sequence: 1, from: "organizationId", table: "organization_members", to: "organizationId", onDelete: "RESTRICT" },
+            { id: 1, sequence: 0, from: "campaignId", table: "campaigns", to: "campaignId", onDelete: "RESTRICT" },
+            { id: 1, sequence: 1, from: "organizationId", table: "campaigns", to: "organizationId", onDelete: "RESTRICT" }
+          ]
+        },
+        tableSql: {
+          campaigns: `create table campaigns (
+            actionTemplate text check (actionTemplate = 'mockVaultDeposit'),
+            lifecycleState text check (lifecycleState in ('draft', 'published-baseline')),
+          source text check (source in ('studio-draft', 'gasok-evidence')),
+          revision integer check (revision >= 1),
+            check (source = 'studio-draft' and lifecycleState = 'draft'
+              and createdByMemberId is not null and updatedByMemberId is not null),
+            check (source = 'gasok-evidence' and lifecycleState = 'published-baseline'
+              and createdByMemberId is null and updatedByMemberId is null)
+          )`,
+          campaign_versions: `create table campaign_versions (
+            versionNumber integer not null check (versionNumber >= 1),
+            sourceDraftRevision integer not null check (sourceDraftRevision >= 1),
+            actionTemplate text not null check (actionTemplate = 'mockVaultDeposit'),
+            canonicalJson text not null check (length(canonicalJson) > 0),
+            campaignVersionHash text not null unique check (
+              length(campaignVersionHash) = 66 and substr(campaignVersionHash, 1, 2) = '0x'
+              and substr(campaignVersionHash, 3) not glob '*[^0-9a-f]*'
+            )
+          )`
+        },
+        triggers: [
+          { name: "campaign_versions_no_delete", table: "campaign_versions", sql: "create trigger campaign_versions_no_delete before delete on campaign_versions begin select raise(abort, 'campaign_versions_immutable'); end" },
+          { name: "campaign_versions_no_update", table: "campaign_versions", sql: "create trigger campaign_versions_no_update before update on campaign_versions begin select raise(abort, 'campaign_versions_immutable'); end" }
+        ],
+        requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
+      };
+    },
+    pruneIncompleteRuns(cutoffIso) {
+      const evidenceIntentHashes = new Set<string>();
+      for (const decision of decisionsByIntent.values()) {
+        evidenceIntentHashes.add(decision.intentHash.toLowerCase());
+      }
+      for (const receipt of receiptsByHash.values()) {
+        evidenceIntentHashes.add(receipt.intentHash.toLowerCase());
+      }
+      for (const evidence of publicEvidenceByIntent.values()) {
+        evidenceIntentHashes.add(evidence.intentHash.toLowerCase());
+      }
+      const staleRuns = [...runsById.values()].filter(
+        (run) =>
+          run.createdAt < cutoffIso &&
+          !isTerminalLiveRunStatus(run.status) &&
+          !evidenceIntentHashes.has(run.intentHash.toLowerCase())
+      );
+
+      for (const run of staleRuns) {
+        runsById.delete(run.runId);
+        runsByIdempotency.delete(idempotencyLookupKey(run));
+
+        const submitted = submittedByRun.get(run.runId);
+        if (submitted !== undefined) {
+          submittedRunByDeposit.delete(submitted.depositTxHash.toLowerCase());
+          submittedByRun.delete(run.runId);
+        }
+
+        for (const [verifierInputHash, verifierInput] of verifierInputsByHash) {
+          if (verifierInput.runId === run.runId) verifierInputsByHash.delete(verifierInputHash);
+        }
+
+        const verificationJobId = verificationJobIdByRun.get(run.runId);
+        if (verificationJobId !== undefined) {
+          verificationJobsById.delete(verificationJobId);
+          verificationJobIdByRun.delete(run.runId);
+        }
+      }
+
+      return staleRuns.length;
     }
   };
 }
@@ -199,10 +901,25 @@ function numberValue(row: Record<string, unknown>, key: string): number {
   throw new Error(`${key} is not a number`);
 }
 
+function nullableNumberValue(row: Record<string, unknown>, key: string): number | null {
+  const value = row[key];
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
+  throw new Error(`${key} is not a number`);
+}
+
+function nullableReceiptStatusValue(row: Record<string, unknown>, key: string): 1 | 0 | null {
+  const value = nullableNumberValue(row, key);
+  if (value === null || value === 0 || value === 1) return value;
+  throw new Error(`${key} is not a receipt status`);
+}
+
 function rowToRun(row: Record<string, unknown>): LiveRunRecord {
   return {
     runId: stringValue(row, "runId"),
     tenantId: nullableStringValue(row, "tenantId") ?? DEFAULT_TENANT,
+    capabilityHash: nullableStringValue(row, "capabilityHash"),
     idempotencyKey: stringValue(row, "idempotencyKey"),
     wallet: stringValue(row, "wallet"),
     campaignId: stringValue(row, "campaignId"),
@@ -242,7 +959,11 @@ function rowToDecision(row: Record<string, unknown>): DecisionRecord {
     verifierInputHash: stringValue(row, "verifierInputHash"),
     receiptHash: nullableStringValue(row, "receiptHash"),
     decisionTxHash: nullableStringValue(row, "decisionTxHash"),
-    issuedAt: numberValue(row, "issuedAt")
+    issuedAt: numberValue(row, "issuedAt"),
+    standardRpcReceiptStatus: nullableReceiptStatusValue(row, "standardRpcReceiptStatus"),
+    depositBlockNumber: nullableNumberValue(row, "depositBlockNumber"),
+    depositBlockHash: nullableStringValue(row, "depositBlockHash"),
+    confirmationDepth: nullableNumberValue(row, "confirmationDepth")
   };
 }
 
@@ -262,6 +983,16 @@ function rowToVerifierInput(row: Record<string, unknown>): VerifierInputRecord {
     verifierInputHash: stringValue(row, "verifierInputHash"),
     canonicalPayload: stringValue(row, "canonicalPayload"),
     canonicalPayloadBytesHex: stringValue(row, "canonicalPayloadBytesHex"),
+    createdAt: stringValue(row, "createdAt")
+  };
+}
+
+function rowToPublicEvidence(row: Record<string, unknown>): PublicEvidenceRecord {
+  return {
+    receiptHash: stringValue(row, "receiptHash"),
+    intentHash: stringValue(row, "intentHash"),
+    depositTxHash: stringValue(row, "depositTxHash"),
+    bundleJson: stringValue(row, "bundleJson"),
     createdAt: stringValue(row, "createdAt")
   };
 }
@@ -293,6 +1024,7 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     create table if not exists runs (
       runId text primary key,
       tenantId text not null default 'local',
+      capabilityHash text,
       idempotencyKey text not null,
       wallet text not null,
       campaignId text not null,
@@ -324,7 +1056,11 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       verifierInputHash text not null,
       receiptHash text unique,
       decisionTxHash text,
-      issuedAt integer not null
+      issuedAt integer not null,
+      standardRpcReceiptStatus integer,
+      depositBlockNumber integer,
+      depositBlockHash text,
+      confirmationDepth integer
     );
 
     create table if not exists receipts (
@@ -342,6 +1078,31 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       canonicalPayloadBytesHex text not null,
       createdAt text not null
     );
+
+    create table if not exists public_evidence_bundles (
+      receiptHash text primary key,
+      intentHash text not null unique,
+      depositTxHash text not null unique,
+      bundleJson text not null,
+      createdAt text not null
+    );
+
+    create table if not exists public_campaign_events (
+      eventType text not null,
+      sessionHash text not null,
+      campaignId text not null,
+      missionId text not null,
+      recordedAt text not null,
+      primary key (eventType, sessionHash, campaignId, missionId)
+    );
+
+    create index if not exists idx_public_campaign_events_aggregate
+      on public_campaign_events (
+        campaignId,
+        missionId,
+        eventType,
+        sessionHash
+      );
 
     create table if not exists verification_jobs (
       jobId text primary key,
@@ -364,14 +1125,29 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     );
   `);
     ensureRunTenantIdColumn(db);
+    ensureNullableColumn(db, "runs", "capabilityHash", "text");
     ensureNullableDecisionTxHash(db, dbPath);
+    ensureNullableColumn(db, "decisions", "standardRpcReceiptStatus", "integer");
+    ensureNullableColumn(db, "decisions", "depositBlockNumber", "integer");
+    ensureNullableColumn(db, "decisions", "depositBlockHash", "text");
+    ensureNullableColumn(db, "decisions", "confirmationDepth", "integer");
     recordLocalMigrations(db);
+    installStudioAuthMigration(db, new Date(0).toISOString());
+    installStudioCampaignMigration(db, new Date(0).toISOString());
+    installStudioCampaignVersionMigration(db, new Date(0).toISOString());
   } catch (error) {
     db.close();
     throw error;
   }
 
+  const studioAuth = createSqliteStudioAuthRepository(db);
+  const studioCampaigns = createSqliteStudioCampaignRepository(db);
+  const studioCampaignVersions = createSqliteStudioCampaignVersionRepository(db);
+
   return {
+    studioAuth,
+    studioCampaigns,
+    studioCampaignVersions,
     createRun(input) {
       const normalized = { ...input, tenantId: tenantIdFor(input) };
       const existing = db
@@ -386,12 +1162,13 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       }
       db.prepare(
         `insert into runs (
-          runId, tenantId, idempotencyKey, wallet, campaignId, missionId, referralCode, nonce, intentHash,
+          runId, tenantId, capabilityHash, idempotencyKey, wallet, campaignId, missionId, referralCode, nonce, intentHash,
           manifestJson, manifestSignature, status, expiryUnix, createdAt, updatedAt
-        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         normalized.runId,
         normalized.tenantId,
+        normalized.capabilityHash ?? null,
         normalized.idempotencyKey,
         normalized.wallet,
         normalized.campaignId,
@@ -410,6 +1187,10 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     },
     getRun(runId) {
       const row = db.prepare("select * from runs where runId = ?").get(runId);
+      return row === undefined ? undefined : rowToRun(row);
+    },
+    getRunForCapabilityHash(runId, capabilityHash) {
+      const row = db.prepare("select * from runs where runId = ? and capabilityHash = ?").get(runId, capabilityHash);
       return row === undefined ? undefined : rowToRun(row);
     },
     getRunForTenant(tenantId, runId) {
@@ -454,8 +1235,9 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       if (existingByDeposit !== undefined) throw new Error("depositTxHash already has a terminal decision");
       db.prepare(
         `insert into decisions (
-          intentHash, depositTxHash, decision, failureReason, verifierInputHash, receiptHash, decisionTxHash, issuedAt
-        ) values (?, ?, ?, ?, ?, ?, ?, ?)`
+          intentHash, depositTxHash, decision, failureReason, verifierInputHash, receiptHash, decisionTxHash, issuedAt,
+          standardRpcReceiptStatus, depositBlockNumber, depositBlockHash, confirmationDepth
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         input.intentHash,
         input.depositTxHash,
@@ -464,7 +1246,11 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
         input.verifierInputHash,
         input.receiptHash,
         input.decisionTxHash,
-        input.issuedAt
+        input.issuedAt,
+        input.standardRpcReceiptStatus ?? null,
+        input.depositBlockNumber ?? null,
+        input.depositBlockHash ?? null,
+        input.confirmationDepth ?? null
       );
       return input;
     },
@@ -520,6 +1306,176 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       const row = db.prepare("select * from verifier_inputs where verifierInputHash = ?").get(verifierInputHash);
       return row === undefined ? undefined : rowToVerifierInput(row);
     },
+    savePublicEvidence(input) {
+      const existing =
+        this.getPublicEvidenceByReceiptHash(input.receiptHash) ??
+        this.getPublicEvidenceByIntentHash(input.intentHash) ??
+        this.getPublicEvidenceByDepositTxHash(input.depositTxHash);
+      if (existing !== undefined) {
+        if (!publicEvidenceRecordsEqual(existing, input)) {
+          throw new Error("public evidence conflict");
+        }
+        return existing;
+      }
+      throw new Error("public evidence must be published atomically");
+    },
+    getPublicEvidenceByReceiptHash(receiptHash) {
+      const row = db
+        .prepare("select * from public_evidence_bundles where lower(receiptHash) = lower(?)")
+        .get(receiptHash);
+      return row === undefined ? undefined : rowToPublicEvidence(row);
+    },
+    getPublicEvidenceByIntentHash(intentHash) {
+      const row = db
+        .prepare("select * from public_evidence_bundles where lower(intentHash) = lower(?)")
+        .get(intentHash);
+      return row === undefined ? undefined : rowToPublicEvidence(row);
+    },
+    getPublicEvidenceByDepositTxHash(depositTxHash) {
+      const row = db
+        .prepare("select * from public_evidence_bundles where lower(depositTxHash) = lower(?)")
+        .get(depositTxHash);
+      return row === undefined ? undefined : rowToPublicEvidence(row);
+    },
+    publishMatchedEvidence(input) {
+      assertMatchedEvidencePublication(this, input);
+      db.exec("begin immediate");
+      try {
+        const existingVerifierInput = this.getVerifierInput(
+          input.verifierInput.verifierInputHash
+        );
+        const existingReceipt = this.getReceipt(input.receipt.receiptHash);
+        const existingReceiptByIntentRow = db
+          .prepare("select * from receipts where lower(intentHash) = lower(?)")
+          .get(input.receipt.intentHash);
+        const existingReceiptByIntent =
+          existingReceiptByIntentRow === undefined
+            ? undefined
+            : rowToReceipt(existingReceiptByIntentRow);
+        const existingDecisionByIntent = this.getDecisionByIntentHash(
+          input.decision.intentHash
+        );
+        const existingDecisionByDepositRow = db
+          .prepare("select * from decisions where lower(depositTxHash) = lower(?)")
+          .get(input.decision.depositTxHash);
+        const existingDecisionByDeposit =
+          existingDecisionByDepositRow === undefined
+            ? undefined
+            : rowToDecision(existingDecisionByDepositRow);
+        const existingPublicEvidence =
+          this.getPublicEvidenceByReceiptHash(input.publicEvidence.receiptHash) ??
+          this.getPublicEvidenceByIntentHash(input.publicEvidence.intentHash) ??
+          this.getPublicEvidenceByDepositTxHash(input.publicEvidence.depositTxHash);
+        if (
+          (existingVerifierInput !== undefined &&
+            !verifierInputRecordsEqual(existingVerifierInput, input.verifierInput)) ||
+          (existingReceipt !== undefined &&
+            !receiptRecordsEqual(existingReceipt, input.receipt)) ||
+          (existingReceiptByIntent !== undefined &&
+            !receiptRecordsEqual(existingReceiptByIntent, input.receipt)) ||
+          (existingDecisionByIntent !== undefined &&
+            !decisionRecordsEqual(existingDecisionByIntent, input.decision)) ||
+          (existingDecisionByDeposit !== undefined &&
+            !decisionRecordsEqual(existingDecisionByDeposit, input.decision)) ||
+          (existingPublicEvidence !== undefined &&
+            !publicEvidenceRecordsEqual(existingPublicEvidence, input.publicEvidence))
+        ) {
+          throw new Error("matched evidence publication conflict");
+        }
+
+        const verifierInput = this.saveVerifierInput(input.verifierInput);
+        const receipt = this.saveReceipt(input.receipt);
+        const decision = this.saveDecision(input.decision);
+        const publicEvidence =
+          existingPublicEvidence === undefined
+            ? input.publicEvidence
+            : this.savePublicEvidence(input.publicEvidence);
+        if (existingPublicEvidence === undefined) {
+          db.prepare(
+            `insert into public_evidence_bundles (
+              receiptHash, intentHash, depositTxHash, bundleJson, createdAt
+            ) values (?, ?, ?, ?, ?)`
+          ).run(
+            publicEvidence.receiptHash,
+            publicEvidence.intentHash,
+            publicEvidence.depositTxHash,
+            publicEvidence.bundleJson,
+            publicEvidence.createdAt
+          );
+        }
+        const run = this.updateRunStatus(input.runId, "matched", input.updatedAt);
+        db.exec("commit");
+        return { run, verifierInput, receipt, decision, publicEvidence };
+      } catch (error) {
+        db.exec("rollback");
+        throw error;
+      }
+    },
+    savePublicCampaignEvent(input) {
+      assertPublicCampaignEventRecord(input);
+      db.prepare(
+        `insert or ignore into public_campaign_events (
+          eventType, sessionHash, campaignId, missionId, recordedAt
+        ) values (?, ?, ?, ?, ?)`
+      ).run(
+        input.eventType,
+        input.sessionHash,
+        input.campaignId,
+        input.missionId,
+        input.recordedAt
+      );
+      const row = db
+        .prepare(
+          `select eventType, sessionHash, campaignId, missionId, recordedAt
+           from public_campaign_events
+           where eventType = ? and sessionHash = ? and campaignId = ? and missionId = ?`
+        )
+        .get(
+          input.eventType,
+          input.sessionHash,
+          input.campaignId,
+          input.missionId
+        );
+      if (row === undefined) {
+        throw new Error("public campaign event persistence failed");
+      }
+      return {
+        eventType: stringValue(row, "eventType") as PublicCampaignEventRecord["eventType"],
+        sessionHash: stringValue(row, "sessionHash"),
+        campaignId: stringValue(row, "campaignId") as PublicCampaignEventRecord["campaignId"],
+        missionId: stringValue(row, "missionId") as PublicCampaignEventRecord["missionId"],
+        recordedAt: stringValue(row, "recordedAt")
+      };
+    },
+    aggregatePublicCampaignEvents(campaignId, missionId) {
+      const row = db
+        .prepare(
+          `select
+             count(distinct case when eventType = 'campaignVisited' then sessionHash end)
+               as uniqueCampaignVisitorCount,
+             count(distinct case when eventType = 'walletConnected' then sessionHash end)
+               as uniqueWalletConnectSessionCount
+           from public_campaign_events
+           where campaignId = ? and missionId = ?`
+        )
+        .get(campaignId, missionId);
+      if (row === undefined) {
+        return {
+          uniqueCampaignVisitorCount: 0,
+          uniqueWalletConnectSessionCount: 0
+        };
+      }
+      return {
+        uniqueCampaignVisitorCount: numberValue(
+          row,
+          "uniqueCampaignVisitorCount"
+        ),
+        uniqueWalletConnectSessionCount: numberValue(
+          row,
+          "uniqueWalletConnectSessionCount"
+        )
+      };
+    },
     enqueueVerificationJob(input) {
       const existing = this.getVerificationJobForRun(input.runId);
       if (existing !== undefined && existing.status !== "dead") return existing;
@@ -560,6 +1516,59 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
       const row = db.prepare("select * from verification_jobs where runId = ?").get(runId);
       return row === undefined ? undefined : rowToVerificationJob(row);
     },
+    checkWritable() {
+      let writable = false;
+      try {
+        db.exec("begin immediate");
+        writable = true;
+      } catch (_error) {
+        writable = false;
+      } finally {
+        try {
+          db.exec("rollback");
+        } catch (_error) {
+          writable = false;
+        }
+      }
+      return writable;
+    },
+    getSchemaState() {
+      return readLiveSchemaState(db);
+    },
+    pruneIncompleteRuns(cutoffIso) {
+      const pruneCandidateQuery = `
+        select candidate_runs.runId
+        from runs as candidate_runs
+        where candidate_runs.createdAt < ?
+          and candidate_runs.status not in ('matched', 'mismatched', 'failed')
+          and not exists (
+            select 1 from decisions
+            where lower(decisions.intentHash) = lower(candidate_runs.intentHash)
+          )
+          and not exists (
+            select 1 from receipts
+            where lower(receipts.intentHash) = lower(candidate_runs.intentHash)
+          )
+          and not exists (
+            select 1 from public_evidence_bundles
+            where lower(public_evidence_bundles.intentHash) = lower(candidate_runs.intentHash)
+          )
+      `;
+      const incompleteRunFilter = `runId in (${pruneCandidateQuery})`;
+      db.exec("begin immediate");
+      try {
+        const staleRuns = db.prepare(pruneCandidateQuery).all(cutoffIso);
+        db.prepare(`delete from submitted_txs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.prepare(`delete from verifier_inputs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.prepare(`delete from verification_jobs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.prepare(`delete from runs where ${incompleteRunFilter}`).run(cutoffIso);
+        db.exec("commit");
+        return staleRuns.length;
+      } catch (error) {
+        db.exec("rollback");
+        throw error;
+      }
+    },
     close() {
       db.close();
     }
@@ -570,6 +1579,18 @@ function ensureRunTenantIdColumn(db: DatabaseSync): void {
   const columns = db.prepare("pragma table_info(runs)").all() as Record<string, unknown>[];
   if (!columns.some((row) => row.name === "tenantId")) {
     db.exec("alter table runs add column tenantId text not null default 'local'");
+  }
+}
+
+function ensureNullableColumn(
+  db: DatabaseSync,
+  table: "runs" | "decisions",
+  column: "capabilityHash" | "standardRpcReceiptStatus" | "depositBlockNumber" | "depositBlockHash" | "confirmationDepth",
+  type: "text" | "integer"
+): void {
+  const columns = db.prepare(`pragma table_info(${table})`).all();
+  if (!columns.some((row) => row.name === column)) {
+    db.exec(`alter table ${table} add column ${column} ${type}`);
   }
 }
 
@@ -588,10 +1609,127 @@ function recordLocalMigrations(db: DatabaseSync): void {
   const migrations = [
     ["001_live_base", "local-live-base"],
     ["002_nullable_decision_tx_hash", "nullable-decision-tx-hash"],
-    ["003_verification_jobs", "verification-jobs"]
+    ["003_verification_jobs", "verification-jobs"],
+    ["004_run_capability_hash", "run-capability-hash"],
+    ["005_decision_rpc_metadata", "decision-rpc-metadata"],
+    ["006_public_evidence_bundles", "public-evidence-bundles"],
+    ["007_public_campaign_events", "public-campaign-events"]
   ] as const;
   const insert = db.prepare("insert or ignore into schema_migrations (id, checksum, appliedAt) values (?, ?, ?)");
   for (const migration of migrations) {
     insert.run(migration[0], migration[1], appliedAt);
   }
+}
+
+function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
+  const migrationRows = db
+    .prepare("select id, checksum from schema_migrations order by rowid asc")
+    .all();
+  const migrations = migrationRows.map((row) => stringValue(row, "id"));
+  const migrationChecksums = Object.fromEntries(
+    migrationRows.map((row) => [stringValue(row, "id"), stringValue(row, "checksum")])
+  );
+  const tableNames = [
+    "runs",
+    "submitted_txs",
+    "decisions",
+    "receipts",
+    "verifier_inputs",
+    "public_evidence_bundles",
+    "public_campaign_events",
+    "organizations",
+    "organization_members",
+    "auth_challenges",
+    "auth_sessions",
+    "campaigns",
+    "campaign_versions",
+    "verification_jobs",
+    "schema_migrations"
+  ] as const;
+  const tables: LiveSchemaStateInput["tables"] = {};
+  const indexes: NonNullable<LiveSchemaStateInput["indexes"]> = {};
+  const foreignKeys: NonNullable<LiveSchemaStateInput["foreignKeys"]> = {};
+  const tableSql: Record<string, string> = {};
+  const triggers = db.prepare(
+    `select name, tbl_name as tableName, sql
+     from sqlite_master
+     where type = 'trigger'
+     order by name asc`
+  ).all().map((row) => ({
+    name: stringValue(row, "name"),
+    table: stringValue(row, "tableName"),
+    sql: stringValue(row, "sql")
+  }));
+
+  for (const tableName of tableNames) {
+    const tableDefinition = db.prepare(
+      "select sql from sqlite_master where type = 'table' and name = ?"
+    ).get(tableName) as Record<string, unknown> | undefined;
+    if (typeof tableDefinition?.sql === "string") tableSql[tableName] = tableDefinition.sql;
+    tables[tableName] = db
+      .prepare(`pragma table_info(${tableName})`)
+      .all()
+      .map((row) => ({
+        name: stringValue(row, "name"),
+        declaredType: stringValue(row, "type"),
+        notNull: numberValue(row, "notnull") === 1,
+        pkPosition: numberValue(row, "pk")
+      }));
+    const indexRows = db
+      .prepare(
+        `select name, "unique" as isUnique, origin, partial
+         from pragma_index_list(?)
+         order by seq asc`
+      )
+      .all(tableName);
+    indexes[tableName] = indexRows.map((indexRow) => {
+      const indexName = stringValue(indexRow, "name");
+      const indexColumns = db
+        .prepare(
+          `select name, "desc" as isDescending
+           from pragma_index_xinfo(?)
+           where key = 1
+           order by seqno asc`
+        )
+        .all(indexName)
+        .map((columnRow) => ({
+          name: stringValue(columnRow, "name"),
+          descending: numberValue(columnRow, "isDescending") === 1
+        }));
+      return {
+        name: indexName,
+        unique: numberValue(indexRow, "isUnique") === 1,
+        origin: stringValue(indexRow, "origin"),
+        partial: numberValue(indexRow, "partial") === 1,
+        columns: indexColumns.map((column) => column.name),
+        descending: indexColumns.map((column) => column.descending)
+      };
+    });
+    foreignKeys[tableName] = db
+      .prepare(
+        `select id, seq as sequence, "from", "table", "to", on_delete as onDelete
+         from pragma_foreign_key_list(?)
+         order by id asc, seq asc`
+      )
+      .all(tableName)
+      .map((row) => ({
+        id: numberValue(row, "id"),
+        sequence: numberValue(row, "sequence"),
+        from: stringValue(row, "from"),
+        table: stringValue(row, "table"),
+        to: stringValue(row, "to"),
+        onDelete: stringValue(row, "onDelete")
+      }));
+  }
+
+  return {
+    migrations,
+    migrationChecksums,
+    tables,
+    indexes,
+    foreignKeys,
+    tableSql,
+    triggers,
+    requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
+  };
 }

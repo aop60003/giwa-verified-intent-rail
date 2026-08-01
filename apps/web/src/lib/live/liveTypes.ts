@@ -27,6 +27,7 @@ export const DEFAULT_LIVE_TENANT_ID = "local";
 export type LiveRunRecord = {
   runId: string;
   tenantId?: string;
+  capabilityHash?: string | null;
   idempotencyKey: string;
   wallet: string;
   campaignId: string;
@@ -58,6 +59,10 @@ export type DecisionRecord = {
   receiptHash: string | null;
   decisionTxHash: string | null;
   issuedAt: number;
+  standardRpcReceiptStatus?: 1 | 0 | null;
+  depositBlockNumber?: number | null;
+  depositBlockHash?: string | null;
+  confirmationDepth?: number | null;
 };
 
 export type ReceiptRecord = {
@@ -74,6 +79,43 @@ export type VerifierInputRecord = {
   canonicalPayload: string;
   canonicalPayloadBytesHex: string;
   createdAt: string;
+};
+
+export type PublicEvidenceRecord = {
+  receiptHash: string;
+  intentHash: string;
+  depositTxHash: string;
+  bundleJson: string;
+  createdAt: string;
+};
+
+export type PublicCampaignEventInput = {
+  eventType: "campaignVisited" | "walletConnected";
+  anonymousSessionId: string;
+  campaignId: "gasok-demo";
+  missionId: "first-mock-vault-deposit";
+};
+
+export type PublicCampaignEventRecord = {
+  eventType: PublicCampaignEventInput["eventType"];
+  sessionHash: string;
+  campaignId: PublicCampaignEventInput["campaignId"];
+  missionId: PublicCampaignEventInput["missionId"];
+  recordedAt: string;
+};
+
+export type PublicCampaignEventAggregate = {
+  uniqueCampaignVisitorCount: number;
+  uniqueWalletConnectSessionCount: number;
+};
+
+export type MatchedEvidencePublication = {
+  runId: string;
+  updatedAt: string;
+  verifierInput: VerifierInputRecord;
+  receipt: ReceiptRecord;
+  decision: DecisionRecord;
+  publicEvidence: PublicEvidenceRecord;
 };
 
 export type PartnerRunProjection = {

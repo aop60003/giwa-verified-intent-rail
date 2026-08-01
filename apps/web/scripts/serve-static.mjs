@@ -7,6 +7,7 @@ import { exportFlowData } from "./export-flow-data.mjs";
 
 const publicDir = resolve(fileURLToPath(new URL("../public/", import.meta.url)));
 const port = Number(process.env.PORT ?? 4176);
+const CAMPAIGN_VERSION_PUBLIC_PATH = /^\/campaign\/campaign_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/v\/[1-9][0-9]*$/u;
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -14,7 +15,7 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
-exportFlowData();
+if (process.env.GIWA_SKIP_PUBLIC_EXPORT !== "1") exportFlowData();
 
 const staticDemoStatusPayload = {
   ok: true,
@@ -23,8 +24,8 @@ const staticDemoStatusPayload = {
     openingOrder: [
       {
         id: "static-fallback",
-        label: "Static fallback",
-        href: "/",
+        label: "Recorded evidence",
+        href: "/evidence",
         state: "available",
         reason: "Recorded evidence remains available without the live local API."
       },
@@ -79,19 +80,29 @@ function writeJson(response, payload) {
   response.end(JSON.stringify(payload, null, 2));
 }
 
-function publicPath(pathname) {
+function publicPath(pathname, search = "") {
   const decoded = decodeURIComponent(pathname);
   const requested =
-    decoded === "/demo"
-      ? "/demo.html"
-      : decoded === "/user" ||
-          decoded === "/user/receipts" ||
-          decoded === "/user/help" ||
-          decoded.startsWith("/user/receipt/")
-        ? "/user.html"
-      : decoded === "/" || decoded === "/partner" || decoded.startsWith("/receipt/")
-        ? "/index.html"
-        : decoded;
+    decoded === "/"
+      ? "/landing.html"
+      : CAMPAIGN_VERSION_PUBLIC_PATH.test(decoded) && search === ""
+        ? "/campaign.html"
+        : decoded === "/giwa-demo"
+        ? "/giwa-demo.html"
+        : decoded === "/demo"
+          ? "/demo.html"
+          : decoded === "/studio"
+            ? "/studio.html"
+            : decoded === "/user" ||
+              decoded === "/user/receipts" ||
+              decoded === "/user/help" ||
+              decoded.startsWith("/user/receipt/")
+              ? "/user.html"
+              : decoded === "/evidence" ||
+                  decoded === "/partner" ||
+                  decoded.startsWith("/receipt/")
+                ? "/index.html"
+                : decoded;
   const normalized = normalize(requested).replace(/^(\.\.[/\\])+/, "");
   return join(publicDir, normalized);
 }
@@ -114,7 +125,7 @@ const server = createServer((request, response) => {
     return;
   }
 
-  const filePath = publicPath(url.pathname);
+  const filePath = publicPath(url.pathname, url.search);
 
   if (!filePath.startsWith(publicDir) || !existsSync(filePath)) {
     response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });

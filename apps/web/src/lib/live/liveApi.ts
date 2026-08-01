@@ -1,36 +1,67 @@
+import {
+  canonicalManifestPayload,
+  canonicalManifestPayloadBytesHex
+} from "../../../../../packages/protocol/src/index.ts";
 import type { LiveStore } from "./liveStore.ts";
 import type { HostedRuntimeMode } from "./hostedMode.ts";
 import { hasLiveAuthScope, type LiveAuthContext } from "./liveAuth.ts";
-import { rejectBodyTenantOverride } from "./liveTenantPolicy.ts";
 import type {
   DecisionRecord,
   LiveRunRecord,
   PartnerRunProjection,
+  PublicEvidenceRecord,
   ReceiptRecord,
   SubmittedTxRecord,
   VerifierInputRecord
 } from "./liveTypes.ts";
-import { DEFAULT_LIVE_TENANT_ID } from "./liveTypes.ts";
+import type { LiveVerifierPublicEvidenceDraft } from "../verifier/liveVerifierService.ts";
+import { DEFAULT_LIVE_TENANT_ID, isTerminalLiveRunStatus } from "./liveTypes.ts";
 import type { LiveManifestPreview } from "./liveManifestIssuer.ts";
 import type { VerificationJobQueue } from "./verificationJobQueue.ts";
-import { evaluateCommercialReceiptGate } from "./commercialReceiptGate.ts";
 import { toLiveApiErrorBody } from "./liveApiErrors.ts";
 import { failureCodeDisplayCopy, toBoundedFailureCode, toSafeFailureReason } from "../verifier/liveFailureCode.ts";
 import { buildLiveDemoControlRoom, selectLatestRun } from "./liveDemoControlRoom.ts";
+import {
+  hashLiveRunCapability,
+  issueLiveRunCapability,
+  type IssuedLiveRunCapability
+} from "./liveParticipantCapability.ts";
+import {
+  GASOK_CAMPAIGN_ID,
+  GASOK_MISSION_ID,
+  type LivePublicConfig
+} from "./livePublicConfig.ts";
+import { classifyLiveApiRoute } from "./liveRoutePolicy.ts";
+import { buildPublicCampaignStudio } from "../partner/publicCampaignStudio.ts";
+import { lookupPublicMatchedProof } from "./publicProofLookup.ts";
+import {
+  PUBLIC_VERIFICATION_NOTICE,
+  PUBLIC_VERIFICATION_REPLAY_COMMAND,
+  normalizePublicVerificationBundle
+} from "./publicVerificationBundle.ts";
+import { replayPublicVerificationBundle } from "./publicVerificationReplay.ts";
 
 const GIWA_SEPOLIA_CHAIN_ID = 91342;
+const SAFE_MANIFEST_INPUT_ERRORS = new Set([
+  "wallet must be a valid address",
+  "referralCode is too long",
+  "referralCode contains unsupported characters"
+]);
 
 export type LiveApiRequest = {
   method: string;
   pathname: string;
   body?: unknown;
   auth?: LiveAuthContext | null;
+  runCapability?: string | null;
   requestId?: string;
+  downloadRequested?: boolean;
 };
 
 export type LiveApiResponse = {
   status: number;
   body: Record<string, unknown>;
+  headers?: Record<string, string>;
 };
 
 export type ManifestIssueInput = {
@@ -55,6 +86,8 @@ export type LiveApiDependencies = {
   mode?: HostedRuntimeMode;
   baseUrl?: string;
   verificationJobs?: VerificationJobQueue;
+  issueRunCapability?: () => IssuedLiveRunCapability;
+  publicConfig?: LivePublicConfig;
   now: () => string;
   issueManifest: (input: ManifestIssueInput) => Promise<ManifestIssueResult>;
   verifyRun?: (input: { run: LiveRunRecord; submittedTx: SubmittedTxRecord }) => Promise<{
@@ -63,13 +96,15 @@ export type LiveApiDependencies = {
     verifierInputHash: string;
     receiptHash: string | null;
     decisionTxHash: string | null;
-    standardRpcReceiptStatus: 1 | 0;
-    depositBlockNumber: number;
-    depositBlockHash: string;
+    standardRpcReceiptStatus: 1 | 0 | null;
+    depositBlockNumber: number | null;
+    depositBlockHash: string | null;
     confirmationDepth: number;
     receipt?: ReceiptRecord;
     verifierInputRecord?: VerifierInputRecord;
+    publicEvidenceDraft?: LiveVerifierPublicEvidenceDraft;
   }>;
+  replayPublicEvidence?: typeof replayPublicVerificationBundle;
 };
 
 function errorBody(error: string, requestId: string | undefined): Record<string, unknown> {
@@ -80,14 +115,6 @@ function requestTenant(request: LiveApiRequest): string {
   return request.auth?.tenantId ?? DEFAULT_LIVE_TENANT_ID;
 }
 
-function hostedAuthFailure(deps: LiveApiDependencies, request: LiveApiRequest): LiveApiResponse | null {
-  const mode = deps.mode ?? "local";
-  if (mode !== "local" && request.pathname.startsWith("/api/") && request.auth == null) {
-    return { status: 401, body: errorBody("unauthorized", request.requestId) };
-  }
-  return null;
-}
-
 function scopeAllowed(deps: LiveApiDependencies, request: LiveApiRequest, scope: Parameters<typeof hasLiveAuthScope>[1]): boolean {
   if ((deps.mode ?? "local") === "local") return true;
   return request.auth !== null && request.auth !== undefined && hasLiveAuthScope(request.auth, scope);
@@ -95,6 +122,38 @@ function scopeAllowed(deps: LiveApiDependencies, request: LiveApiRequest, scope:
 
 function forbidden(request: LiveApiRequest): LiveApiResponse {
   return { status: 403, body: errorBody("forbidden", request.requestId) };
+}
+
+function unauthorized(request: LiveApiRequest, error = "unauthorized"): LiveApiResponse {
+  return { status: 401, body: errorBody(error, request.requestId) };
+}
+
+function participantRun(
+  deps: LiveApiDependencies,
+  request: LiveApiRequest,
+  runId: string
+): LiveRunRecord | undefined {
+  if ((deps.mode ?? "local") === "local") return deps.store.getRun(runId);
+  if (typeof request.runCapability !== "string") return undefined;
+  return deps.store.getRunForCapabilityHash(runId, hashLiveRunCapability(request.runCapability));
+}
+
+function hasTerminalRunState(deps: LiveApiDependencies, run: LiveRunRecord): boolean {
+  return isTerminalLiveRunStatus(run.status) || deps.store.getDecisionByIntentHash(run.intentHash) !== undefined;
+}
+
+const RUN_CREATE_KEYS = new Set(["wallet", "chainId", "referralCode", "campaignId", "missionId"]);
+
+function assertFixedRunPolicy(body: Record<string, unknown>): void {
+  if (Object.keys(body).some((key) => !RUN_CREATE_KEYS.has(key))) {
+    throw new Error("fixed_policy_override_not_allowed");
+  }
+  if (body.campaignId !== undefined && body.campaignId !== GASOK_CAMPAIGN_ID) {
+    throw new Error("fixed_policy_override_not_allowed");
+  }
+  if (body.missionId !== undefined && body.missionId !== GASOK_MISSION_ID) {
+    throw new Error("fixed_policy_override_not_allowed");
+  }
 }
 
 function objectBody(value: unknown): Record<string, unknown> {
@@ -121,25 +180,17 @@ function optionalString(body: Record<string, unknown>, key: string): string | nu
   return value.trim();
 }
 
-function requiredBoundedString(body: Record<string, unknown>, key: string, maxLength: number): string {
-  const value = requiredString(body, key);
-  if (value.length > maxLength) throw new Error(`${key} is too long`);
-  if (/[\u0000-\u001f\u007f]/u.test(value)) throw new Error(`${key} contains unsupported characters`);
-  return value;
-}
-
-function optionalBoundedString(body: Record<string, unknown>, key: string, maxLength: number): string | null {
+function optionalBoundedString(
+  body: Record<string, unknown>,
+  key: string,
+  maxLength: number
+): string | null {
   const value = optionalString(body, key);
   if (value === null || value.length === 0) return null;
   if (value.length > maxLength) throw new Error(`${key} is too long`);
-  if (/[\u0000-\u001f\u007f]/u.test(value)) throw new Error(`${key} contains unsupported characters`);
-  return value;
-}
-
-function optionalNumber(body: Record<string, unknown>, key: string): number | null {
-  const value = body[key];
-  if (value === null || value === undefined || value === "") return null;
-  if (typeof value !== "number" || !Number.isInteger(value)) throw new Error(`${key} must be an integer`);
+  if (/[\u0000-\u001f\u007f]/u.test(value)) {
+    throw new Error(`${key} contains unsupported characters`);
+  }
   return value;
 }
 
@@ -148,6 +199,13 @@ function requiredAddress(body: Record<string, unknown>, key: string): string {
   if (!/^0x[a-f0-9]{40}$/u.test(value)) {
     throw new Error(`${key} must be a valid address`);
   }
+  return value;
+}
+
+function optionalNumber(body: Record<string, unknown>, key: string): number | null {
+  const value = body[key];
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "number" || !Number.isInteger(value)) throw new Error(`${key} must be an integer`);
   return value;
 }
 
@@ -178,6 +236,7 @@ function runResponse(
   state?: {
     submittedTx?: SubmittedTxRecord | undefined;
     decision?: DecisionRecord | undefined;
+    publicEvidence?: PublicEvidenceRecord | undefined;
     verificationJob?: ReturnType<LiveStore["getVerificationJobForRun"]> | undefined;
   }
 ): Record<string, unknown> {
@@ -223,13 +282,35 @@ function runResponse(
     decision: state?.decision?.decision ?? null,
     failureReason: safeFailureReason,
     verifierInputHash: state?.decision?.verifierInputHash ?? null,
-    receiptReady: state?.decision?.decision === "matched" && state.decision.receiptHash !== null,
+    receiptReady:
+      state?.decision?.decision === "matched" &&
+      state.decision.receiptHash !== null &&
+      state.publicEvidence !== undefined,
     receiptHash: state?.decision?.receiptHash ?? null,
     decisionTxHash: state?.decision?.decisionTxHash ?? null,
     verification,
     createdAt: run.createdAt,
     updatedAt: run.updatedAt
   };
+}
+
+function matchingPublicEvidence(
+  store: LiveStore,
+  decision: DecisionRecord | undefined
+): PublicEvidenceRecord | undefined {
+  if (decision?.decision !== "matched" || decision.receiptHash === null) {
+    return undefined;
+  }
+  const evidence = store.getPublicEvidenceByReceiptHash(decision.receiptHash);
+  if (
+    evidence === undefined ||
+    evidence.receiptHash.toLowerCase() !== decision.receiptHash.toLowerCase() ||
+    evidence.intentHash.toLowerCase() !== decision.intentHash.toLowerCase() ||
+    evidence.depositTxHash.toLowerCase() !== decision.depositTxHash.toLowerCase()
+  ) {
+    return undefined;
+  }
+  return evidence;
 }
 
 function partnerRunProjection(run: LiveRunRecord, receiptHash: string | null): PartnerRunProjection {
@@ -254,21 +335,144 @@ function runIdFrom(pathname: string, suffix = ""): string | undefined {
   return undefined;
 }
 
+function buildPublicVerificationBundle(
+  draft: LiveVerifierPublicEvidenceDraft,
+  generatedAt: string
+) {
+  return normalizePublicVerificationBundle({
+    schemaVersion: "1",
+    source: "live",
+    generatedAt,
+    identity: {
+      receiptHash: draft.receipt.record.receiptHash,
+      intentHash: draft.receipt.record.intentHash,
+      depositTxHash: draft.receipt.payload.depositTxHash
+    },
+    manifest: {
+      payload: draft.manifest.payload,
+      canonicalPayload: canonicalManifestPayload(draft.manifest.payload),
+      canonicalPayloadBytesHex: canonicalManifestPayloadBytesHex(
+        draft.manifest.payload
+      ),
+      signature: draft.manifest.signature,
+      signingDomain: {
+        name: "GIWA Verified Intent Rail",
+        version: "1",
+        chainId: 91342,
+        verifyingContract: draft.manifest.verifyingContract
+      },
+      recoveredSigner: draft.manifest.recoveredSigner
+    },
+    verifierInput: draft.verifierInput,
+    verification: draft.verification,
+    decodedLogs: draft.decodedLogs,
+    receipt: {
+      payload: draft.receipt.payload,
+      canonicalPayload: draft.receipt.record.canonicalPayload,
+      canonicalPayloadBytesHex: draft.receipt.record.canonicalPayloadBytesHex,
+      receiptHash: draft.receipt.record.receiptHash,
+      schemaVersion: draft.receipt.schemaVersion,
+      verifierVersion: draft.receipt.verifierVersion
+    },
+    replay: {
+      algorithm: "keccak256-canonical-json+eip712",
+      command: PUBLIC_VERIFICATION_REPLAY_COMMAND
+    },
+    notice: PUBLIC_VERIFICATION_NOTICE
+  });
+}
+
 export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveApiRequest) => Promise<LiveApiResponse> {
   return async function handle(request): Promise<LiveApiResponse> {
     try {
-      const authFailure = hostedAuthFailure(deps, request);
-      if (authFailure !== null) return authFailure;
+      const routeClass = classifyLiveApiRoute(request.method, request.pathname);
+      const hosted = (deps.mode ?? "local") !== "local";
+      if (hosted && routeClass === "partner" && request.auth == null) return unauthorized(request);
+      if (hosted && routeClass === "participant" && typeof request.runCapability !== "string") {
+        return unauthorized(request, "run_capability_required");
+      }
+
+      if (request.method === "GET" && request.pathname === "/api/public/config") {
+        if (deps.publicConfig === undefined) {
+          return { status: 503, body: errorBody("public_config_unavailable", request.requestId) };
+        }
+        return { status: 200, body: deps.publicConfig };
+      }
+
+      if (
+        request.method === "GET" &&
+        request.pathname === "/api/public/campaign-studio"
+      ) {
+        return {
+          status: 200,
+          body: await buildPublicCampaignStudio({
+            store: deps.store,
+            campaignId: GASOK_CAMPAIGN_ID,
+            missionId: GASOK_MISSION_ID,
+            generatedAt: deps.now()
+          })
+        };
+      }
+
+      if (
+        request.method === "POST" &&
+        request.pathname === "/api/public/events"
+      ) {
+        return {
+          status: 503,
+          body: { error: "public_campaign_events_disabled" }
+        };
+      }
+
+      if (
+        request.method === "GET" &&
+        /^\/api\/public\/evidence\/[^/]+$/u.test(request.pathname)
+      ) {
+        const queryHash = request.pathname.slice(
+          "/api/public/evidence/".length
+        );
+        let proof = null;
+        try {
+          proof = await lookupPublicMatchedProof({
+            store: deps.store,
+            queryHash
+          });
+        } catch {
+          proof = null;
+        }
+        if (proof === null) {
+          return {
+            status: 404,
+            body: { error: "proof_not_found" },
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store"
+            }
+          };
+        }
+
+        const headers: Record<string, string> = {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "public, max-age=60, stale-while-revalidate=300"
+        };
+        if (request.downloadRequested === true) {
+          headers["content-disposition"] =
+            `attachment; filename="giwa-receipt-${proof.receiptHash}.json"`;
+        }
+        return {
+          status: 200,
+          body: request.downloadRequested === true ? proof.bundle : proof,
+          headers
+        };
+      }
 
       if (request.method === "POST" && request.pathname === "/api/runs") {
-        if (!scopeAllowed(deps, request, "runs:write")) return forbidden(request);
         const body = objectBody(request.body);
-        const tenantPolicy = rejectBodyTenantOverride(body);
-        if (!tenantPolicy.ok) return { status: 400, body: errorBody(tenantPolicy.code, request.requestId) };
+        assertFixedRunPolicy(body);
         const input: ManifestIssueInput = {
           wallet: requiredAddress(body, "wallet"),
-          campaignId: requiredBoundedString(body, "campaignId", 96),
-          missionId: requiredBoundedString(body, "missionId", 96),
+          campaignId: GASOK_CAMPAIGN_ID,
+          missionId: GASOK_MISSION_ID,
           referralCode: optionalBoundedString(body, "referralCode", 96)
         };
         const chainId = optionalNumber(body, "chainId");
@@ -279,14 +483,21 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           };
         }
         const issued = await deps.issueManifest(input);
+        const capability = (deps.issueRunCapability ?? issueLiveRunCapability)();
         const timestamp = deps.now();
         const tenantId = requestTenant(request);
         const run = deps.store.createRun({
           runId: issued.runId,
           tenantId,
-          idempotencyKey: [tenantId, input.wallet, input.campaignId, input.missionId, input.referralCode ?? ""].join(
-            ":"
-          ),
+          capabilityHash: capability.hash,
+          idempotencyKey: [
+            tenantId,
+            issued.runId,
+            input.wallet,
+            input.campaignId,
+            input.missionId,
+            input.referralCode ?? ""
+          ].join(":"),
           wallet: input.wallet,
           campaignId: input.campaignId,
           missionId: input.missionId,
@@ -300,23 +511,24 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           createdAt: timestamp,
           updatedAt: timestamp
         });
+        if (run.capabilityHash !== capability.hash) {
+          return { status: 409, body: errorBody("run_capability_conflict", request.requestId) };
+        }
 
-        return { status: 201, body: runResponse(run, issued) };
+        return { status: 201, body: { ...runResponse(run, issued), runCapability: capability.value } };
       }
 
       const getRunId = request.method === "GET" ? runIdFrom(request.pathname) : undefined;
       if (getRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "runs:read")) return forbidden(request);
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(getRunId)
-            : deps.store.getRunForTenant(requestTenant(request), getRunId);
+        const run = participantRun(deps, request, getRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
+        const decision = deps.store.getDecisionByIntentHash(run.intentHash);
         return {
           status: 200,
           body: runResponse(run, undefined, {
             submittedTx: deps.store.getSubmittedTx(run.runId),
-            decision: deps.store.getDecisionByIntentHash(run.intentHash),
+            decision,
+            publicEvidence: matchingPublicEvidence(deps.store, decision),
             verificationJob: deps.store.getVerificationJobForRun(run.runId)
           })
         };
@@ -324,12 +536,11 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       const evidenceRunId = request.method === "POST" ? runIdFrom(request.pathname, "/evidence") : undefined;
       if (evidenceRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "runs:write")) return forbidden(request);
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(evidenceRunId)
-            : deps.store.getRunForTenant(requestTenant(request), evidenceRunId);
+        const run = participantRun(deps, request, evidenceRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
+        if (hasTerminalRunState(deps, run)) {
+          return { status: 409, body: errorBody("run_terminal", request.requestId) };
+        }
         const timestamp = deps.now();
         if (run.status === "manifestInvalidated") {
           return { status: 409, body: { error: "manifest_invalidated" } };
@@ -362,25 +573,30 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             status: updated.status,
             receiptReady: false,
             receiptHash: null,
-            verification: { status: "not_started", reason: "deposit_evidence_stored" }
+            verification: {
+              status: "not_started",
+              reason: "deposit_evidence_stored"
+            }
           }
         };
       }
 
       const invalidateRunId = request.method === "POST" ? runIdFrom(request.pathname, "/invalidate") : undefined;
       if (invalidateRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "runs:write")) return forbidden(request);
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(invalidateRunId)
-            : deps.store.getRunForTenant(requestTenant(request), invalidateRunId);
+        const run = participantRun(deps, request, invalidateRunId);
         if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
+        if (hasTerminalRunState(deps, run)) {
+          return { status: 409, body: errorBody("run_terminal", request.requestId) };
+        }
         const updated = deps.store.updateRunStatus(invalidateRunId, "manifestInvalidated", deps.now());
         return { status: 200, body: { ...runResponse(updated), invalidationAccepted: true } };
       }
 
       const intentRelayRunId = request.method === "POST" ? runIdFrom(request.pathname, "/intent-submit") : undefined;
       if (intentRelayRunId !== undefined) {
+        if (participantRun(deps, request, intentRelayRunId) === undefined) {
+          return { status: 404, body: { error: "run_not_found" } };
+        }
         return {
           status: 409,
           body: {
@@ -393,23 +609,28 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       const verifyRunId = request.method === "POST" ? runIdFrom(request.pathname, "/verify") : undefined;
       if (verifyRunId !== undefined) {
-        if (!scopeAllowed(deps, request, "verify:write")) return forbidden(request);
+        const run = participantRun(deps, request, verifyRunId);
+        if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         if (deps.verifyRun === undefined) {
           return {
             status: 409,
-            body: { error: "verifier_unavailable", runId: verifyRunId, reason: "local_verifier_not_configured" }
+            body: {
+              error: "verifier_unavailable",
+              runId: verifyRunId,
+              reason: "local_verifier_not_configured"
+            }
           };
         }
-        const run =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getRun(verifyRunId)
-            : deps.store.getRunForTenant(requestTenant(request), verifyRunId);
-        if (run === undefined) return { status: 404, body: { error: "run_not_found" } };
         const submittedTx = deps.store.getSubmittedTx(verifyRunId);
         if (submittedTx === undefined) return { status: 409, body: { error: "deposit_evidence_required" } };
 
         const existingDecision = deps.store.getDecisionByIntentHash(run.intentHash);
         if (existingDecision !== undefined) {
+          const publicEvidence = matchingPublicEvidence(deps.store, existingDecision);
+          const receiptReady =
+            existingDecision.decision === "matched" &&
+            existingDecision.receiptHash !== null &&
+            publicEvidence !== undefined;
           const failureCode = toBoundedFailureCode(existingDecision.failureReason);
           const safeFailureReason = toSafeFailureReason(existingDecision.failureReason);
           const failureCopy = failureCode === null ? null : failureCodeDisplayCopy(failureCode);
@@ -422,7 +643,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
               failureCode,
               failureCopy,
               verifierInputHash: existingDecision.verifierInputHash,
-              receiptReady: existingDecision.decision === "matched" && existingDecision.receiptHash !== null,
+              receiptReady,
               receiptHash: existingDecision.receiptHash,
               decisionTxHash: existingDecision.decisionTxHash,
               verification: { status: "terminal" }
@@ -430,7 +651,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           };
         }
 
-        if ((deps.mode ?? "local") !== "local" && deps.verificationJobs !== undefined) {
+        if ((deps.mode ?? "local") === "prod-testnet" && deps.verificationJobs !== undefined) {
           const job = deps.verificationJobs.enqueue({
             tenantId: requestTenant(request),
             runId: verifyRunId,
@@ -477,17 +698,17 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
               standardRpcReceiptStatus: result.standardRpcReceiptStatus,
               depositBlockNumber: result.depositBlockNumber,
               depositBlockHash: result.depositBlockHash,
-              confirmationDepth: result.confirmationDepth
+              confirmationDepth: result.confirmationDepth,
+              verification: {
+                status: "retryable",
+                retryPath: `/api/runs/${verifyRunId}/verify`
+              }
             }
           };
         }
 
-        if (result.decision === "matched" && result.receipt === undefined) {
-          throw new Error("matched verifier result must include receipt");
-        }
-        if (result.verifierInputRecord !== undefined) deps.store.saveVerifierInput(result.verifierInputRecord);
-        if (result.receipt !== undefined) deps.store.saveReceipt(result.receipt);
-        const decision = deps.store.saveDecision({
+        const decisionTime = deps.now();
+        const decisionInput: DecisionRecord = {
           intentHash: run.intentHash,
           depositTxHash: submittedTx.depositTxHash,
           decision: result.decision,
@@ -495,9 +716,72 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
           verifierInputHash: result.verifierInputHash,
           receiptHash: result.receiptHash,
           decisionTxHash: result.decisionTxHash,
-          issuedAt: nowUnix(deps.now())
-        });
-        const updated = deps.store.updateRunStatus(verifyRunId, decision.decision, deps.now());
+          issuedAt: nowUnix(decisionTime),
+          standardRpcReceiptStatus: result.standardRpcReceiptStatus,
+          depositBlockNumber: result.depositBlockNumber,
+          depositBlockHash: result.depositBlockHash,
+          confirmationDepth: result.confirmationDepth
+        };
+        let decision: DecisionRecord;
+        let updated: LiveRunRecord;
+
+        if (result.decision === "matched") {
+          if (result.receipt === undefined) {
+            throw new Error("matched verifier result must include receipt");
+          }
+          if (
+            result.verifierInputRecord === undefined ||
+            result.publicEvidenceDraft === undefined
+          ) {
+            throw new Error("matched verifier result must include public evidence");
+          }
+          if (
+            JSON.stringify(result.receipt) !==
+              JSON.stringify(result.publicEvidenceDraft.receipt.record) ||
+            result.verifierInputRecord.canonicalPayload !==
+              result.publicEvidenceDraft.verifierInput.canonicalPayload ||
+            result.verifierInputRecord.canonicalPayloadBytesHex !==
+              result.publicEvidenceDraft.verifierInput.canonicalPayloadBytesHex ||
+            result.verifierInputRecord.verifierInputHash !==
+              result.publicEvidenceDraft.verifierInput.verifierInputHash
+          ) {
+            throw new Error("matched verifier evidence draft is incoherent");
+          }
+
+          const publicationTime = decisionTime;
+          const bundle = buildPublicVerificationBundle(
+            result.publicEvidenceDraft,
+            publicationTime
+          );
+          const replay = await (
+            deps.replayPublicEvidence ?? replayPublicVerificationBundle
+          )(bundle);
+          if (!replay.ok) {
+            throw new Error("public verification bundle replay failed");
+          }
+          const published = deps.store.publishMatchedEvidence({
+            runId: verifyRunId,
+            updatedAt: publicationTime,
+            verifierInput: result.verifierInputRecord,
+            receipt: result.receipt,
+            decision: decisionInput,
+            publicEvidence: {
+              receiptHash: bundle.identity.receiptHash,
+              intentHash: bundle.identity.intentHash,
+              depositTxHash: bundle.identity.depositTxHash,
+              bundleJson: JSON.stringify(bundle),
+              createdAt: publicationTime
+            }
+          });
+          decision = published.decision;
+          updated = published.run;
+        } else {
+          if (result.verifierInputRecord !== undefined) {
+            deps.store.saveVerifierInput(result.verifierInputRecord);
+          }
+          decision = deps.store.saveDecision(decisionInput);
+          updated = deps.store.updateRunStatus(verifyRunId, decision.decision, decisionTime);
+        }
         return {
           status: 200,
           body: {
@@ -507,7 +791,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
             failureCode,
             failureCopy,
             verifierInputHash: decision.verifierInputHash,
-            receiptReady: decision.decision === "matched" && decision.receiptHash !== null,
+            receiptReady: matchingPublicEvidence(deps.store, decision) !== undefined,
             receiptHash: decision.receiptHash,
             decisionTxHash: decision.decisionTxHash,
             standardRpcReceiptStatus: result.standardRpcReceiptStatus,
@@ -519,57 +803,41 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       }
 
       if (request.method === "GET" && request.pathname.startsWith("/api/receipts/")) {
-        if (!scopeAllowed(deps, request, "receipts:read")) return forbidden(request);
         const receiptHash = request.pathname.slice("/api/receipts/".length);
-        const receipt =
-          (deps.mode ?? "local") === "local"
-            ? deps.store.getReceipt(receiptHash)
-            : deps.store.getReceiptForTenant(requestTenant(request), receiptHash);
-        if (receipt === undefined) return { status: 404, body: { error: "receipt_not_found" } };
-        const decision = deps.store.getDecisionByIntentHash(receipt.intentHash);
-        const verifierInput =
-          decision === undefined ? undefined : deps.store.getVerifierInput(decision.verifierInputHash);
-        const run = deps.store
-          .listRuns()
-          .find((candidate) => candidate.intentHash.toLowerCase() === receipt.intentHash.toLowerCase());
-        const gate = evaluateCommercialReceiptGate({
-          run,
-          decision,
-          receipt,
-          verifierInput,
-          replay: { requireHashRecomputation: true }
+        const proof = await lookupPublicMatchedProof({
+          store: deps.store,
+          queryHash: receiptHash
         });
-        if (!gate.open) {
+        if (proof === null || proof.queryKind !== "receipt") {
           return { status: 404, body: { error: "receipt_not_found" } };
         }
-        let payload: unknown;
-        try {
-          payload = JSON.parse(receipt.payloadJson);
-        } catch {
-          return { status: 500, body: { error: "receipt_payload_invalid", receiptHash } };
-        }
+        const { bundle } = proof;
         return {
           status: 200,
           body: {
             source: "live",
-            receiptHash: receipt.receiptHash,
-            intentHash: receipt.intentHash,
-            payload,
-            payloadJson: receipt.payloadJson,
-            canonicalPayload: receipt.canonicalPayload,
-            canonicalPayloadBytesHex: receipt.canonicalPayloadBytesHex
+            receiptHash: bundle.identity.receiptHash,
+            intentHash: bundle.identity.intentHash,
+            payload: bundle.receipt.payload,
+            payloadJson: JSON.stringify(bundle.receipt.payload),
+            canonicalPayload: bundle.receipt.canonicalPayload,
+            canonicalPayloadBytesHex: bundle.receipt.canonicalPayloadBytesHex,
+            verifierInputHash: bundle.verifierInput.verifierInputHash,
+            standardRpcReceiptStatus: bundle.verification.standardRpcReceiptStatus,
+            depositBlockNumber: bundle.verification.depositBlockNumber,
+            depositBlockHash: bundle.verification.depositBlockHash,
+            confirmationDepth: bundle.verification.confirmationDepth,
+            testnetNotice: "Testnet-only. No real asset, no yield, no RWA claim."
           }
         };
       }
 
       if (request.method === "GET" && request.pathname === "/api/demo/status") {
-        if (!scopeAllowed(deps, request, "partner:read") && !scopeAllowed(deps, request, "runs:read")) {
-          return forbidden(request);
-        }
-        const rows =
-          (deps.mode ?? "local") === "local" && request.auth == null
-            ? deps.store.listRuns()
-            : deps.store.listRunsForTenant(requestTenant(request));
+        if (hosted && request.auth == null) return unauthorized(request);
+        if (hosted && !scopeAllowed(deps, request, "runs:read")) return forbidden(request);
+        const rows = hosted
+          ? deps.store.listRunsForTenant(requestTenant(request))
+          : deps.store.listRuns();
         const latestRun = selectLatestRun(rows);
         const decision = latestRun === null ? undefined : deps.store.getDecisionByIntentHash(latestRun.intentHash);
         const controlRoom = buildLiveDemoControlRoom({
@@ -596,7 +864,7 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
       }
 
       if (request.method === "GET" && request.pathname === "/api/partner/runs") {
-        if (!scopeAllowed(deps, request, "partner:read") && !scopeAllowed(deps, request, "runs:read")) {
+        if (!scopeAllowed(deps, request, "partner:read")) {
           return forbidden(request);
         }
         const rows =
@@ -618,6 +886,16 @@ export function createLiveApiHandler(deps: LiveApiDependencies): (request: LiveA
 
       return { status: 404, body: { error: "not_found" } };
     } catch (error) {
+      if (
+        error instanceof Error &&
+        (
+          error.message === "fixed_policy_override_not_allowed" ||
+          error.message === "run_capability_required" ||
+          SAFE_MANIFEST_INPUT_ERRORS.has(error.message)
+        )
+      ) {
+        return { status: 400, body: errorBody(error.message, request.requestId) };
+      }
       return {
         status: 400,
         body: toLiveApiErrorBody(error, request.requestId)

@@ -5,33 +5,54 @@ export type UserReceiptViewInput = {
   receiptHash: string | null;
   depositTxHash: string | null;
   blockNumber: number | string | null;
+  blockHash: string | null;
+  confirmationDepth: number | null;
+  verifierInputHash: string | null;
   wallet: string;
+  target: string;
+  asset: string;
+  amountBaseUnits: string;
+  issuedAt: number | null;
+  safetyNotice: string | null;
   actionName: string;
   networkName: string;
-  technical: Record<string, string | number | null | undefined>;
 };
 
 export type UserReceiptView = {
   state: UserReceiptState;
   summary: {
     title: string;
-    receiptId: string;
+    receiptHash: string;
     actionName: string;
     networkName: string;
     wallet: string;
+    target: string;
+    asset: string;
+    amountBaseUnits: string;
     depositTxHash: string;
     blockNumber: string;
+    blockHash: string;
+    confirmationDepth: string;
+    verifierInputHash: string;
+    issuedAt: string;
+    safetyNotice: string;
   };
   share: {
     copyLabel: string;
     path: string | null;
   };
-  technicalAccordion: Array<{ label: string; value: string }>;
+  partner: {
+    label: string;
+    path: string | null;
+  };
+  publicProof: {
+    label: string;
+    path: string | null;
+  };
 };
 
-function shortHash(value: string | null | undefined): string {
-  if (typeof value !== "string" || value.length <= 18) return String(value ?? "pending");
-  return `${value.slice(0, 10)}...${value.slice(-5)}`;
+function display(value: string | number | null): string {
+  return value === null ? "pending" : String(value);
 }
 
 function stateFor(input: UserReceiptViewInput): UserReceiptState {
@@ -42,31 +63,52 @@ function stateFor(input: UserReceiptViewInput): UserReceiptState {
 
 export function buildUserReceiptView(input: UserReceiptViewInput): UserReceiptView {
   const state = stateFor(input);
-  const receiptId = shortHash(input.receiptHash);
-  const technicalAccordion = Object.entries(input.technical)
-    .filter(([, value]) => value !== null && value !== undefined)
-    .map(([label, value]) => ({ label, value: String(value) }));
+  const receiptPath =
+    input.receiptHash === null ? null : `/user/receipt/${input.receiptHash}`;
+  const partnerPath =
+    input.receiptHash === null
+      ? null
+      : `/partner?receipt=${input.receiptHash}`;
+  const publicProofPath =
+    input.receiptHash === null
+      ? null
+      : `/evidence?proof=${input.receiptHash}`;
 
   return {
     state,
     summary: {
       title:
         state === "verified"
-          ? "Verified receipt"
+          ? "약속한 조건대로 실행됐습니다."
           : state === "notMatched"
-            ? "Receipt not matched"
-            : "Receipt pending",
-      receiptId,
+            ? "Manifest 불일치"
+            : "Receipt 검증 중",
+      receiptHash: display(input.receiptHash),
       actionName: input.actionName,
       networkName: input.networkName,
-      wallet: shortHash(input.wallet),
-      depositTxHash: shortHash(input.depositTxHash),
-      blockNumber: input.blockNumber === null ? "pending" : String(input.blockNumber)
+      wallet: input.wallet,
+      target: input.target,
+      asset: input.asset,
+      amountBaseUnits: input.amountBaseUnits,
+      depositTxHash: display(input.depositTxHash),
+      blockNumber: display(input.blockNumber),
+      blockHash: display(input.blockHash),
+      confirmationDepth: display(input.confirmationDepth),
+      verifierInputHash: display(input.verifierInputHash),
+      issuedAt: input.issuedAt === null ? "pending" : new Date(input.issuedAt * 1000).toISOString(),
+      safetyNotice: input.safetyNotice ?? "Testnet-only."
     },
     share: {
-      copyLabel: "Copy receipt link",
-      path: input.receiptHash === null ? null : `/user/receipt/${input.receiptHash}`
+      copyLabel: "Receipt 링크 복사",
+      path: receiptPath
     },
-    technicalAccordion
+    partner: {
+      label: "Campaign Studio에서 반영 확인",
+      path: partnerPath
+    },
+    publicProof: {
+      label: "Proof Ledger에서 공개 검증",
+      path: publicProofPath
+    }
   };
 }

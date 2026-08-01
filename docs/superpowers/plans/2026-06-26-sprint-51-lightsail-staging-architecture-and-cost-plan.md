@@ -330,8 +330,8 @@ Expected: no unapproved new findings.
 Run only against Sprint 51 documents, not `.env` files:
 
 ```powershell
-$credentialPattern = ("private " + "key") + "|mnem" + "onic|bear" + "er|" + ("api " + "key") + "|" + ("access " + "key") + "|" + ("secret " + "key") + "|AWS_ACCESS_" + "KEY|AWS_" + "SECRET"
-rg -n $credentialPattern docs\superpowers\plans\2026-06-26-sprint-51-lightsail-staging-architecture-and-cost-plan.md docs\implementation\giwa-lightsail-staging-architecture.md docs\implementation\giwa-lightsail-cost-and-sizing.md docs\implementation\giwa-lightsail-deploy-runbook-draft.md docs\evidence\lightsail-staging-plan-sprint51.json
+$credentialScanPattern = ("private " + "key") + "|mnem" + "onic|bear" + "er|" + ("api " + "key") + "|" + ("access " + "key") + "|" + ("secret " + "key") + "|AWS_ACCESS_" + "KEY|AWS_" + "SECRET"
+rg -n $credentialScanPattern docs\superpowers\plans\2026-06-26-sprint-51-lightsail-staging-architecture-and-cost-plan.md docs\implementation\giwa-lightsail-staging-architecture.md docs\implementation\giwa-lightsail-cost-and-sizing.md docs\implementation\giwa-lightsail-deploy-runbook-draft.md docs\evidence\lightsail-staging-plan-sprint51.json
 ```
 
 Expected: no matches.

@@ -89,4 +89,58 @@ describe("standard RPC receipt client", () => {
 
     await expect(snapshotDepositTransaction(client, `0x${"a".repeat(64)}`)).rejects.toThrow("wrong chain");
   });
+
+  it("normalizes a receipt that is not available yet to a bounded retryable error", async () => {
+    const client = createStandardRpcReceiptClient({
+      chainId: 91342,
+      timeoutMs: 1000,
+      transport: {
+        async getChainId() {
+          return 91342;
+        },
+        async getTransaction() {
+          return {};
+        },
+        async getTransactionReceipt() {
+          const error = new Error("provider detail must not escape");
+          error.name = "TransactionReceiptNotFoundError";
+          throw error;
+        },
+        async getBlockNumber() {
+          return 13n;
+        }
+      }
+    });
+
+    await expect(snapshotDepositTransaction(client, `0x${"a".repeat(64)}`)).rejects.toMatchObject({
+      code: "standard_rpc_receipt_retryable",
+      message: "standard_rpc_receipt_retryable"
+    });
+  });
+
+  it("normalizes bounded RPC timeouts without exposing the operation label", async () => {
+    const client = createStandardRpcReceiptClient({
+      chainId: 91342,
+      timeoutMs: 1,
+      transport: {
+        async getChainId() {
+          return new Promise<number>(() => undefined);
+        },
+        async getTransaction() {
+          return {};
+        },
+        async getTransactionReceipt() {
+          return {};
+        },
+        async getBlockNumber() {
+          return 13n;
+        }
+      }
+    });
+
+    await expect(snapshotDepositTransaction(client, `0x${"a".repeat(64)}`)).rejects.toMatchObject({
+      code: "standard_rpc_receipt_retryable",
+      message: "standard_rpc_receipt_retryable"
+    });
+  });
 });

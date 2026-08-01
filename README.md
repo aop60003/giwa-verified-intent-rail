@@ -1,6 +1,6 @@
 # GIWA Verified Intent Rail
 
-This repository contains the final submission pack for the GASOK MVP concept. The public-facing product name is `GIWA Verified Intent Rail`.
+This repository contains the implementation and submission-preparation workspace for the GASOK MVP concept. The public-facing product name is `GIWA Verified Intent Rail`. The evaluator-facing staging deployment and final submission evidence have not been completed yet.
 
 ## Canonical Document
 
@@ -8,22 +8,147 @@ Use [03_giwa_verified_intent_rail_positioning.md](03_giwa_verified_intent_rail_p
 
 ## Current Routing / Stop Condition
 
-Use [docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md) as the current implementation routing document.
+Use [the July GASOK staging implementation plan](docs/superpowers/plans/2026-07-22-gasok-selection-staging-submission-implementation.md) as the current implementation routing document and [the approved staging design](docs/superpowers/specs/2026-07-22-gasok-selection-staging-submission-design.md) as its design authority.
 
-The older [docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md) is reference-only and must not be executed directly.
+The older [sprint index](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md), [original MVP plan](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md), Sprint 51 architecture, Sprint 52 preflight, and Sprint 53 execution plans remain historical records. They must not override the current runbook or be treated as evidence of a completed deployment.
 
-Current state is a local-review handoff freeze with Sprint 53 Lightsail staging deploy execution planning completed locally after the Sprint 51 architecture and Sprint 52 preflight package. Sprint 53 defines the explicit-approval deployment sequence, smoke plan, rollback path, evidence capture, and go/no-go handoff, but it does not create infrastructure, deploy, configure DNS/HTTPS, connect managed infrastructure, or change protected CI status. Open the Sprint 43 blocker handoff, Sprint 47 evidence, Sprint 48 UX spec, Sprint 49 evidence, Sprint 50 visual QA evidence, Sprint 51 Lightsail plan, Sprint 52 preflight package, and Sprint 53 execution plan before any demo route or staging discussion. Protected CI, protected artifact metadata, branch-protection satisfaction, partner/customer signoff, external hosting approval, managed infrastructure approval, release approval, and staging dry-run execution remain blocked until external conditions change.
+Current source of truth for a later approved Lightsail rollout is [the GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md). Public deployment, DNS, HTTPS, fresh staging wallet actions, video capture, and final submission freeze have not occurred. Protected CI evidence is the default release authority; no GASOK-only local-advisory exception is currently recorded. Git push, host package installation, DNS, HTTPS/certificate work, wallet actions, and DB restore remain explicit human approval gates.
 
-## Final Demo Pack
+## Local Product Evolution Status
 
-Open these first:
+The [Release 1 and Release 2 local completion freeze](docs/implementation/giwa-release-1-2-local-completion-freeze.md)
+records the locally verified product state as of 2026-07-31. Release 1 trust and
+data-integrity work and Release 2 public-verifiability and partner-evidence work
+are locally complete. This is local-advisory evidence only: no source freeze
+commit, protected-CI result for that source, deployment approval, public
+staging migration, backfill, or chain transaction is implied.
+
+The [Release 3 local completion freeze](docs/implementation/giwa-release-3-local-completion-freeze.md)
+records the locally verified shared Dossier presentation, responsive reflow,
+keyboard focus, self-hosted font, and reduced-motion boundary. Release 3 is
+local-advisory evidence only and does not authorize Git integration or public
+deployment.
+
+The [Release 4 wallet-session Studio design](docs/superpowers/specs/2026-08-01-giwa-release-4-wallet-session-studio-design.md),
+[implementation plan](docs/superpowers/plans/2026-08-01-giwa-release-4-wallet-session-studio.md),
+and [local completion freeze](docs/implementation/giwa-release-4-wallet-session-studio-local-completion-freeze.md)
+record the locally verified application-defined EIP-191 Owner challenge,
+eight-hour server session, additive organization auth storage, and read-only
+`/studio` surface. This remains local-advisory evidence only. The next product
+slice must begin with a separately reviewed Release 4 campaign/role design; it
+must not infer campaign mutation or broader partner authority from this login
+slice. The GASOK staging runbook remains the separate authority for any later
+approved public rollout.
+
+The approved [Release 4 Owner Campaign Draft design](docs/superpowers/specs/2026-08-01-giwa-release-4-owner-campaign-drafts-design.md),
+[implementation plan](docs/superpowers/plans/2026-08-01-giwa-release-4-owner-campaign-drafts.md),
+and [local completion freeze](docs/implementation/giwa-release-4-owner-campaign-drafts-local-completion-freeze.md)
+record the local-only extension: an authenticated Owner may create and edit
+organization-scoped, SQLite-backed `mockVaultDeposit` Drafts in `/studio`.
+The fixed published baseline remains read-only. Drafts are currently
+disconnected from public Campaign Studio, Manifest/Receipt creation, and
+execution. This remains local-advisory evidence only; it does not authorize Git
+integration, deployment, hosted configuration, real wallet authentication, or
+chain activity.
+
+The approved [Release 4 Owner Campaign Publishing design](docs/superpowers/specs/2026-08-01-giwa-release-4-owner-campaign-publishing-design.md),
+[implementation plan](docs/superpowers/plans/2026-08-01-giwa-release-4-owner-campaign-publishing.md),
+and [local completion freeze](docs/implementation/giwa-release-4-owner-campaign-publishing-local-completion-freeze.md)
+record the locally verified immutable Published Version and exact public-preview
+boundary. An Owner may publish one saved `mockVaultDeposit` Draft revision;
+the control requires a strict successful Version-history load, the Draft stays
+mutable, and every earlier Version stays unchanged. Failed or malformed history
+keeps publishing unavailable instead of assuming an empty sequence. The preview
+does not activate participant execution, create a Manifest or Receipt, request
+a wallet signature, call RPC, or take a chain action. This remains local-advisory
+evidence only and does not authorize Git integration, protected CI, deployment,
+or hosted migration.
+
+## Current GASOK Staging Pack
+
+Submission and operations documents:
+
+- [Public verification bundle and independent replay guide](docs/implementation/giwa-public-verification-bundle.md)
+- [GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md)
+- [Korean-first 90-second demo script](docs/implementation/giwa-gasok-demo-script.md)
+- [Submission no-go/go checklist](docs/implementation/giwa-gasok-submission-checklist.md)
+- [Historical Sprint 53 deployment plan](docs/implementation/giwa-lightsail-staging-deploy-execution-plan.md)
+- [Historical Sprint 53 smoke and rollback plan](docs/implementation/giwa-lightsail-staging-smoke-and-rollback-plan.md)
+
+Versioned Lightsail assets:
+
+- [Static service unit](ops/lightsail/systemd/giwa-static.service)
+- [Live service unit](ops/lightsail/systemd/giwa-live.service)
+- [Backup service unit](ops/lightsail/systemd/giwa-backup.service)
+- [Backup timer unit](ops/lightsail/systemd/giwa-backup.timer)
+- [Nginx staging template](ops/lightsail/nginx/giwa-staging.conf.template)
+- [Nginx config renderer](ops/lightsail/render-nginx-config.mjs)
+- [SQLite backup script](ops/lightsail/scripts/backup-live-db.sh)
+- [On-host local smoke script](ops/lightsail/scripts/smoke-local.sh)
+
+Approved public route ownership:
+
+| Route | Owner | Failure behavior |
+| --- | --- | --- |
+| `/`, `/giwa-demo`, `/evidence`, `/demo`, `/partner`, `/receipt/*` | static service on `127.0.0.1:4176` | production landing, public demo shell, read-only public proof surfaces, and operator control |
+| `/user*` | live service on `127.0.0.1:4177` | compatibility live flow with recorded static fallback |
+| `/api/*`, `/healthz`, `/readyz` | live service on `127.0.0.1:4177` | live API and health surfaces |
+
+SQLite storage and the in-memory rate limiter are intentionally one-instance GASOK testnet-staging choices, not horizontal-scaling claims.
+
+Current public experience:
+
+| Route | Purpose |
+| --- | --- |
+| `/` | real GIWA Genesis campaign entry |
+| `/giwa-demo` | GASOK guided entry |
+| `/user` | five-stage participant journey |
+| `/user/receipt/:hash` | participant Receipt and Exact Execution Seal |
+| `/user/receipts` | browser-local matched execution history |
+| `/studio` | Owner-authenticated Campaign Draft and public-preview workspace |
+| `/campaign/:campaignId/v/:versionNumber` | exact immutable Published Version preview |
+| `/partner` | public-safe read-only Campaign Studio |
+| `/evidence` | exact-hash public Proof Ledger |
+| `/receipt/:hash` | public technical Receipt |
+
+`/partner` derives its counts from stored evidence, exposes no campaign-management
+mutation, and marks stages that the current evidence model does not capture as
+unavailable instead of estimating them. `/demo` remains the operator Control
+Room and is not part of the participant-to-partner proof narrative.
+
+```text
+Production landing:   http://127.0.0.1:4176/
+Public GIWA demo:     http://127.0.0.1:4176/giwa-demo
+Operator control:     http://127.0.0.1:4176/demo
+Compatibility user:  http://127.0.0.1:4176/user
+Campaign Studio:      http://127.0.0.1:4176/partner
+Proof Ledger:         http://127.0.0.1:4176/evidence
+```
+
+## Current GASOK Final Demo Gate
+
+Use only these current documents for Task 15 and evaluator routing:
+
+- [Current GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md)
+- [Current GASOK demo script](docs/implementation/giwa-gasok-demo-script.md)
+- [Current GASOK submission checklist](docs/implementation/giwa-gasok-submission-checklist.md)
+
+The staging-origin gate is `NO-GO` until Task 15 records an actual public HTTPS `/user` URL, matched Receipt URL/hash, deposit explorer transaction, recorded/static partner packet with source/freshness label, exact source commit, and final verification evidence. Do not route an evaluator to a localhost URL or a retained hash from an older rehearsal.
+
+After the gate passes, the current demo order is the actual public `/user` origin, the fresh matched Receipt and its deposit explorer transaction, then the separately labeled recorded/static `/partner` and static fallback. The checked-in partner packet is not assumed to be the fresh staging run.
+
+## Historical Sprint 12 Recorded Demo Pack — Not Current GASOK Submission
+
+The links, localhost commands, hashes, and snapshots below preserve earlier local-review evidence only. They are not current Task 15 inputs, evaluator routes, or proof of a public staging deployment.
+
+Historical first-read documents:
 
 - [External blocker monitoring and staging handoff](docs/implementation/giwa-external-blocker-monitoring-and-staging-handoff.md)
 - [Partner/customer handoff package](docs/implementation/giwa-partner-customer-handoff-package.md)
-- [Demo script](docs/implementation/giwa-mvp-demo-script.md)
-- [Runbook](docs/implementation/giwa-mvp-runbook.md)
-- [Acceptance checklist](docs/implementation/giwa-mvp-acceptance-checklist.md)
-- [Submission evidence map](docs/implementation/giwa-mvp-submission-evidence.md)
+- [Historical local demo script](docs/implementation/giwa-mvp-demo-script.md)
+- [Historical local runbook](docs/implementation/giwa-mvp-runbook.md)
+- [Historical local acceptance checklist](docs/implementation/giwa-mvp-acceptance-checklist.md)
+- [Historical submission evidence map](docs/implementation/giwa-mvp-submission-evidence.md)
 
 Recommended demo order:
 
@@ -75,6 +200,8 @@ Evidence paths:
 - [docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json](docs/evidence/lightsail-staging-deploy-execution-plan-sprint53.json)
 
 ## Hosted Ops Readiness
+
+The sprint-by-sprint narrative below is retained for provenance and historical context. References to a sprint as "current" describe that sprint's recorded state at the time; they do not override the July GASOK staging pack above and do not prove public deployment.
 
 Sprint 17 adds hosted operations and partner beta readiness documents. Sprint 18 adds the partner beta rehearsal package. Sprint 19 adds staging deployment preparation gates. These are gates and runbooks only; they do not authorize public hosting or deployment.
 
@@ -208,6 +335,8 @@ Sprint 25 Git and Workflow Initialization After Approval is the approval-gated e
 - [Evidence retention policy](docs/implementation/giwa-evidence-retention-policy.md)
 
 ## Local Live MVP
+
+This section records historical localhost rehearsals. Its URLs and hashes are not current public staging or final submission evidence.
 
 Sprint 12 adds a local live rehearsal path while keeping the Sprint 7 static fallback intact. The final fresh wallet rehearsal used:
 
