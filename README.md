@@ -12,7 +12,7 @@ Use [the July GASOK staging implementation plan](docs/superpowers/plans/2026-07-
 
 The older [sprint index](docs/superpowers/plans/2026-06-16-giwa-mvp-sprint-index.md), [original MVP plan](docs/superpowers/plans/2026-06-15-giwa-verified-intent-rail-mvp.md), Sprint 51 architecture, Sprint 52 preflight, and Sprint 53 execution plans remain historical records. They must not override the current runbook or be treated as evidence of a completed deployment.
 
-Current source of truth for a later approved Lightsail rollout is [the GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md). Public deployment, DNS, HTTPS, fresh staging wallet actions, video capture, and final submission freeze have not occurred. Protected CI evidence is the default release authority; no GASOK-only local-advisory exception is currently recorded. Git push, host package installation, DNS, HTTPS/certificate work, wallet actions, and DB restore remain explicit human approval gates.
+Current source of truth for a later approved Lightsail rollout is [the GASOK staging runbook](docs/implementation/giwa-gasok-staging-runbook.md). Public deployment, DNS, HTTPS, fresh staging wallet actions, video capture, and final submission freeze have not occurred. GitHub Actions and its required status checks were intentionally disabled on 2026-08-01, so this repository currently produces no protected-CI release authority. No GASOK-only local-advisory exception is recorded yet. Git push, host package installation, DNS, HTTPS/certificate work, wallet actions, and DB restore remain explicit human approval gates.
 
 ## Local Product Evolution Status
 
