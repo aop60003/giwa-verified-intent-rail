@@ -296,9 +296,14 @@ display name, address, origin 값은 이 문서나 제출 evidence에 추가하�
 
 ## 배포 의사결정 게이트
 
-기본값은 **선택한 정확한 source commit에 대한 current protected CI evidence**다. 현재 이 문서에는 GASOK 예외 승인이 기록되어 있지 않다.
+GitHub Actions와 `main`의 required status checks는 사용자의 결정으로
+2026-08-01에 비활성화됐다. 따라서 현재 저장소는 protected CI release
+authority를 생성하지 않는다. 현재 이 문서에는 GASOK 예외 승인도 기록되어
+있지 않다.
 
-외부 계정 상태 때문에 protected CI가 사용할 수 없을 때만 사용자가 GASOK 선발 스테이징에 한정된 local-advisory 예외를 별도로 승인할 수 있다. 기록은 네 필드를 모두 가져야 한다.
+Actions를 사용하지 않는 동안 배포하려면 사용자가 GASOK 선발 스테이징에
+한정된 local-advisory 예외를 별도로 승인해야 한다. 기록은 네 필드를 모두
+가져야 한다.
 
 ```text
 sourceCommit=<exact 40-character commit>
@@ -372,13 +377,14 @@ sudo systemctl --no-pager --full status giwa-backup.service
 unit은 `/opt/giwa/current/ops/lightsail/scripts/backup-live-db.sh`를 호출하고 SQLite `.backup` 뒤 `PRAGMA quick_check`가 `ok`인지 확인한다. 출력에는 backup filename만 남아야 한다. backup 실패, migration 누락, legacy incompatible schema 또는 `/readyz`의 schema category 실패는 no-go다.
 
 Release 4 application을 처음 활성화하기 전에는 이 verified backup을 먼저
-완료한 뒤 additive migration `008_studio_wallet_auth`를 적용한다. `/readyz`의
-schema gate는 migration ID와 checksum뿐 아니라 `organizations`,
-`organization_members`, `auth_challenges`, `auth_sessions`의 정확한 column,
-unique/covering index, membership/session foreign key를 모두 확인해야 한다.
-Migration 008은 기존 run, decision, Receipt, public-evidence row 또는 그 hash를
-rewrite하지 않는다. 하나라도 다르거나 legacy Receipt/public-evidence 보존을
-확인하지 못하면 live activation은 no-go다.
+완료한 뒤 additive migration `008_studio_wallet_auth`,
+`009_studio_campaign_drafts`, `010_campaign_versions`를 순서대로 적용한다.
+`/readyz`의 schema gate는 세 migration ID와 checksum뿐 아니라 auth 네 table,
+organization-scoped Draft table, immutable Campaign Version table, 관련
+unique/covering index, composite foreign key와 no-update/no-delete trigger를 모두
+확인해야 한다. 세 migration은 기존 run, decision, Receipt, public-evidence row
+또는 그 hash를 rewrite하지 않는다. 하나라도 다르거나 legacy
+Receipt/public-evidence 보존을 확인하지 못하면 live activation은 no-go다.
 
 SQLite WAL 상태에서도 파일 복사 대신 versioned script의 `sqlite3 .backup`을 사용한다. 복원 훈련은 active DB가 아닌 별도 경로에서 backup을 열어 `PRAGMA quick_check`와 새 릴리스의 schema compatibility를 확인한다. 실제 active DB 교체는 write를 멈추고 owner가 승인한 경우에만 수행한다.
 
@@ -545,10 +551,11 @@ rollback은 testnet transaction을 되돌리지 못한다. 실패한 live run은
 6. static/local/public smoke를 다시 실행한다. live schema compatibility와 exact process cwd가 확인된 경우에만 live를 유지한다.
 7. DB restore는 자동으로 하지 않는다. active writes 중지, backup `quick_check`, 이전/현재 schema compatibility assessment, restore owner의 명시적 승인이 모두 있을 때만 별도 절차로 수행한다.
 8. bounded 로그, source commit, failure category, smoke 결과와 owner 결정을 보존한다. runtime values와 run capability는 evidence에서 제외한다.
-9. Migration `008_studio_wallet_auth`의 네 auth table과 index는 additive schema로
-   보존한다. 이전 application이 이 schema와 함께 read-only/public 경계를
-   유지하는지 먼저 검증하며, rollback을 이유로 table을 drop하거나 legacy
-   Receipt/public-evidence hash를 rewrite하지 않는다.
+9. Migration `008_studio_wallet_auth`, `009_studio_campaign_drafts`,
+   `010_campaign_versions`의 auth, Draft, immutable Version table과 index/trigger는
+   additive schema로 보존한다. 이전 application이 이 schema와 함께
+   read-only/public 경계를 유지하는지 먼저 검증하며, rollback을 이유로 table을
+   drop하거나 legacy Receipt/public-evidence hash를 rewrite하지 않는다.
 10. 이전 release에서 `/api/auth/*`가 지원되지 않으면 bounded unavailable/not-found
     동작으로 닫혀 있는지 확인하고, Release 4 session cookie가 partner credential
     또는 기존 public route authority로 승격되지 않는지 확인한다.

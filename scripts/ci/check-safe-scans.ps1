@@ -10,7 +10,7 @@ $ScanPaths = @(
   "apps\web\scripts",
   ".github",
   "scripts\ci"
-)
+) | Where-Object { Test-Path -LiteralPath $_ }
 
 $ScanGlobs = @(
   "--glob", "*.md",

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 function readWebFile(path: string): string {
   const direct = join(process.cwd(), path);
   const workspace = join(process.cwd(), "apps/web", path);
-  return readFileSync(existsSync(direct) ? direct : workspace, "utf8");
+  return readFileSync(existsSync(direct) ? direct : workspace, "utf8").replace(/\r\n/gu, "\n");
 }
 
 const limits = { name: 4, summary: 6 };
