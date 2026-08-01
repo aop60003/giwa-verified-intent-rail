@@ -65,9 +65,8 @@ describe("GIWA public demo presentation", () => {
     expect(source).toContain(
       "GIWA Verified Intent Rail이 두 기록을 대조합니다."
     );
-    expect(source).toContain('review_mission: "미션 조건 보기"');
-    expect(source).toContain('action === "review_mission"');
-    expect(source).toContain('action !== "review_mission"');
+    expect(source).toContain('connect: "지갑 연결"');
+    expect(source).not.toContain("review_mission");
     expect(source).toContain("isRecordedMismatchExample");
     expect(source).toContain("Recorded negative control");
     expect(source).toContain("불일치 대조 예시");
@@ -100,9 +99,10 @@ describe("GIWA public demo presentation", () => {
     const primaryStart = source.indexOf("function nextPrimaryAction()");
     const primaryEnd = source.indexOf("function primaryLabel()", primaryStart);
     const primarySource = source.slice(primaryStart, primaryEnd);
-    expect(primarySource.indexOf("!missionReviewed")).toBeLessThan(
-      primarySource.indexOf("walletState.account === null")
+    expect(primarySource).toContain(
+      'if (walletState.account === null) return "connect";'
     );
+    expect(primarySource).not.toContain("missionReviewed");
   });
 
   it("uses one editorial Journey Canvas without fixed-width overflow", () => {

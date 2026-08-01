@@ -6,7 +6,6 @@ const USER_RUN_KEY = "giwa:userRunState";
 const USER_WALLET_TX_KEY = "giwa:userWalletTxState";
 const USER_RECEIPTS_KEY = "giwa:userReceipts";
 const CAMPAIGN_HANDOFF_RECEIPT_KEY = "giwa:campaignHandoffReceipt";
-const USER_MISSION_REVIEW_KEY = "giwa:userMissionReviewed";
 const BALANCE_OF_SELECTOR = "0x70a08231";
 const ALLOWANCE_SELECTOR = "0xdd62ed3e";
 const MINT_SELECTOR = "0x40c10f19";
@@ -36,10 +35,9 @@ let publicConfig = null;
 let assetState = { next: "gas_required", approveRequired: true, gasWei: null, tokenBalance: null, allowance: null };
 let inFlight = false;
 let contextGeneration = 0;
-let missionReviewed = sessionStorage.getItem(USER_MISSION_REVIEW_KEY) === "true";
 const activeRequestControllers = new Set();
 const contextChangeListeners = new Set();
-let notice = "먼저 미션 조건을 확인하세요.";
+let notice = "지갑을 연결해 참여를 시작하세요.";
 
 function projectFailureCode(value) {
   const allowed = new Set([
@@ -571,7 +569,7 @@ function journeyProjection() {
     runState?.status
   );
   return projectJourneyStageState({
-    missionReviewed,
+    missionReviewed: true,
     walletReady,
     assetsReady,
     manifestReady,
@@ -592,7 +590,7 @@ function protocolConsoleProjection() {
     runState?.status
   );
   return projectProtocolConsoleState({
-    missionReviewed,
+    missionReviewed: true,
     approvalSubmitted:
       typeof runState?.approveTxHash === "string" ||
       assetState.next === "deposit_ready",
@@ -993,7 +991,6 @@ function publicNotice(kind, reason = null) {
 }
 
 function nextPrimaryAction() {
-  if (!missionReviewed) return "review_mission";
   if (walletState.account === null) return "connect";
   if (walletState.chainId !== GIWA_CHAIN_ID) return "switch_chain";
   if (assetState.next === "gas_required") return "open_faucet";
@@ -1009,7 +1006,6 @@ function nextPrimaryAction() {
 
 function primaryLabel() {
   const labels = {
-    review_mission: "미션 조건 보기",
     connect: "지갑 연결",
     switch_chain: "GIWA Sepolia로 전환",
     open_faucet: "테스트 ETH 받기",
@@ -2513,8 +2509,7 @@ async function onPrimaryAction() {
   const currentProvider = provider();
   if (
     currentProvider === null &&
-    action !== "open_receipt" &&
-    action !== "review_mission"
+    action !== "open_receipt"
   ) {
     walletState = { status: "providerMissing", account: null, chainId: null };
     notice = publicNotice("wallet", "provider_missing");
@@ -2525,11 +2520,7 @@ async function onPrimaryAction() {
   inFlight = true;
   render();
   try {
-    if (action === "review_mission") {
-      missionReviewed = true;
-      sessionStorage.setItem(USER_MISSION_REVIEW_KEY, "true");
-      notice = "미션 조건을 확인했습니다. 이제 지갑을 연결해 참여할 수 있습니다.";
-    } else if (action === "connect") {
+    if (action === "connect") {
       await connectWallet(currentProvider);
       context = captureContext();
     } else if (action === "switch_chain") {
