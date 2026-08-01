@@ -16,14 +16,14 @@ function readRuntimeSource(filePath: string): string {
 }
 
 describe("live server source imports", () => {
-  it("loads the Studio campaign service under the pinned Node strip-only runtime", () => {
+  it("loads the complete live server graph under the pinned Node strip-only runtime", () => {
     const result = spawnSync(
       "node",
       [
         "--experimental-strip-types",
         "--input-type=module",
         "--eval",
-        'await import("./src/lib/live/studioCampaignService.ts");'
+        'await import("./scripts/serve-live.mjs");'
       ],
       {
         cwd: process.cwd(),
