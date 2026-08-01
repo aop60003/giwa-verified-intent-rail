@@ -26,7 +26,7 @@ describe("GIWA Protocol Dossier presentation contract", () => {
   it("keeps the shell semantic and testnet-bounded", () => {
     const shell = readWebFile("public/protocol-dossier.js");
 
-    expect(shell).toContain("GIWA Verified Intent Rail");
+    expect(shell).toContain("LoopRail Demo");
     expect(shell).toContain('["/studio", "Studio", "studio"]');
     expect(shell).toContain("GIWA Sepolia · Testnet");
     expect(shell).toContain("조건 확인");

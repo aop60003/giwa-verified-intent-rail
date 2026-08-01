@@ -89,7 +89,7 @@
       documentRef,
       "a",
       "protocol-brand",
-      "GIWA Verified Intent Rail"
+      "LoopRail Demo"
     );
     brand.href = "/";
 
