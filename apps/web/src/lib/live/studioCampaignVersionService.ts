@@ -37,12 +37,17 @@ export type ExistingPublishedVersionProjection = {
 };
 
 export class StudioCampaignVersionServiceError extends Error {
+  readonly code: StudioCampaignVersionServiceErrorCode;
+  readonly existingVersion: ExistingPublishedVersionProjection | null;
+
   constructor(
-    public readonly code: StudioCampaignVersionServiceErrorCode,
-    public readonly existingVersion: ExistingPublishedVersionProjection | null = null
+    code: StudioCampaignVersionServiceErrorCode,
+    existingVersion: ExistingPublishedVersionProjection | null = null
   ) {
     super(code);
     this.name = "StudioCampaignVersionServiceError";
+    this.code = code;
+    this.existingVersion = existingVersion;
   }
 }
 
