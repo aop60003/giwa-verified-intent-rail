@@ -114,9 +114,24 @@ describe("public Campaign Studio presentation", () => {
   const html = readWebFile("public/index.html");
   const source = readWebFile("public/flow.js");
 
+  it("uses the shared Campaign shell and explains a selected Receipt before raw evidence", () => {
+    const start = source.indexOf("function renderPublicCampaignStudio");
+    const end = source.indexOf("function renderPublicEvidenceSearch", start);
+    const studio = source.slice(start, end);
+
+    expect(studio).toContain('renderProtocolHeader("campaign")');
+    expect(studio).toContain("이 Receipt가 Campaign evidence에 반영된 방식");
+    expect(studio).toContain(
+      "Manifest와 일치한 GIWA Sepolia 실행만 참여·제출·Matched Receipt 지표에 포함됩니다."
+    );
+    expect(studio.indexOf("campaign-receipt-explanation")).toBeLessThan(
+      studio.indexOf("proof-ledger-links")
+    );
+  });
+
   it("ships the Korean public proof shell and six-section Studio", () => {
     expect(html).toContain('<html lang="ko">');
-    expect(html).toContain("Pretendard");
+    expect(html).toContain("/fonts/pretendard.css");
     expect(html).toContain(
       "<title>Public Proof · GIWA Verified Intent Rail</title>"
     );

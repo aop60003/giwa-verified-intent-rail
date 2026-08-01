@@ -291,6 +291,19 @@ describe("public Proof Ledger presentation", () => {
   const source = readWebFile("public/flow.js");
   const participantSource = readWebFile("public/user-flow.js");
 
+  it("uses the shared Proof shell and explains the verification chain before raw hashes", () => {
+    const start = source.indexOf("function renderPublicEvidenceSearch");
+    const end = source.indexOf("function bindPublicEvidenceSearch", start);
+    const proof = source.slice(start, end);
+
+    expect(proof).toContain('renderProtocolHeader("proof")');
+    expect(proof).toContain("Manifest → GIWA 실행 → Match → Receipt");
+    expect(proof).toContain("renderHashDisclosure");
+    expect(proof.indexOf("proof-chain-intro")).toBeLessThan(
+      proof.indexOf("proof-search-controls")
+    );
+  });
+
   it("renders exact-hash search without wallet discovery", () => {
     expect(source).toContain("renderPublicEvidenceSearch");
     expect(source).toContain("projectPublicMatchedProof");

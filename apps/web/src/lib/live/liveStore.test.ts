@@ -6,6 +6,9 @@ import { DatabaseSync } from "node:sqlite";
 
 import { createMemoryLiveStore, createSqliteLiveStore } from "./liveStore.ts";
 import type { LiveStore } from "./liveStore.ts";
+import type { StudioAuthRepository } from "./studioAuthRepository.ts";
+import type { StudioCampaignRecord } from "./studioCampaignRepository.ts";
+import type { StudioCampaignVersionRecord } from "./studioCampaignVersionRepository.ts";
 import {
   evaluateLiveSchemaState,
   REQUIRED_LIVE_MIGRATIONS
@@ -87,6 +90,107 @@ function publicEvidence(
     depositTxHash: `0x${"d".repeat(64)}`,
     bundleJson: '{"schemaVersion":"1","source":"live"}',
     createdAt: "2026-07-31T00:00:00.000Z",
+    ...overrides
+  };
+}
+
+const studioNow = "2026-08-01T00:00:00.000Z";
+const studioOwnerA = "0x1111111111111111111111111111111111111111" as const;
+const studioOwnerB = "0x2222222222222222222222222222222222222222" as const;
+
+const campaignBaseline: StudioCampaignRecord = {
+  campaignId: "gasok-demo",
+  organizationId: "tenant-a",
+  name: "GIWA GASOK Demo",
+  summary: "Existing verified-intent testnet campaign.",
+  actionTemplate: "mockVaultDeposit",
+  lifecycleState: "published-baseline",
+  source: "gasok-evidence",
+  revision: 1,
+  createdByMemberId: null,
+  updatedByMemberId: null,
+  createdAt: "1970-01-01T00:00:00.000Z",
+  updatedAt: "1970-01-01T00:00:00.000Z"
+};
+
+function campaignDraft(overrides: Partial<StudioCampaignRecord> = {}): StudioCampaignRecord {
+  return {
+    ...campaignBaseline,
+    campaignId: "campaign-draft",
+    lifecycleState: "draft",
+    source: "studio-draft",
+    createdByMemberId: "member-a",
+    updatedByMemberId: "member-a",
+    createdAt: studioNow,
+    updatedAt: studioNow,
+    ...overrides
+  };
+}
+
+function publishedCampaignVersion(
+  campaign: StudioCampaignRecord,
+  versionNumber: number,
+  memberId: string
+): StudioCampaignVersionRecord {
+  return {
+    campaignId: campaign.campaignId,
+    organizationId: campaign.organizationId,
+    versionNumber,
+    name: campaign.name,
+    summary: campaign.summary,
+    actionTemplate: "mockVaultDeposit",
+    sourceDraftRevision: campaign.revision,
+    canonicalJson: `{"campaignId":"${campaign.campaignId}","versionNumber":${versionNumber}}`,
+    campaignVersionHash: `0x${String(versionNumber).repeat(64)}`,
+    publishedByMemberId: memberId,
+    publishedAt: studioNow
+  };
+}
+
+function provisionCampaignOrganizations(store: LiveStore): { memberA: string; memberB: string } {
+  for (const [id, displayName, wallet] of [
+    ["tenant-a", "Loop", studioOwnerA],
+    ["tenant-b", "Other", studioOwnerB]
+  ] as const) {
+    store.studioAuth.upsertOrganization({ id, displayName, createdAt: studioNow, updatedAt: studioNow });
+    store.studioAuth.syncBootstrapOwners({ organizationId: id, walletAddresses: [wallet], nowIso: studioNow });
+  }
+  return {
+    memberA: store.studioAuth.getActiveMember("tenant-a", studioOwnerA)!.memberId,
+    memberB: store.studioAuth.getActiveMember("tenant-b", studioOwnerB)!.memberId
+  };
+}
+
+function studioChallenge(
+  overrides: Partial<Parameters<StudioAuthRepository["createChallenge"]>[0]> = {}
+): Parameters<StudioAuthRepository["createChallenge"]>[0] {
+  return {
+    challengeId: "challenge-one",
+    expectedWallet: studioOwnerA,
+    nonceHash: "a".repeat(64),
+    origin: "https://app.example",
+    uri: "https://app.example/studio",
+    chainId: 91_342,
+    issuedAt: studioNow,
+    expiresAt: "2026-08-01T00:05:00.000Z",
+    usedAt: null,
+    attemptCount: 0,
+    createdAt: studioNow,
+    ...overrides
+  };
+}
+
+function studioSession(
+  memberId: string,
+  overrides: Partial<Parameters<StudioAuthRepository["consumeChallengeAndCreateSession"]>[0]["session"]> = {}
+): Parameters<StudioAuthRepository["consumeChallengeAndCreateSession"]>[0]["session"] {
+  return {
+    sessionId: "session-one",
+    tokenHash: "b".repeat(64),
+    memberId,
+    createdAt: "2026-08-01T00:01:00.000Z",
+    expiresAt: "2026-08-01T08:01:00.000Z",
+    revokedAt: null,
     ...overrides
   };
 }
@@ -729,7 +833,612 @@ describe("public campaign event store contract", () => {
   });
 });
 
+describe("Studio auth live-store parity", () => {
+  it.each(["memory", "SQLite"] as const)(
+    "rolls back atomic bootstrap organization provisioning in %s when Owner synchronization fails",
+    (adapter) => {
+      const dir = adapter === "SQLite"
+        ? mkdtempSync(join(tmpdir(), "giwa-studio-auth-bootstrap-rollback-"))
+        : null;
+      const store = adapter === "SQLite"
+        ? createSqliteLiveStore(join(dir!, "live.sqlite"))
+        : createMemoryLiveStore();
+      try {
+        const auth = store.studioAuth;
+        auth.upsertOrganization({
+          id: "tenant-existing",
+          displayName: "Existing",
+          createdAt: studioNow,
+          updatedAt: studioNow
+        });
+        auth.syncBootstrapOwners({
+          organizationId: "tenant-existing",
+          walletAddresses: [studioOwnerA],
+          nowIso: studioNow
+        });
+
+        expect(() => auth.bootstrapOrganizationsAndOwners({
+          organizations: [
+            { id: "tenant-existing", displayName: "Changed", createdAt: studioNow, updatedAt: studioNow },
+            { id: "tenant-new", displayName: "New", createdAt: studioNow, updatedAt: studioNow }
+          ],
+          organizationId: "tenant-new",
+          walletAddresses: ["0x1234" as `0x${string}`],
+          nowIso: studioNow
+        })).toThrow("invalid_studio_wallet");
+        expect(auth.getActiveMember("tenant-existing", studioOwnerA)).toMatchObject({
+          role: "Owner",
+          status: "active"
+        });
+        expect(() => auth.syncBootstrapOwners({
+          organizationId: "tenant-new",
+          walletAddresses: [studioOwnerB],
+          nowIso: studioNow
+        })).toThrow("studio_organization_not_found");
+      } finally {
+        if ("close" in store && typeof store.close === "function") store.close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it.each(["memory", "SQLite"] as const)(
+    "matches organization, challenge, session, and pruning semantics in %s",
+    (adapter) => {
+      const dir = adapter === "SQLite"
+        ? mkdtempSync(join(tmpdir(), "giwa-studio-auth-parity-"))
+        : null;
+      const store = adapter === "SQLite"
+        ? createSqliteLiveStore(join(dir!, "live.sqlite"))
+        : createMemoryLiveStore();
+      try {
+        const auth = store.studioAuth;
+        auth.upsertOrganization({
+          id: "tenant-a",
+          displayName: "Loop",
+          createdAt: studioNow,
+          updatedAt: studioNow
+        });
+        expect(auth.syncBootstrapOwners({
+          organizationId: "tenant-a",
+          walletAddresses: [studioOwnerA, studioOwnerA, studioOwnerB],
+          nowIso: studioNow
+        })).toEqual({ activeOwnerCount: 2 });
+        const member = auth.getActiveMember("tenant-a", studioOwnerA)!;
+        auth.syncBootstrapOwners({
+          organizationId: "tenant-a",
+          walletAddresses: [studioOwnerB],
+          nowIso: "2026-08-01T00:00:01.000Z"
+        });
+        expect(auth.getActiveMember("tenant-a", studioOwnerA)).toBeNull();
+        auth.syncBootstrapOwners({
+          organizationId: "tenant-a",
+          walletAddresses: [studioOwnerA, studioOwnerB],
+          nowIso: "2026-08-01T00:00:02.000Z"
+        });
+        expect(auth.getActiveMember("tenant-a", studioOwnerA)?.memberId).toBe(member.memberId);
+        expect(() => auth.syncBootstrapOwners({
+          organizationId: "tenant-a",
+          walletAddresses: [],
+          nowIso: studioNow
+        })).toThrow("studio_bootstrap_owner_required");
+
+        auth.createChallenge(studioChallenge());
+        expect(auth.incrementChallengeAttempt("challenge-one")).toBe(1);
+        expect(auth.incrementChallengeAttempt("missing")).toBe(0);
+        expect(() => auth.createChallenge(studioChallenge())).toThrow("duplicate_studio_auth_challenge");
+        expect(() => auth.createChallenge(studioChallenge({ challengeId: "challenge-duplicate-nonce" })))
+          .toThrow("duplicate_studio_auth_challenge");
+
+        auth.createChallenge(studioChallenge({
+          challengeId: "challenge-exact-expiry",
+          nonceHash: "c".repeat(64),
+          expiresAt: "2026-08-01T00:02:00.000Z"
+        }));
+        expect(auth.consumeChallengeAndCreateSession({
+          challengeId: "challenge-exact-expiry",
+          nowIso: "2026-08-01T00:02:00.000Z",
+          session: studioSession(member.memberId, {
+            sessionId: "session-exact-expiry",
+            tokenHash: "d".repeat(64)
+          })
+        })).toBe(false);
+        expect(auth.getChallenge("challenge-exact-expiry")?.usedAt).toBeNull();
+
+        const validSession = studioSession(member.memberId);
+        expect(auth.consumeChallengeAndCreateSession({
+          challengeId: "challenge-one",
+          nowIso: "2026-08-01T00:01:00.000Z",
+          session: validSession
+        })).toBe(true);
+        expect(auth.consumeChallengeAndCreateSession({
+          challengeId: "challenge-one",
+          nowIso: "2026-08-01T00:01:00.000Z",
+          session: validSession
+        })).toBe(false);
+        auth.createChallenge(studioChallenge({
+          challengeId: "challenge-duplicate-session-id",
+          nonceHash: "e".repeat(64)
+        }));
+        expect(auth.consumeChallengeAndCreateSession({
+          challengeId: "challenge-duplicate-session-id",
+          nowIso: "2026-08-01T00:01:00.000Z",
+          session: studioSession(member.memberId, { tokenHash: "f".repeat(64) })
+        })).toBe(false);
+        expect(auth.getChallenge("challenge-duplicate-session-id")?.usedAt).toBeNull();
+        auth.createChallenge(studioChallenge({
+          challengeId: "challenge-duplicate-token-hash",
+          nonceHash: "1".repeat(64)
+        }));
+        expect(auth.consumeChallengeAndCreateSession({
+          challengeId: "challenge-duplicate-token-hash",
+          nowIso: "2026-08-01T00:01:00.000Z",
+          session: studioSession(member.memberId, { sessionId: "session-other" })
+        })).toBe(false);
+        expect(auth.getChallenge("challenge-duplicate-token-hash")?.usedAt).toBeNull();
+        expect(auth.getSessionContextByTokenHash(
+          validSession.tokenHash,
+          "2026-08-01T00:02:00.000Z"
+        )).toMatchObject({
+          organization: { id: "tenant-a" },
+          member: { memberId: member.memberId, status: "active" }
+        });
+        expect(auth.getSessionContextByTokenHash(validSession.tokenHash, validSession.expiresAt)).toBeNull();
+        expect(auth.revokeSessionByTokenHash(validSession.tokenHash, "2026-08-01T00:03:00.000Z")).toBe(true);
+        expect(auth.revokeSessionByTokenHash(validSession.tokenHash, "2026-08-01T00:04:00.000Z")).toBe(false);
+
+        expect(auth.pruneExpiredAuthRecords("2026-08-01T00:03:00.000Z", 1)).toEqual({
+          challengesRemoved: 1,
+          sessionsRemoved: 0
+        });
+        expect(auth.getChallenge("challenge-exact-expiry")).toBeNull();
+        expect(auth.pruneExpiredAuthRecords("2026-08-01T09:00:00.000Z", 1)).toEqual({
+          challengesRemoved: 1,
+          sessionsRemoved: 1
+        });
+      } finally {
+        if ("close" in store && typeof store.close === "function") store.close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it("normalizes case variants to one stable Owner and challenge wallet in memory and SQLite", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-studio-auth-case-parity-"));
+    const sqlite = createSqliteLiveStore(join(dir, "live.sqlite"));
+    const memory = createMemoryLiveStore();
+    const mixedCaseOwner = "0xAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAa" as const;
+    const lowerCaseOwner = mixedCaseOwner.toLowerCase() as `0x${string}`;
+    const snapshot = (repository: StudioAuthRepository) => {
+      repository.upsertOrganization({
+        id: "tenant-case",
+        displayName: "Case",
+        createdAt: studioNow,
+        updatedAt: studioNow
+      });
+      const synchronized = repository.syncBootstrapOwners({
+        organizationId: "tenant-case",
+        walletAddresses: [mixedCaseOwner, lowerCaseOwner],
+        nowIso: studioNow
+      });
+      const mixedCaseMember = repository.getActiveMember("tenant-case", mixedCaseOwner);
+      const lowerCaseMember = repository.getActiveMember("tenant-case", lowerCaseOwner);
+      repository.syncBootstrapOwners({
+        organizationId: "tenant-case",
+        walletAddresses: [lowerCaseOwner],
+        nowIso: "2026-08-01T00:01:00.000Z"
+      });
+      repository.createChallenge(studioChallenge({
+        challengeId: "challenge-case",
+        expectedWallet: mixedCaseOwner,
+        nonceHash: "2".repeat(64)
+      }));
+      return {
+        synchronized,
+        mixedCaseMember,
+        lowerCaseMember,
+        stableMember: repository.getActiveMember("tenant-case", lowerCaseOwner),
+        challenge: repository.getChallenge("challenge-case")
+      };
+    };
+
+    try {
+      const memorySnapshot = snapshot(memory.studioAuth);
+      const sqliteSnapshot = snapshot(sqlite.studioAuth);
+      for (const result of [memorySnapshot, sqliteSnapshot]) {
+        expect(result.synchronized).toEqual({ activeOwnerCount: 1 });
+        expect(result.mixedCaseMember).toEqual(result.lowerCaseMember);
+        expect(result.mixedCaseMember?.walletAddress).toBe(lowerCaseOwner);
+        expect(result.stableMember?.memberId).toBe(result.mixedCaseMember?.memberId);
+        expect(result.challenge?.expectedWallet).toBe(lowerCaseOwner);
+      }
+      expect(sqliteSnapshot).toEqual(memorySnapshot);
+    } finally {
+      sqlite.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["memory", "SQLite"] as const)(
+    "rejects invalid EVM wallet input at every repository boundary in %s",
+    (adapter) => {
+      const dir = adapter === "SQLite"
+        ? mkdtempSync(join(tmpdir(), "giwa-studio-auth-invalid-wallet-"))
+        : null;
+      const store = adapter === "SQLite"
+        ? createSqliteLiveStore(join(dir!, "live.sqlite"))
+        : createMemoryLiveStore();
+      const invalidWallet = "0x1234" as const;
+      try {
+        store.studioAuth.upsertOrganization({
+          id: "tenant-invalid",
+          displayName: "Invalid",
+          createdAt: studioNow,
+          updatedAt: studioNow
+        });
+        expect(() => store.studioAuth.syncBootstrapOwners({
+          organizationId: "tenant-invalid",
+          walletAddresses: [invalidWallet],
+          nowIso: studioNow
+        })).toThrow("invalid_studio_wallet");
+        expect(() => store.studioAuth.getActiveMember("tenant-invalid", invalidWallet))
+          .toThrow("invalid_studio_wallet");
+        expect(() => store.studioAuth.createChallenge(studioChallenge({
+          challengeId: "challenge-invalid",
+          expectedWallet: invalidWallet,
+          nonceHash: "3".repeat(64)
+        }))).toThrow("invalid_studio_wallet");
+      } finally {
+        if ("close" in store && typeof store.close === "function") store.close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+});
+
+describe("Studio campaign live-store parity", () => {
+  it.each(["memory", "sqlite"] as const)(
+    "publishes immutable campaign versions with %s storage",
+    (kind) => {
+      const dir = kind === "sqlite" ? mkdtempSync(join(tmpdir(), "giwa-campaign-version-parity-")) : null;
+      const store = kind === "sqlite"
+        ? createSqliteLiveStore(join(dir!, "live.sqlite"))
+        : createMemoryLiveStore();
+      try {
+        const { memberA } = provisionCampaignOrganizations(store);
+        const draft = store.studioCampaigns.createDraft(campaignDraft({
+          campaignId: "campaign_00000000-0000-4000-8000-000000000001",
+          createdByMemberId: memberA,
+          updatedByMemberId: memberA
+        }));
+        const first = store.studioCampaignVersions.publishDraftVersion({
+          organizationId: draft.organizationId,
+          campaignId: draft.campaignId,
+          expectedRevision: draft.revision,
+          publishedByMemberId: memberA,
+          publishedAt: studioNow,
+          buildVersion: (campaign, versionNumber) => publishedCampaignVersion(campaign, versionNumber, memberA)
+        });
+        expect(first).toMatchObject({ ok: true, version: { versionNumber: 1 } });
+        expect(store.studioCampaignVersions.publishDraftVersion({
+          organizationId: draft.organizationId,
+          campaignId: draft.campaignId,
+          expectedRevision: draft.revision,
+          publishedByMemberId: memberA,
+          publishedAt: studioNow,
+          buildVersion: (campaign, versionNumber) => publishedCampaignVersion(campaign, versionNumber, memberA)
+        })).toMatchObject({ ok: false, reason: "already_published" });
+        expect(store.studioCampaignVersions.listForOrganizationCampaign("tenant-a", draft.campaignId))
+          .toMatchObject([{ versionNumber: 1, sourceDraftRevision: 1 }]);
+        expect(evaluateLiveSchemaState(store.getSchemaState())).toEqual({ ok: true, reason: null });
+      } finally {
+        if (kind === "sqlite") (store as ReturnType<typeof createSqliteLiveStore>).close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it.each(["memory", "sqlite"] as const)(
+    "uses the same global version-hash collision outcome with %s storage",
+    (kind) => {
+      const dir = kind === "sqlite" ? mkdtempSync(join(tmpdir(), "giwa-campaign-hash-parity-")) : null;
+      const store = kind === "sqlite" ? createSqliteLiveStore(join(dir!, "live.sqlite")) : createMemoryLiveStore();
+      try {
+        const { memberA } = provisionCampaignOrganizations(store);
+        const first = store.studioCampaigns.createDraft(campaignDraft({
+          campaignId: "campaign_00000000-0000-4000-8000-000000000011",
+          createdByMemberId: memberA,
+          updatedByMemberId: memberA
+        }));
+        const second = store.studioCampaigns.createDraft(campaignDraft({
+          campaignId: "campaign_00000000-0000-4000-8000-000000000012",
+          name: "Second campaign",
+          createdByMemberId: memberA,
+          updatedByMemberId: memberA
+        }));
+        const publish = (campaign: StudioCampaignRecord) => store.studioCampaignVersions.publishDraftVersion({
+          organizationId: campaign.organizationId,
+          campaignId: campaign.campaignId,
+          expectedRevision: campaign.revision,
+          publishedByMemberId: memberA,
+          publishedAt: studioNow,
+          buildVersion: (draft, versionNumber) => ({
+            ...publishedCampaignVersion(draft, versionNumber, memberA),
+            campaignVersionHash: `0x${"f".repeat(64)}`
+          })
+        });
+        expect(publish(first)).toMatchObject({ ok: true });
+        expect(() => publish(second)).toThrow("duplicate_studio_campaign_version_hash");
+      } finally {
+        if (kind === "sqlite") (store as ReturnType<typeof createSqliteLiveStore>).close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it.each(["memory", "SQLite"] as const)(
+    "keeps baseline, Draft revision, ordering, and tenant boundaries aligned in %s",
+    (adapter) => {
+      const dir = adapter === "SQLite"
+        ? mkdtempSync(join(tmpdir(), "giwa-studio-campaign-parity-"))
+        : null;
+      const store = adapter === "SQLite"
+        ? createSqliteLiveStore(join(dir!, "live.sqlite"))
+        : createMemoryLiveStore();
+      try {
+        const { memberA, memberB } = provisionCampaignOrganizations(store);
+        const campaigns = store.studioCampaigns;
+        expect(campaigns.bootstrapPublishedBaseline(campaignBaseline)).toEqual(campaignBaseline);
+        expect(campaigns.bootstrapPublishedBaseline({ ...campaignBaseline, name: "Ignored replacement" }))
+          .toEqual(campaignBaseline);
+        expect(() => campaigns.bootstrapPublishedBaseline({ ...campaignBaseline, organizationId: "tenant-b" }))
+          .toThrow("studio_campaign_baseline_conflict");
+
+        campaigns.createDraft(campaignDraft({
+          campaignId: "campaign-old",
+          createdByMemberId: memberA,
+          updatedByMemberId: memberA,
+          updatedAt: "2026-08-01T00:00:00.000Z"
+        }));
+        campaigns.createDraft(campaignDraft({
+          campaignId: "campaign-new",
+          createdByMemberId: memberA,
+          updatedByMemberId: memberA,
+          updatedAt: "2026-08-01T00:01:00.000Z"
+        }));
+        campaigns.createDraft(campaignDraft({
+          campaignId: "campaign-tenant-b",
+          organizationId: "tenant-b",
+          createdByMemberId: memberB,
+          updatedByMemberId: memberB
+        }));
+        expect(campaigns.listForOrganization("tenant-a").map((campaign) => campaign.campaignId))
+          .toEqual(["gasok-demo", "campaign-new", "campaign-old"]);
+        expect(campaigns.listForOrganization("tenant-b").map((campaign) => campaign.campaignId))
+          .toEqual(["campaign-tenant-b"]);
+
+        const update = {
+          organizationId: "tenant-a",
+          campaignId: "campaign-new",
+          name: "Updated Draft",
+          summary: "Updated local draft.",
+          updatedByMemberId: memberA,
+          updatedAt: "2026-08-01T01:00:00.000Z",
+          expectedRevision: 1
+        };
+        expect(campaigns.updateDraft(update)).toMatchObject({
+          ok: true,
+          campaign: { revision: 2, name: "Updated Draft" }
+        });
+        expect(campaigns.updateDraft({ ...update, name: "Stale writer" }))
+          .toEqual({ ok: false, reason: "revision_conflict" });
+        expect(campaigns.updateDraft({ ...update, campaignId: "campaign-tenant-b" }))
+          .toEqual({ ok: false, reason: "not_found" });
+        expect(campaigns.updateDraft({ ...update, campaignId: "gasok-demo" }))
+          .toEqual({ ok: false, reason: "not_found" });
+        expect(campaigns.listForOrganization("tenant-a")[0]).toEqual(campaignBaseline);
+
+        campaigns.createDraft(campaignDraft({
+          campaignId: "campaign-max-revision",
+          createdByMemberId: memberA,
+          updatedByMemberId: memberA,
+          revision: Number.MAX_SAFE_INTEGER
+        }));
+        const exhausted = {
+          ...update,
+          campaignId: "campaign-max-revision",
+          expectedRevision: Number.MAX_SAFE_INTEGER
+        };
+        expect(() => campaigns.updateDraft(exhausted)).toThrow("studio_campaign_revision_exhausted");
+        expect(campaigns.listForOrganization("tenant-a").find(
+          (campaign) => campaign.campaignId === exhausted.campaignId
+        )).toMatchObject({ revision: Number.MAX_SAFE_INTEGER, name: campaignBaseline.name });
+      } finally {
+        if ("close" in store && typeof store.close === "function") store.close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it("persists Studio campaign Drafts after SQLite close and reopen", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-studio-campaign-persistence-"));
+    const dbPath = join(dir, "live.sqlite");
+    try {
+      const first = createSqliteLiveStore(dbPath);
+      const { memberA } = provisionCampaignOrganizations(first);
+      first.studioCampaigns.bootstrapPublishedBaseline(campaignBaseline);
+      first.studioCampaigns.createDraft(campaignDraft({
+        createdByMemberId: memberA,
+        updatedByMemberId: memberA
+      }));
+      first.close();
+
+      const reopened = createSqliteLiveStore(dbPath);
+      expect(reopened.studioCampaigns.listForOrganization("tenant-a").map((campaign) => campaign.campaignId))
+        .toEqual(["gasok-demo", "campaign-draft"]);
+      expect(reopened.getSchemaState().migrations).toContain("009_studio_campaign_drafts");
+      reopened.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("sqlite live store", () => {
+  it("persists Studio organizations, Owners, challenges, and sessions", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-studio-auth-"));
+    const dbPath = join(dir, "live.sqlite");
+    try {
+      const first = createSqliteLiveStore(dbPath);
+      first.studioAuth.upsertOrganization({
+        id: "tenant-a",
+        displayName: "Loop",
+        createdAt: studioNow,
+        updatedAt: studioNow
+      });
+      first.studioAuth.syncBootstrapOwners({
+        organizationId: "tenant-a",
+        walletAddresses: [studioOwnerA],
+        nowIso: studioNow
+      });
+      const member = first.studioAuth.getActiveMember("tenant-a", studioOwnerA)!;
+      first.studioAuth.createChallenge(studioChallenge());
+      expect(first.studioAuth.consumeChallengeAndCreateSession({
+        challengeId: "challenge-one",
+        nowIso: "2026-08-01T00:01:00.000Z",
+        session: studioSession(member.memberId)
+      })).toBe(true);
+      first.close();
+
+      const reopened = createSqliteLiveStore(dbPath);
+      expect(reopened.studioAuth.getActiveMember("tenant-a", studioOwnerA)?.role).toBe("Owner");
+      expect(reopened.studioAuth.getChallenge("challenge-one")?.usedAt).toBe("2026-08-01T00:01:00.000Z");
+      expect(reopened.studioAuth.getSessionContextByTokenHash(
+        "b".repeat(64),
+        "2026-08-01T00:02:00.000Z"
+      )?.organization.id).toBe("tenant-a");
+      expect(reopened.getSchemaState().migrations).toContain("008_studio_wallet_auth");
+      reopened.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports exact Studio auth foreign keys", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-studio-auth-fk-"));
+    const dbPath = join(dir, "live.sqlite");
+    try {
+      const store = createSqliteLiveStore(dbPath);
+      store.close();
+      const db = new DatabaseSync(dbPath);
+      expect(db.prepare(
+        `select "from", "table", "to" from pragma_foreign_key_list(?)`
+      ).all("organization_members")).toEqual([
+        { from: "organizationId", table: "organizations", to: "id" }
+      ]);
+      expect(db.prepare(
+        `select "from", "table", "to" from pragma_foreign_key_list(?)`
+      ).all("auth_sessions")).toEqual([
+        { from: "memberId", table: "organization_members", to: "memberId" }
+      ]);
+      db.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["memory", "SQLite"] as const)(
+    "rejects a nonexistent session member without consuming the challenge in %s",
+    (adapter) => {
+      const dir = adapter === "SQLite"
+        ? mkdtempSync(join(tmpdir(), "giwa-studio-auth-member-parity-"))
+        : null;
+      const store = adapter === "SQLite"
+        ? createSqliteLiveStore(join(dir!, "live.sqlite"))
+        : createMemoryLiveStore();
+      try {
+        store.studioAuth.createChallenge(studioChallenge());
+        expect(store.studioAuth.consumeChallengeAndCreateSession({
+          challengeId: "challenge-one",
+          nowIso: "2026-08-01T00:01:00.000Z",
+          session: studioSession("missing-member")
+        })).toBe(false);
+        expect(store.studioAuth.getChallenge("challenge-one")?.usedAt).toBeNull();
+      } finally {
+        if ("close" in store && typeof store.close === "function") store.close();
+        if (dir !== null) rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it("reports a drifted migration-008 checksum without overwriting it on reopen", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-studio-auth-checksum-"));
+    const dbPath = join(dir, "live.sqlite");
+    try {
+      const initial = createSqliteLiveStore(dbPath);
+      initial.close();
+      const drifted = new DatabaseSync(dbPath);
+      drifted.prepare(
+        "update schema_migrations set checksum = ? where id = ?"
+      ).run("drifted-checksum", "008_studio_wallet_auth");
+      drifted.close();
+
+      const reopened = createSqliteLiveStore(dbPath);
+      try {
+        expect(reopened.getSchemaState().migrationChecksums?.["008_studio_wallet_auth"])
+          .toBe("drifted-checksum");
+        expect(evaluateLiveSchemaState(reopened.getSchemaState())).toEqual({
+          ok: false,
+          reason: "migration_missing"
+        });
+      } finally {
+        reopened.close();
+      }
+      const inspected = new DatabaseSync(dbPath);
+      expect(inspected.prepare(
+        "select checksum from schema_migrations where id = ?"
+      ).get("008_studio_wallet_auth")).toEqual({ checksum: "drifted-checksum" });
+      inspected.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rolls back every migration-008 artifact when schema installation fails", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-studio-auth-migration-rollback-"));
+    const dbPath = join(dir, "live.sqlite");
+    try {
+      const malformed = new DatabaseSync(dbPath);
+      malformed.exec(`
+        create table schema_migrations (
+          id text primary key,
+          checksum text not null,
+          appliedAt text not null
+        );
+        create table organization_members (memberId text primary key);
+      `);
+      malformed.close();
+
+      expect(() => createSqliteLiveStore(dbPath)).toThrow();
+
+      const inspected = new DatabaseSync(dbPath);
+      expect(inspected.prepare(
+        "select id from schema_migrations where id = ?"
+      ).get("008_studio_wallet_auth")).toBeUndefined();
+      expect(inspected.prepare(
+        "select name from sqlite_master where type = 'table' and name = ?"
+      ).get("organizations")).toBeUndefined();
+      expect(inspected.prepare(
+        "select name from sqlite_master where type = 'table' and name = ?"
+      ).get("auth_challenges")).toBeUndefined();
+      expect(inspected.prepare(
+        "select name from sqlite_master where type = 'table' and name = ?"
+      ).get("auth_sessions")).toBeUndefined();
+      inspected.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
   it("reports exact SQLite column positions, index origins, and aggregation coverage", () => {
     const dir = mkdtempSync(join(tmpdir(), "giwa-live-store-"));
     const dbPath = join(dir, "live.sqlite");
@@ -803,6 +1512,29 @@ describe("sqlite live store", () => {
     }
   });
 
+  it("reports the required descending Studio campaign index direction", () => {
+    const dir = mkdtempSync(join(tmpdir(), "giwa-live-store-"));
+    const dbPath = join(dir, "live.sqlite");
+    try {
+      const store = createSqliteLiveStore(dbPath);
+      try {
+        expect(store.getSchemaState().indexes?.campaigns).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              name: "idx_campaigns_organization_state_updated",
+              columns: ["organizationId", "lifecycleState", "updatedAt", "campaignId"],
+              descending: [false, false, true, false]
+            })
+          ])
+        );
+      } finally {
+        store.close();
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("stores immutable public evidence with three-hash lookup in sqlite", () => {
     const dir = mkdtempSync(join(tmpdir(), "giwa-live-store-"));
     const dbPath = join(dir, "live.sqlite");
@@ -818,27 +1550,44 @@ describe("sqlite live store", () => {
     }
   });
 
-  it("preserves the exact public evidence bytes after sqlite reopen", () => {
+  it("upgrades a pre-008 database without changing exact Receipt or public-evidence bytes", () => {
     const dir = mkdtempSync(join(tmpdir(), "giwa-live-store-"));
     const dbPath = join(dir, "live.sqlite");
     const record = publicEvidence({
       bundleJson: '{\n  "schemaVersion": "1",\n  "exactBytes": "\\u003c"\n}\n'
     });
+    const receipt: ReceiptRecord = {
+      receiptHash: record.receiptHash,
+      intentHash: record.intentHash,
+      payloadJson: '{\n  "status": "matched",\n  "exactBytes": "\\u003c"\n}\n',
+      canonicalPayload: '{"exactBytes":"<","status":"matched"}',
+      canonicalPayloadBytesHex: "0x7b2265786163744279746573223a223c227d"
+    };
     try {
       const first = createSqliteLiveStore(dbPath);
       try {
-        const publication = matchedPublication({ publicEvidence: record });
+        const publication = matchedPublication({ publicEvidence: record, receipt });
         seedRunForPublication(first, publication);
         atomicEvidenceStore(first).publishMatchedEvidence(publication);
       } finally {
         first.close();
       }
 
+      const legacy = new DatabaseSync(dbPath);
+      legacy.exec(`
+        drop table if exists auth_sessions;
+        drop table if exists auth_challenges;
+        drop table if exists organization_members;
+        drop table if exists organizations;
+      `);
+      legacy.prepare("delete from schema_migrations where id = ?").run("008_studio_wallet_auth");
+      legacy.close();
+
       const second = createSqliteLiveStore(dbPath);
       try {
-        expect(evidenceStore(second).getPublicEvidenceByReceiptHash(record.receiptHash)?.bundleJson).toBe(
-          record.bundleJson
-        );
+        expect(second.getReceipt(receipt.receiptHash)).toEqual(receipt);
+        expect(evidenceStore(second).getPublicEvidenceByReceiptHash(record.receiptHash)).toEqual(record);
+        expect(second.getSchemaState().migrations).toContain("008_studio_wallet_auth");
       } finally {
         second.close();
       }

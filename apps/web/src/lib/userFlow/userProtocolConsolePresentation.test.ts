@@ -146,6 +146,9 @@ describe("GIWA Protocol Console presentation contract", () => {
 
   it("renders the shared product shell and only one public three-step journey", () => {
     expect(source).toContain("function renderProtocolTopBar");
+    expect(source).toContain("GiwaProtocolDossier.createHeader");
+    expect(source).toContain("const protocolViews");
+    expect(source).toContain("activeView: protocolViews.has(activeView)");
     expect(source).toContain("function renderPublicJourney");
     expect(source).toContain("GIWA Verified Intent Rail");
     expect(source).toContain("Mission");
@@ -154,6 +157,10 @@ describe("GIWA Protocol Console presentation contract", () => {
     expect(source).toContain("조건 확인");
     expect(source).toContain("지갑 실행");
     expect(source).toContain("결과 공개");
+    expect(source).toContain("GiwaProtocolDossier.createLineIcon");
+    expect(source).toContain('className: "hash-disclosure"');
+    expect(source).not.toContain('return "✓"');
+    expect(source).not.toContain('return "→"');
   });
 
   it("renders the approved Mission Cockpit copy and testnet boundary", () => {

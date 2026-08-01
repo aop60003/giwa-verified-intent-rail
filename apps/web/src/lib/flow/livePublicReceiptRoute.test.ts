@@ -218,4 +218,21 @@ describe("live public Receipt route", () => {
     expect(receiptRoute).toContain("Campaign");
     expect(receiptRoute).toContain("GIWA Explorer");
   });
+
+  it("uses the shared Receipt shell and presents Campaign and Proof before technical disclosures", () => {
+    const receiptRoute = source.slice(
+      source.indexOf("function renderReceiptRoute"),
+      source.indexOf("function projectCampaignHandoffRequest")
+    );
+
+    expect(source).toContain("GiwaProtocolDossier.createHeader");
+    expect(receiptRoute).toContain('renderProtocolHeader("receipt")');
+    expect(receiptRoute).toContain('`/partner?receipt=${receipt.receiptHash}`');
+    expect(receiptRoute).toContain('`/evidence?proof=${receipt.receiptHash}`');
+    const primaryActionsIndex = receiptRoute.indexOf("receipt-primary-actions");
+    expect(primaryActionsIndex).toBeGreaterThanOrEqual(0);
+    expect(primaryActionsIndex).toBeLessThan(
+      receiptRoute.indexOf("renderVerificationBundle", primaryActionsIndex)
+    );
+  });
 });

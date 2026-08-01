@@ -1399,6 +1399,31 @@ function field(label, value, href) {
   ]);
 }
 
+function renderProtocolHeader(activeView) {
+  return globalThis.GiwaProtocolDossier.createHeader(document, {
+    activeView,
+    walletLabel: "공개 읽기 전용"
+  });
+}
+
+function disclosureSummary(text) {
+  return el("summary", {}, [
+    el("span", { text }),
+    globalThis.GiwaProtocolDossier.createLineIcon(document, "chevron-down")
+  ]);
+}
+
+function renderHashDisclosure(label, value) {
+  return el("details", { className: "hash-disclosure" }, [
+    el("summary", {}, [
+      el("span", { text: label }),
+      el("span", { className: "mono hash-visual", text: shortHash(value) }),
+      globalThis.GiwaProtocolDossier.createLineIcon(document, "chevron-down")
+    ]),
+    el("code", { className: "mono hash-full", text: value ?? "확인 중" })
+  ]);
+}
+
 function verificationBundleDownloadPath(bundle) {
   const receiptHash = bundle?.identity?.receiptHash;
   return /^0x[a-f0-9]{64}$/u.test(receiptHash ?? "")
@@ -1484,7 +1509,7 @@ function renderVerificationBundle(proof, options = {}) {
     el("p", { className: "notice", text: bundle.notice }),
     el("div", { className: "verification-bundle-disclosures" }, [
       el("details", { className: "verification-bundle-disclosure" }, [
-        el("summary", { text: "Manifest 및 서명" }),
+        disclosureSummary("Manifest 및 서명"),
         field("Manifest signature", bundle.manifest.signature),
         field("Recovered signer", bundle.manifest.recoveredSigner),
         field(
@@ -1494,7 +1519,7 @@ function renderVerificationBundle(proof, options = {}) {
         field("Intent hash", bundle.identity.intentHash)
       ]),
       el("details", { className: "verification-bundle-disclosure" }, [
-        el("summary", { text: "Verifier input" }),
+        disclosureSummary("Verifier input"),
         field("Verifier input hash", bundle.verifierInput.verifierInputHash),
         field("Verifier version", bundle.verifierInput.verifierVersion),
         field(
@@ -1508,7 +1533,7 @@ function renderVerificationBundle(proof, options = {}) {
         field("Block hash", bundle.verification.depositBlockHash)
       ]),
       el("details", { className: "verification-bundle-disclosure" }, [
-        el("summary", { text: "Decoded logs" }),
+        disclosureSummary("Decoded logs"),
         ...(bundle.decodedLogs.length === 0
           ? [el("p", { className: "muted", text: "공개 가능한 decoded log가 없습니다." })]
           : bundle.decodedLogs.map((log) =>
@@ -1522,13 +1547,13 @@ function renderVerificationBundle(proof, options = {}) {
             ))
       ]),
       el("details", { className: "verification-bundle-disclosure" }, [
-        el("summary", { text: "Receipt canonical payload" }),
+        disclosureSummary("Receipt canonical payload"),
         field("Receipt hash", bundle.receipt.receiptHash),
         field("Schema version", bundle.receipt.schemaVersion),
         field("Verifier version", bundle.receipt.verifierVersion)
       ]),
       el("details", { className: "verification-bundle-disclosure" }, [
-        el("summary", { text: "독립 재검증" }),
+        disclosureSummary("독립 재검증"),
         el("p", {
           className: "muted",
           text: "다운로드한 JSON만 사용하며 DB, RPC 또는 비공개 API에 연결하지 않습니다."
@@ -1824,6 +1849,7 @@ function renderReceiptRoute(model, routeAllowed, routeHash, publicProof = null) 
   app.textContent = "";
   if (!routeAllowed) {
     app.append(
+      renderProtocolHeader("receipt"),
       el("section", { className: "hero-flow receipt-hero" }, [
         el("div", { className: "hero-copy" }, [
           el("p", { className: "eyebrow", text: "Testnet receipt" }),
@@ -1878,6 +1904,7 @@ function renderReceiptRoute(model, routeAllowed, routeHash, publicProof = null) 
         ])
       : null;
   app.append(
+    renderProtocolHeader("receipt"),
     el("section", { className: "hero-flow receipt-hero" }, [
       el("div", { className: "hero-copy" }, [
         el("p", { className: "eyebrow", text: sourceLabel }),
@@ -1892,12 +1919,17 @@ function renderReceiptRoute(model, routeAllowed, routeHash, publicProof = null) 
             ? "이 화면은 이전 GIWA Sepolia 테스트넷 실행에서 저장된 검증 예시입니다."
             : "이 Receipt는 현재 live verifier와 public Receipt gate를 통과했습니다."
         }),
-        el("div", { className: "hero-actions" }, [
+        el("div", { className: "hero-actions receipt-primary-actions" }, [
           el("a", { className: "primary-link", href: receipt.depositExplorerUrl ?? "#", text: "GIWA Explorer" }),
           el("a", {
             className: "secondary-link",
             href: `/partner?receipt=${receipt.receiptHash}`,
             text: "Campaign"
+          }),
+          el("a", {
+            className: "secondary-link",
+            href: `/evidence?proof=${receipt.receiptHash}`,
+            text: "Proof Ledger"
           })
         ])
       ]),
@@ -2351,6 +2383,7 @@ function renderPublicCampaignStudio(model, options = {}) {
 
   app.textContent = "";
   app.append(
+    renderProtocolHeader("campaign"),
     el("section", { className: "studio-hero", id: "main-content" }, [
       el("div", {}, [
         el("div", { className: "studio-kicker" }, [
@@ -2409,14 +2442,21 @@ function renderPublicCampaignStudio(model, options = {}) {
               tabindex: "-1"
             },
             [
-              el("p", { className: "eyebrow", text: handoff.eyebrow }),
-              el("h2", { text: "이 Receipt가 현재 공개 집계에 포함됐습니다." }),
-              el("p", { text: handoff.message }),
-              el("a", {
-                className: "secondary-link",
-                href: `#${handoff.rowId}`,
-                text: "Receipt 행 확인"
-              })
+              el("div", { className: "campaign-receipt-explanation" }, [
+                el("p", { className: "eyebrow", text: handoff.eyebrow }),
+                el("h2", { text: "이 Receipt가 Campaign evidence에 반영된 방식" }),
+                el("p", {
+                  text: "Manifest와 일치한 GIWA Sepolia 실행만 참여·제출·Matched Receipt 지표에 포함됩니다."
+                }),
+                el("p", { className: "muted", text: handoff.message })
+              ]),
+              el("div", { className: "proof-ledger-links" }, [
+                el("a", {
+                  className: "secondary-link",
+                  href: `#${handoff.rowId}`,
+                  text: "Receipt 행 확인"
+                })
+              ])
             ]
           )
         ]),
@@ -2622,16 +2662,16 @@ function renderPublicEvidenceSearch(input = {}) {
             ]),
             renderSourceLabel("Live")
           ]),
-          el("dl", { className: "exact-execution-table" }, [
+          el("div", { className: "exact-execution-table" }, [
             field("Campaign", proof.campaignId),
             field("Mission", proof.missionId),
             field("Participant", proof.walletLabel),
-            field("Receipt hash", proof.receiptHash),
-            field("Intent hash", proof.intentHash),
-            field("Deposit transaction", proof.depositTxHash),
+            renderHashDisclosure("Receipt hash", proof.receiptHash),
+            renderHashDisclosure("Intent hash", proof.intentHash),
+            renderHashDisclosure("Deposit transaction", proof.depositTxHash),
             field("Block", `${proof.blockNumber} · ${proof.confirmationDepth} confirmations`),
-            field("Block hash", proof.blockHash),
-            field("Verifier input", proof.verifierInputHash)
+            renderHashDisclosure("Block hash", proof.blockHash),
+            renderHashDisclosure("Verifier input", proof.verifierInputHash)
           ]),
           el("div", { className: "hero-actions" }, [
             el("a", { className: "primary-link", href: proof.receiptPath, text: "공개 Receipt" }),
@@ -2645,13 +2685,14 @@ function renderPublicEvidenceSearch(input = {}) {
           el("p", { className: "muted", text: emptyCopy?.body ?? "" })
         ]);
   app.append(
+    renderProtocolHeader("proof"),
     el("section", { className: "proof-search-page", id: "main-content" }, [
-      el("header", { className: "proof-search-header" }, [
+      el("header", { className: "proof-search-header proof-chain-intro" }, [
         el("p", { className: "eyebrow", text: "Public Proof Ledger" }),
-        el("h1", { text: "공개 실행 증거 찾기" }),
+        el("h1", { text: "Manifest → GIWA 실행 → Match → Receipt" }),
         el("p", {
           className: "lead",
-          text: "Receipt gate를 통과한 GIWA Sepolia 테스트넷 실행만 검색됩니다."
+          text: "서명된 조건과 확인된 테스트넷 트랜잭션을 대조한 뒤, 일치한 Receipt만 공개합니다."
         })
       ]),
       el("form", {

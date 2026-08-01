@@ -103,12 +103,14 @@ describe("evaluator visual polish", () => {
       source.indexOf("function renderHelp", routeStart)
     );
 
-    expect(html).toContain("pretendardvariable-dynamic-subset.min.css");
+    expect(html).toContain('/fonts/pretendard-giwa-subset.woff2');
+    expect(html).toContain('/fonts/pretendard.css');
+    expect(html).not.toContain('cdn.jsdelivr.net');
     expect(source).toContain("/matched-receipt-seal.png");
     expect(source).toContain('alt: ""');
     expect(source).toContain('"aria-hidden": "true"');
     expect(receiptRoute.indexOf("renderMatchedReceiptRows(matchRows)")).toBeLessThan(
-      receiptRoute.indexOf('field("Receipt hash", receiptHash)')
+      receiptRoute.indexOf('renderHashDisclosure("Receipt hash", receiptHash)')
     );
     expect(source).toContain('id: "copy-receipt-feedback"');
     expect(source).toContain('tabindex: "-1"');

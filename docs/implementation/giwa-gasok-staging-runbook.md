@@ -268,8 +268,18 @@ rollback release를 동시에 보존할 수 있는지 계산한다. 고정 임�
 | `GIWA_LIVE_FAUCET_HELP_URL` | HTTPS recovery URL |
 | `GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS` | positive integer hours |
 | `GIWA_LIVE_DB_PATH` | `/var/lib/giwa` 아래 absolute path |
+| `GIWA_LIVE_PARTNER_TENANT_ID` | 명시적인 Studio organization ID; `^[A-Za-z0-9_-]{1,64}$` |
+| `GIWA_LIVE_STUDIO_ORGANIZATION_NAME` | 선택 display name; 생략 시 `Loop`, 설정 시 trim 후 1–80자 |
+| `GIWA_LIVE_STUDIO_OWNER_WALLETS` | 쉼표로 구분한 하나 이상의 유효하고 중복 없는 Owner EVM address |
 
-위 표의 11개가 `requireLiveServerEnv`가 스테이징에서 요구하는 정확한 필수 집합이다. `GIWA_LIVE_PARTNER_TENANT_ID`는 선택 항목이며 코드 기본값은 `tenant_default`다. GASOK 배포 정책은 final freeze 전에 이 선택 항목을 명시적으로 설정하고, 실제 값 대신 `explicitly-set` 결정만 evidence에 기록하는 것이다. 누락되어 기본값에 의존하면 runtime은 시작할 수 있어도 submission freeze는 no-go다.
+위 표에서 `GIWA_LIVE_STUDIO_ORGANIZATION_NAME`을 제외한 13개가 hosted
+readiness에 필요한 정확한 필수 집합이다. Studio readiness는 명시적인
+organization ID, 하나 이상의 유효한 Owner address, 그리고 기존의 정확한
+HTTPS `GIWA_LIVE_PUBLIC_ORIGIN`이 모두 있어야 green이다. Owner address는
+지갑의 공개 식별자이지만 runtime file 밖의 readiness, 로그, smoke, evidence에는
+address 목록을 기록하지 않고 validation state와 `ownerCount`만 기록한다.
+organization name은 선택 항목이고 생략하면 `Loop`를 사용한다. 실제 ID,
+display name, address, origin 값은 이 문서나 제출 evidence에 추가하지 않는다.
 
 `GIWA_LIVE_MOCK_MODE`는 필수나 선택 항목이 아니다. 스테이징에서는 `GIWA_LIVE_MOCK_MODE=1`을 금지하고 runtime file에 이름 자체를 넣지 않는다. mock mode는 local API contract rehearsal에만 사용한다.
 
@@ -361,6 +371,15 @@ sudo systemctl --no-pager --full status giwa-backup.service
 
 unit은 `/opt/giwa/current/ops/lightsail/scripts/backup-live-db.sh`를 호출하고 SQLite `.backup` 뒤 `PRAGMA quick_check`가 `ok`인지 확인한다. 출력에는 backup filename만 남아야 한다. backup 실패, migration 누락, legacy incompatible schema 또는 `/readyz`의 schema category 실패는 no-go다.
 
+Release 4 application을 처음 활성화하기 전에는 이 verified backup을 먼저
+완료한 뒤 additive migration `008_studio_wallet_auth`를 적용한다. `/readyz`의
+schema gate는 migration ID와 checksum뿐 아니라 `organizations`,
+`organization_members`, `auth_challenges`, `auth_sessions`의 정확한 column,
+unique/covering index, membership/session foreign key를 모두 확인해야 한다.
+Migration 008은 기존 run, decision, Receipt, public-evidence row 또는 그 hash를
+rewrite하지 않는다. 하나라도 다르거나 legacy Receipt/public-evidence 보존을
+확인하지 못하면 live activation은 no-go다.
+
 SQLite WAL 상태에서도 파일 복사 대신 versioned script의 `sqlite3 .backup`을 사용한다. 복원 훈련은 active DB가 아닌 별도 경로에서 backup을 열어 `PRAGMA quick_check`와 새 릴리스의 schema compatibility를 확인한다. 실제 active DB 교체는 write를 멈추고 owner가 승인한 경우에만 수행한다.
 
 `backup-live-db.sh`는 오래된 파일을 삭제하지 않는다. 운영자는 `/var/lib/giwa/backups` 용량 증가를 관찰하고 승인된 retention/storage 정책을 별도로 기록해야 한다. 디스크 임계치와 외부 보관 방식이 없으면 release owner가 no-go를 선택한다.
@@ -410,6 +429,15 @@ sudo -u giwa /opt/giwa/current/ops/lightsail/scripts/smoke-local.sh
 ```
 
 필수 결과는 static, live, healthz, readyz, public-config 다섯 label의 `pass`다. `ss` 등 호스트 도구로 `4176`과 `4177`이 `127.0.0.1`에만 bind하는지도 확인한다.
+
+Release 4가 승인된 hosted configuration으로 실행될 때는 같은 exact HTTPS
+public Origin에서 Studio cookie/Origin smoke를 별도로 수행한다. 누락되거나
+다른 Origin의 auth POST는 거부되고, 성공 cookie는 `Secure`, `HttpOnly`,
+`SameSite=Lax`, `Path=/`, no `Domain`, eight-hour expiry를 가져야 한다. 같은
+cookie의 session recovery와 logout 뒤 비인증 상태까지 확인한다. 이 smoke는
+승인된 사용자 서명 외의 wallet/chain transaction을 만들지 않으며 message,
+signature, cookie, raw token, Owner address, runtime value를 출력하거나 evidence에
+저장하지 않는다.
 
 ### 5. Nginx candidate, syntax checkpoint, HTTP
 
@@ -517,6 +545,13 @@ rollback은 testnet transaction을 되돌리지 못한다. 실패한 live run은
 6. static/local/public smoke를 다시 실행한다. live schema compatibility와 exact process cwd가 확인된 경우에만 live를 유지한다.
 7. DB restore는 자동으로 하지 않는다. active writes 중지, backup `quick_check`, 이전/현재 schema compatibility assessment, restore owner의 명시적 승인이 모두 있을 때만 별도 절차로 수행한다.
 8. bounded 로그, source commit, failure category, smoke 결과와 owner 결정을 보존한다. runtime values와 run capability는 evidence에서 제외한다.
+9. Migration `008_studio_wallet_auth`의 네 auth table과 index는 additive schema로
+   보존한다. 이전 application이 이 schema와 함께 read-only/public 경계를
+   유지하는지 먼저 검증하며, rollback을 이유로 table을 drop하거나 legacy
+   Receipt/public-evidence hash를 rewrite하지 않는다.
+10. 이전 release에서 `/api/auth/*`가 지원되지 않으면 bounded unavailable/not-found
+    동작으로 닫혀 있는지 확인하고, Release 4 session cookie가 partner credential
+    또는 기존 public route authority로 승격되지 않는지 확인한다.
 
 일반 release rollback은 `/opt/giwa/runtime/node-v22.16.0`을 유지한다. 격리
 runtime 삭제는 정확한 절대 경로에 대한 별도 파괴적 승인 없이는 수행하지

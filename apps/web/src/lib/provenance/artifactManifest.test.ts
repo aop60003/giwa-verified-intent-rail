@@ -164,4 +164,27 @@ describe("local artifact manifest", () => {
 
     expect(() => validateLocalArtifactManifest(manifest)).toThrow("artifact_public_file_not_manifested");
   });
+
+  it("manifests public font binaries and their text licenses without scanning binaries as text", () => {
+    const manifest = buildLocalArtifactManifestFromEntries(
+      [
+        ...manifestEntries,
+        { path: "apps/web/public/fonts/OFL.txt", content: "Open Font License\n" },
+        { path: "apps/web/public/fonts/pretendard-subset.woff2", content: new Uint8Array([0, 1, 2, 3]) },
+        { path: "apps/web/public/icons/LUCIDE-LICENSE", content: "ISC License\n" }
+      ],
+      { generatedAt }
+    );
+
+    expect(manifest.ignoredPublicArtifacts).toEqual([]);
+    expect(
+      manifest.artifactGroups.publicArtifacts
+        .filter((entry) => entry.path.includes("fonts/") || entry.path.includes("icons/"))
+        .map((entry) => ({ path: entry.path, scanDecision: entry.scanDecision }))
+    ).toEqual([
+      { path: "apps/web/public/fonts/OFL.txt", scanDecision: "pass-or-blocked" },
+      { path: "apps/web/public/fonts/pretendard-subset.woff2", scanDecision: "pass" },
+      { path: "apps/web/public/icons/LUCIDE-LICENSE", scanDecision: "pass-or-blocked" }
+    ]);
+  });
 });

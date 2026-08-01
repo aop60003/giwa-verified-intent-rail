@@ -27,6 +27,9 @@ describe("production landing and public demo route ownership", () => {
       expect(source).toContain('"/index.html"');
       expect(source).toContain('decoded === "/user"');
       expect(source).toContain('"/user.html"');
+      expect(source).toContain('decoded === "/studio"');
+      expect(source).toContain('"/studio.html"');
+      expect(source).not.toContain('decoded.startsWith("/studio/")');
     }
   });
 
@@ -52,6 +55,18 @@ describe("production landing and public demo route ownership", () => {
     expect(demoHtml).toContain('href="/giwa-demo.css"');
     expect(demoHtml).toContain('src="/user-flow.js"');
     expect(demoHtml).toContain('class="app-shell user-shell giwa-demo-shell"');
+  });
+
+  it("maps only canonical published campaign version routes to the isolated preview", () => {
+    const staticServer = readWebFile("scripts/serve-static.mjs");
+    const liveServer = readWebFile("scripts/serve-live.mjs");
+
+    for (const source of [staticServer, liveServer]) {
+      expect(source).toContain("CAMPAIGN_VERSION_PUBLIC_PATH");
+      expect(source).toContain('"/campaign.html"');
+      expect(source).toContain('CAMPAIGN_VERSION_PUBLIC_PATH.test(decoded) && search === ""');
+      expect(source).not.toContain('decoded.startsWith("/campaign/")');
+    }
   });
 
   it("smokes the judge landing and recorded evidence as distinct surfaces", () => {

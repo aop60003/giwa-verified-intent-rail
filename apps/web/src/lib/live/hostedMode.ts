@@ -33,7 +33,9 @@ export function evaluateHostedModePolicy(input: HostedModeInput): HostedModeResu
     input.requestSafetyReady &&
     input.repositoryReady &&
     input.telemetryReady;
-  if (publicHost && !gatesReady) return { ok: false, reason: "hosted_gate_not_ready" };
+  if (input.mode !== "local" && !gatesReady) {
+    return { ok: false, reason: "hosted_gate_not_ready" };
+  }
 
   return { ok: true, reason: null };
 }

@@ -32,10 +32,26 @@ describe("createMemoryLiveRateLimiter", () => {
   it("uses the bounded single-instance staging policy", () => {
     expect(LIVE_RATE_LIMIT_POLICY).toEqual({
       generalPerIpPerMinute: 120,
+      authPerIpPerMinute: 20,
       createRunPerIpPerMinute: 12,
       verifyPerRunPerMinute: 10,
-      partnerPerCredentialPerMinute: 60
+      partnerPerCredentialPerMinute: 60,
+      studioMutationPerSessionPerMinute: 30
     });
+  });
+
+  it("classifies only challenge and verification POSTs for the auth-specific IP limit", () => {
+    expect(classifyLiveRateLimitRoute("POST", "/api/auth/challenge")).toEqual({ kind: "auth" });
+    expect(classifyLiveRateLimitRoute("POST", "/api/auth/verify")).toEqual({ kind: "auth" });
+    expect(classifyLiveRateLimitRoute("GET", "/api/auth/challenge")).toBeNull();
+    expect(classifyLiveRateLimitRoute("GET", "/api/auth/session")).toBeNull();
+    expect(classifyLiveRateLimitRoute("POST", "/api/auth/logout")).toBeNull();
+    expect(classifyLiveRateLimitRoute("POST", "/api/auth/verify/extra")).toBeNull();
+
+    const rawIp = "203.0.113.45";
+    const bucket = liveRateLimitBucket({ kind: "auth", value: rawIp });
+    expect(bucket).not.toContain(rawIp);
+    expect(LIVE_RATE_LIMIT_POLICY.authPerIpPerMinute).toBe(20);
   });
 
   it("classifies only exact create and participant verify routes", () => {
@@ -85,6 +101,17 @@ describe("createMemoryLiveRateLimiter", () => {
       expect(bucket).not.toContain("tenant_alpha");
       for (const rawValue of rawValues) expect(bucket).not.toContain(rawValue);
     }
+  });
+
+  it("hashes the Studio session and tenant mutation bucket", () => {
+    const sessionId = "session-private-canary";
+    const tenantId = "tenant-private-canary";
+    const bucket = liveRateLimitBucket({ kind: "studio", value: sessionId, tenantId });
+
+    expect(LIVE_RATE_LIMIT_POLICY.studioMutationPerSessionPerMinute).toBe(30);
+    expect(bucket).toMatch(/^studio:/u);
+    expect(bucket).not.toContain(sessionId);
+    expect(bucket).not.toContain(tenantId);
   });
 
   it("trusts one valid X-Real-IP only from a loopback reverse proxy", () => {

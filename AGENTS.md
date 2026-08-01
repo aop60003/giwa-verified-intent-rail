@@ -56,6 +56,9 @@ confirmed facts, not guesses.
     for the approved current staging/submission design.
   - `docs/superpowers/plans/2026-07-22-gasok-selection-staging-submission-implementation.md`
     for the current implementation sequence.
+  - `docs/superpowers/specs/2026-08-01-giwa-release-4-owner-campaign-publishing-design.md`
+    for the approved local Campaign Published Version and public-preview
+    boundary.
   - `docs/implementation/giwa-gasok-staging-runbook.md` for approved staging
     operations.
 - **Sources of truth / generated paths:**
@@ -72,6 +75,16 @@ confirmed facts, not guesses.
   - `docs/implementation/giwa-release-1-2-local-completion-freeze.md` records
     the local-advisory Release 1 and Release 2 completion boundary and the
     unresolved Git and deployment gates.
+  - `docs/implementation/giwa-release-4-wallet-session-studio-local-completion-freeze.md`
+    records the locally verified Owner wallet-session and read-only Studio
+    boundary; hosted configuration, deployment, and real-wallet approval remain
+    unresolved gates.
+  - `docs/implementation/giwa-release-4-owner-campaign-drafts-local-completion-freeze.md`
+    records the local-only Owner Campaign Draft boundary and the unresolved Git,
+    deployment, real-wallet, and chain-action gates.
+  - `docs/implementation/giwa-release-4-owner-campaign-publishing-local-completion-freeze.md`
+    records the locally verified immutable Published Version and exact public-
+    preview boundary, evidence invariance, and unresolved Git/deployment gates.
   - `apps/web/.data/` and `docs/evidence/local/` are ignored local-only runtime
     paths and are not release evidence.
 - **Architecture decisions:**
@@ -83,6 +96,22 @@ confirmed facts, not guesses.
     security, identity, KYC, RWA issuance, or settlement layer.
   - Static evaluator routes remain available independently of the live adapter;
     the GASOK staging topology intentionally uses one SQLite-backed live instance.
+  - Release 4 authenticates configured organization Owners with a five-minute
+    application-defined EIP-191 challenge and a fixed eight-hour server session;
+    that wallet-session authority does not authorize existing partner routes.
+  - Owner-authenticated Studio campaign Drafts are organization-scoped,
+    SQLite-backed, fixed to `mockVaultDeposit`, and remain disconnected from
+    executable participant behavior.
+  - Campaign Publishing keeps Drafts mutable, creates
+    append-only immutable Published Versions, and exposes exact public preview
+    URLs without enabling participant execution, Manifest/Receipt creation, or
+    wallet and chain actions.
+  - Publish eligibility requires a strict successful Version-history response;
+    failed or malformed history remains unavailable and cannot be treated as an
+    empty Version sequence.
+  - Public artifact inventory scans text licenses, hashes PNG/WOFF2 binaries
+    without decoding them as text, and keeps unsupported served extensions
+    fail-closed.
 - **Git conventions:** Use Conventional Commits. Stage, commit, branch, push, or
   open/merge a PR only with explicit user direction; never commit secrets or
   ignored runtime evidence.

@@ -30,6 +30,8 @@ describe("live server source imports", () => {
     expect(source).toMatch(/import \{[^}]*issueLiveRunCapability[^}]*\} from "\.\.\/src\/lib\/live\/liveParticipantCapability\.ts"/su);
     expect(source).toMatch(/import \{[^}]*buildLivePublicConfig[^}]*\} from "\.\.\/src\/lib\/live\/livePublicConfig\.ts"/su);
     expect(source).toMatch(/import \{[^}]*probeLiveChainReadiness[^}]*\} from "\.\.\/src\/lib\/live\/liveChainReadiness\.ts"/su);
+    expect(source).toMatch(/import \{[^}]*createPublicCampaignVersionApiHandler[^}]*createStudioCampaignVersionApiHandler[^}]*\} from "\.\.\/src\/lib\/live\/studioCampaignVersionApi\.ts"/su);
+    expect(source).toMatch(/import \{[^}]*createStudioCampaignVersionService[^}]*\} from "\.\.\/src\/lib\/live\/studioCampaignVersionService\.ts"/su);
     expect(source).toContain("createPublicClient");
     expect(source).toContain("http(serverEnv.standardRpcUrl)");
     expect(source).toContain("issueRunCapability: issueLiveRunCapability");
@@ -113,7 +115,9 @@ describe("live server source imports", () => {
     const source = readRuntimeSource("scripts/serve-live.mjs");
 
     expect(source).toContain("parseLivePartnerCredentialHashes(");
-    expect(source).toContain("authReady: liveMode === \"local\" || credentialHashes.length > 0");
+    expect(source).toMatch(
+      /authReady:\s*liveMode === "local" \|\|\s*\(credentialHashes\.length > 0 && studioAuthReadiness\.ok\)/u
+    );
     expect(source).toContain("selectLiveClientIp({");
     expect(source).toContain('realIpHeader: request.headers["x-real-ip"]');
     expect(source).toContain("isIp: isIP");

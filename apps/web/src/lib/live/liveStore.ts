@@ -15,6 +15,24 @@ import { assertPublicCampaignEventRecord } from "./publicCampaignAnalytics.ts";
 import { REQUIRED_LIVE_MIGRATIONS } from "./liveSchemaMigrations.ts";
 import type { LiveSchemaStateInput } from "./liveSchemaMigrations.ts";
 import {
+  createSqliteStudioAuthRepository,
+  installStudioAuthMigration
+} from "./studioAuthSqliteRepository.ts";
+import { createMemoryStudioAuthRepository } from "./studioAuthRepository.ts";
+import type { StudioAuthRepository } from "./studioAuthRepository.ts";
+import {
+  createSqliteStudioCampaignRepository,
+  installStudioCampaignMigration
+} from "./studioCampaignSqliteRepository.ts";
+import { createMemoryStudioCampaignRepository } from "./studioCampaignRepository.ts";
+import type { StudioCampaignRepository } from "./studioCampaignRepository.ts";
+import {
+  createSqliteStudioCampaignVersionRepository,
+  installStudioCampaignVersionMigration
+} from "./studioCampaignVersionSqliteRepository.ts";
+import { createMemoryStudioCampaignVersionRepository } from "./studioCampaignVersionRepository.ts";
+import type { StudioCampaignVersionRepository } from "./studioCampaignVersionRepository.ts";
+import {
   DEFAULT_LIVE_TENANT_ID as DEFAULT_TENANT,
   isTerminalLiveRunStatus,
   normalizeLiveRunStatus
@@ -22,6 +40,9 @@ import {
 import type { VerificationJobReason, VerificationJobRecord } from "./verificationJobQueue.ts";
 
 export type LiveStore = {
+  studioAuth: StudioAuthRepository;
+  studioCampaigns: StudioCampaignRepository;
+  studioCampaignVersions: StudioCampaignVersionRepository;
   createRun(input: LiveRunRecord): LiveRunRecord;
   getRun(runId: string): LiveRunRecord | undefined;
   getRunForCapabilityHash(runId: string, capabilityHash: string): LiveRunRecord | undefined;
@@ -179,6 +200,9 @@ function assertMatchedEvidencePublication(
 }
 
 export function createMemoryLiveStore(): LiveStore {
+  const studioAuth = createMemoryStudioAuthRepository();
+  const studioCampaigns = createMemoryStudioCampaignRepository();
+  const studioCampaignVersions = createMemoryStudioCampaignVersionRepository(studioCampaigns);
   const runsById = new Map<string, LiveRunRecord>();
   const runsByIdempotency = new Map<string, LiveRunRecord>();
   const submittedByRun = new Map<string, SubmittedTxRecord>();
@@ -195,6 +219,9 @@ export function createMemoryLiveStore(): LiveStore {
   const verificationJobIdByRun = new Map<string, string>();
 
   return {
+    studioAuth,
+    studioCampaigns,
+    studioCampaignVersions,
     createRun(input) {
       const normalized = { ...input, tenantId: tenantIdFor(input) };
       const existing = runsByIdempotency.get(idempotencyLookupKey(normalized));
@@ -428,6 +455,11 @@ export function createMemoryLiveStore(): LiveStore {
     getSchemaState() {
       return {
         migrations: [...REQUIRED_LIVE_MIGRATIONS],
+        migrationChecksums: {
+          "008_studio_wallet_auth": "studio-wallet-auth-v1",
+          "009_studio_campaign_drafts": "studio-campaign-drafts-v1",
+          "010_campaign_versions": "campaign-versions-v1"
+        },
         tables: {
           runs: [{ name: "capabilityHash", notNull: false }],
           decisions: [
@@ -500,6 +532,70 @@ export function createMemoryLiveStore(): LiveStore {
               notNull: true,
               pkPosition: 0
             }
+          ],
+          organizations: [
+            { name: "id", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "displayName", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "updatedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          organization_members: [
+            { name: "memberId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "organizationId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "walletAddress", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "role", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "status", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "provisioningSource", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "updatedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          auth_challenges: [
+            { name: "challengeId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "expectedWallet", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "nonceHash", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "origin", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "uri", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "chainId", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "issuedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "expiresAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "usedAt", declaredType: "TEXT", notNull: false, pkPosition: 0 },
+            { name: "attemptCount", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          auth_sessions: [
+            { name: "sessionId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "tokenHash", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "memberId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "expiresAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "revokedAt", declaredType: "TEXT", notNull: false, pkPosition: 0 }
+          ],
+          campaigns: [
+            { name: "campaignId", declaredType: "TEXT", notNull: false, pkPosition: 1 },
+            { name: "organizationId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "name", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "summary", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "actionTemplate", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "lifecycleState", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "source", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "revision", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "createdByMemberId", declaredType: "TEXT", notNull: false, pkPosition: 0 },
+            { name: "updatedByMemberId", declaredType: "TEXT", notNull: false, pkPosition: 0 },
+            { name: "createdAt", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "updatedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
+          ],
+          campaign_versions: [
+            { name: "campaignId", declaredType: "TEXT", notNull: true, pkPosition: 1 },
+            { name: "organizationId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "versionNumber", declaredType: "INTEGER", notNull: true, pkPosition: 2 },
+            { name: "name", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "summary", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "actionTemplate", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "sourceDraftRevision", declaredType: "INTEGER", notNull: true, pkPosition: 0 },
+            { name: "canonicalJson", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "campaignVersionHash", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "publishedByMemberId", declaredType: "TEXT", notNull: true, pkPosition: 0 },
+            { name: "publishedAt", declaredType: "TEXT", notNull: true, pkPosition: 0 }
           ]
         },
         indexes: {
@@ -551,8 +647,193 @@ export function createMemoryLiveStore(): LiveStore {
                 "sessionHash"
               ]
             }
+          ],
+          organizations: [
+            {
+              name: "memory_organizations_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["id"]
+            }
+          ],
+          organization_members: [
+            {
+              name: "memory_organization_members_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["memberId"]
+            },
+            {
+              name: "memory_organization_members_unique",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["organizationId", "walletAddress"]
+            },
+            {
+              name: "idx_organization_members_wallet",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["organizationId", "walletAddress", "status"]
+            },
+            {
+              name: "idx_organization_members_member_organization",
+              unique: true,
+              origin: "c",
+              partial: false,
+              columns: ["memberId", "organizationId"]
+            }
+          ],
+          auth_challenges: [
+            {
+              name: "memory_auth_challenges_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["challengeId"]
+            },
+            {
+              name: "memory_auth_challenges_nonce",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["nonceHash"]
+            },
+            {
+              name: "idx_auth_challenges_expiry",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["expiresAt", "usedAt"]
+            }
+          ],
+          auth_sessions: [
+            {
+              name: "memory_auth_sessions_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["sessionId"]
+            },
+            {
+              name: "memory_auth_sessions_token",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["tokenHash"]
+            },
+            {
+              name: "idx_auth_sessions_expiry",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["expiresAt", "revokedAt"]
+            }
+          ],
+          campaigns: [
+            {
+              name: "memory_campaigns_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["campaignId"]
+            },
+            {
+              name: "idx_campaigns_organization_state_updated",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["organizationId", "lifecycleState", "updatedAt", "campaignId"],
+              descending: [false, false, true, false]
+            },
+            {
+              name: "idx_campaigns_campaign_organization",
+              unique: true,
+              origin: "c",
+              partial: false,
+              columns: ["campaignId", "organizationId"]
+            }
+          ],
+          campaign_versions: [
+            {
+              name: "memory_campaign_versions_pk",
+              unique: true,
+              origin: "pk",
+              partial: false,
+              columns: ["campaignId", "versionNumber"]
+            },
+            {
+              name: "memory_campaign_versions_revision",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["campaignId", "sourceDraftRevision"]
+            },
+            {
+              name: "memory_campaign_versions_hash",
+              unique: true,
+              origin: "u",
+              partial: false,
+              columns: ["campaignVersionHash"]
+            },
+            {
+              name: "idx_campaign_versions_org_campaign_version",
+              unique: false,
+              origin: "c",
+              partial: false,
+              columns: ["organizationId", "campaignId", "versionNumber"],
+              descending: [false, false, true]
+            }
           ]
         },
+        foreignKeys: {
+          organization_members: [
+            { from: "organizationId", table: "organizations", to: "id", onDelete: "NO ACTION" }
+          ],
+          auth_sessions: [
+            { from: "memberId", table: "organization_members", to: "memberId", onDelete: "NO ACTION" }
+          ],
+          campaigns: [
+            { from: "updatedByMemberId", table: "organization_members", to: "memberId", onDelete: "RESTRICT" },
+            { from: "createdByMemberId", table: "organization_members", to: "memberId", onDelete: "RESTRICT" },
+            { from: "organizationId", table: "organizations", to: "id", onDelete: "RESTRICT" }
+          ],
+          campaign_versions: [
+            { id: 0, sequence: 0, from: "publishedByMemberId", table: "organization_members", to: "memberId", onDelete: "RESTRICT" },
+            { id: 0, sequence: 1, from: "organizationId", table: "organization_members", to: "organizationId", onDelete: "RESTRICT" },
+            { id: 1, sequence: 0, from: "campaignId", table: "campaigns", to: "campaignId", onDelete: "RESTRICT" },
+            { id: 1, sequence: 1, from: "organizationId", table: "campaigns", to: "organizationId", onDelete: "RESTRICT" }
+          ]
+        },
+        tableSql: {
+          campaigns: `create table campaigns (
+            actionTemplate text check (actionTemplate = 'mockVaultDeposit'),
+            lifecycleState text check (lifecycleState in ('draft', 'published-baseline')),
+          source text check (source in ('studio-draft', 'gasok-evidence')),
+          revision integer check (revision >= 1),
+            check (source = 'studio-draft' and lifecycleState = 'draft'
+              and createdByMemberId is not null and updatedByMemberId is not null),
+            check (source = 'gasok-evidence' and lifecycleState = 'published-baseline'
+              and createdByMemberId is null and updatedByMemberId is null)
+          )`,
+          campaign_versions: `create table campaign_versions (
+            versionNumber integer not null check (versionNumber >= 1),
+            sourceDraftRevision integer not null check (sourceDraftRevision >= 1),
+            actionTemplate text not null check (actionTemplate = 'mockVaultDeposit'),
+            canonicalJson text not null check (length(canonicalJson) > 0),
+            campaignVersionHash text not null unique check (
+              length(campaignVersionHash) = 66 and substr(campaignVersionHash, 1, 2) = '0x'
+              and substr(campaignVersionHash, 3) not glob '*[^0-9a-f]*'
+            )
+          )`
+        },
+        triggers: [
+          { name: "campaign_versions_no_delete", table: "campaign_versions", sql: "create trigger campaign_versions_no_delete before delete on campaign_versions begin select raise(abort, 'campaign_versions_immutable'); end" },
+          { name: "campaign_versions_no_update", table: "campaign_versions", sql: "create trigger campaign_versions_no_update before update on campaign_versions begin select raise(abort, 'campaign_versions_immutable'); end" }
+        ],
         requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
       };
     },
@@ -851,12 +1132,22 @@ export function createSqliteLiveStore(dbPath: string): ClosableLiveStore {
     ensureNullableColumn(db, "decisions", "depositBlockHash", "text");
     ensureNullableColumn(db, "decisions", "confirmationDepth", "integer");
     recordLocalMigrations(db);
+    installStudioAuthMigration(db, new Date(0).toISOString());
+    installStudioCampaignMigration(db, new Date(0).toISOString());
+    installStudioCampaignVersionMigration(db, new Date(0).toISOString());
   } catch (error) {
     db.close();
     throw error;
   }
 
+  const studioAuth = createSqliteStudioAuthRepository(db);
+  const studioCampaigns = createSqliteStudioCampaignRepository(db);
+  const studioCampaignVersions = createSqliteStudioCampaignVersionRepository(db);
+
   return {
+    studioAuth,
+    studioCampaigns,
+    studioCampaignVersions,
     createRun(input) {
       const normalized = { ...input, tenantId: tenantIdFor(input) };
       const existing = db
@@ -1331,10 +1622,13 @@ function recordLocalMigrations(db: DatabaseSync): void {
 }
 
 function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
-  const migrations = db
-    .prepare("select id from schema_migrations order by rowid asc")
-    .all()
-    .map((row) => stringValue(row, "id"));
+  const migrationRows = db
+    .prepare("select id, checksum from schema_migrations order by rowid asc")
+    .all();
+  const migrations = migrationRows.map((row) => stringValue(row, "id"));
+  const migrationChecksums = Object.fromEntries(
+    migrationRows.map((row) => [stringValue(row, "id"), stringValue(row, "checksum")])
+  );
   const tableNames = [
     "runs",
     "submitted_txs",
@@ -1343,13 +1637,35 @@ function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
     "verifier_inputs",
     "public_evidence_bundles",
     "public_campaign_events",
+    "organizations",
+    "organization_members",
+    "auth_challenges",
+    "auth_sessions",
+    "campaigns",
+    "campaign_versions",
     "verification_jobs",
     "schema_migrations"
   ] as const;
   const tables: LiveSchemaStateInput["tables"] = {};
   const indexes: NonNullable<LiveSchemaStateInput["indexes"]> = {};
+  const foreignKeys: NonNullable<LiveSchemaStateInput["foreignKeys"]> = {};
+  const tableSql: Record<string, string> = {};
+  const triggers = db.prepare(
+    `select name, tbl_name as tableName, sql
+     from sqlite_master
+     where type = 'trigger'
+     order by name asc`
+  ).all().map((row) => ({
+    name: stringValue(row, "name"),
+    table: stringValue(row, "tableName"),
+    sql: stringValue(row, "sql")
+  }));
 
   for (const tableName of tableNames) {
+    const tableDefinition = db.prepare(
+      "select sql from sqlite_master where type = 'table' and name = ?"
+    ).get(tableName) as Record<string, unknown> | undefined;
+    if (typeof tableDefinition?.sql === "string") tableSql[tableName] = tableDefinition.sql;
     tables[tableName] = db
       .prepare(`pragma table_info(${tableName})`)
       .all()
@@ -1368,28 +1684,52 @@ function readLiveSchemaState(db: DatabaseSync): LiveSchemaStateInput {
       .all(tableName);
     indexes[tableName] = indexRows.map((indexRow) => {
       const indexName = stringValue(indexRow, "name");
-      const columns = db
+      const indexColumns = db
         .prepare(
-          `select name
-           from pragma_index_info(?)
+          `select name, "desc" as isDescending
+           from pragma_index_xinfo(?)
+           where key = 1
            order by seqno asc`
         )
         .all(indexName)
-        .map((columnRow) => stringValue(columnRow, "name"));
+        .map((columnRow) => ({
+          name: stringValue(columnRow, "name"),
+          descending: numberValue(columnRow, "isDescending") === 1
+        }));
       return {
         name: indexName,
         unique: numberValue(indexRow, "isUnique") === 1,
         origin: stringValue(indexRow, "origin"),
         partial: numberValue(indexRow, "partial") === 1,
-        columns
+        columns: indexColumns.map((column) => column.name),
+        descending: indexColumns.map((column) => column.descending)
       };
     });
+    foreignKeys[tableName] = db
+      .prepare(
+        `select id, seq as sequence, "from", "table", "to", on_delete as onDelete
+         from pragma_foreign_key_list(?)
+         order by id asc, seq asc`
+      )
+      .all(tableName)
+      .map((row) => ({
+        id: numberValue(row, "id"),
+        sequence: numberValue(row, "sequence"),
+        from: stringValue(row, "from"),
+        table: stringValue(row, "table"),
+        to: stringValue(row, "to"),
+        onDelete: stringValue(row, "onDelete")
+      }));
   }
 
   return {
     migrations,
+    migrationChecksums,
     tables,
     indexes,
+    foreignKeys,
+    tableSql,
+    triggers,
     requiredMigrations: [...REQUIRED_LIVE_MIGRATIONS]
   };
 }

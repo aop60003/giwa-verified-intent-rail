@@ -41,6 +41,9 @@ function redactedConfigKey(key: string): string {
   if (key === "GIWA_LIVE_FAUCET_HELP_URL") return "faucet-help-policy";
   if (key === "GIWA_LIVE_INCOMPLETE_RUN_RETENTION_HOURS") return "run-retention-policy";
   if (key === "GIWA_LIVE_PARTNER_CREDENTIAL_HASHES") return "hosted-auth-hash";
+  if (key === "GIWA_LIVE_STUDIO_OWNER_WALLETS") return "studio-owner-list";
+  if (key === "GIWA_LIVE_PARTNER_TENANT_ID") return "studio-organization";
+  if (key === "GIWA_LIVE_STUDIO_ORGANIZATION_NAME") return "studio-organization-name";
   return "live-config";
 }
 
@@ -57,6 +60,8 @@ export function buildLiveReadinessBody(input: LiveReadinessInput): {
   missingKeyCount: number;
   invalidKeyCount: number;
 } {
+  const missingKeys = redactedConfigKeys(input.missingKeys);
+  const invalidKeys = redactedConfigKeys(input.invalidKeys);
   const ready =
     input.envReady &&
     input.authReady &&
@@ -89,9 +94,9 @@ export function buildLiveReadinessBody(input: LiveReadinessInput): {
       verifier: status(input.verifierReady),
       schema: status(input.schemaReady)
     },
-    missingKeys: redactedConfigKeys(input.missingKeys),
-    invalidKeys: redactedConfigKeys(input.invalidKeys),
-    missingKeyCount: input.missingKeys.length,
-    invalidKeyCount: input.invalidKeys.length
+    missingKeys,
+    invalidKeys,
+    missingKeyCount: missingKeys.length,
+    invalidKeyCount: invalidKeys.length
   };
 }

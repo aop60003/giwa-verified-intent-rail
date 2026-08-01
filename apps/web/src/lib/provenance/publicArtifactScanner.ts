@@ -306,7 +306,7 @@ export function summarizePublicArtifactScans(results: PublicArtifactScanResult[]
 
 export function selectPublicArtifactScanEntries(manifest: LocalArtifactManifest): ArtifactEntry[] {
   return [
-    ...manifest.artifactGroups.publicArtifacts,
+    ...manifest.artifactGroups.publicArtifacts.filter((entry) => entry.scanDecision === "pass-or-blocked"),
     ...manifest.artifactGroups.publicEvidence.filter((entry) => entry.path.endsWith(".json"))
   ];
 }

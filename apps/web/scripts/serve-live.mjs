@@ -20,6 +20,22 @@ import { authenticateLiveRequest } from "../src/lib/live/liveAuth.ts";
 import { buildLiveHealthBody, buildLiveReadinessBody } from "../src/lib/live/liveHealth.ts";
 import { evaluateHostedModePolicy } from "../src/lib/live/hostedMode.ts";
 import {
+  evaluateStudioAuthConfig,
+  applyStudioAuthBootstrap
+} from "../src/lib/live/studioAuthConfig.ts";
+import { createStudioAuthService } from "../src/lib/live/studioAuthService.ts";
+import { createStudioAuthApiHandler } from "../src/lib/live/studioAuthApi.ts";
+import { createStudioCampaignApiHandler } from "../src/lib/live/studioCampaignApi.ts";
+import {
+  createPublicCampaignVersionApiHandler,
+  createStudioCampaignVersionApiHandler
+} from "../src/lib/live/studioCampaignVersionApi.ts";
+import {
+  createStudioCampaignService,
+  STUDIO_CAMPAIGN_BODY_MAX_BYTES
+} from "../src/lib/live/studioCampaignService.ts";
+import { createStudioCampaignVersionService } from "../src/lib/live/studioCampaignVersionService.ts";
+import {
   LIVE_RATE_LIMIT_POLICY,
   classifyLiveRateLimitRoute,
   createMemoryLiveRateLimiter,
@@ -50,6 +66,9 @@ const host = process.env.HOST ?? "127.0.0.1";
 const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const CAPABILITY_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
+const STUDIO_PUBLISH_PATH = /^\/api\/studio\/campaigns\/campaign_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/publish$/u;
+const STUDIO_VERSION_PATH = /^\/api\/studio\/campaigns\/campaign_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/versions$/u;
+const PUBLIC_VERSION_PATH = /^\/api\/public\/campaigns\/campaign_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/versions\/([1-9][0-9]*)$/u;
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -60,6 +79,21 @@ const contentTypes = {
 export function derivePublicEvidenceDownloadRequested(url) {
   const downloadValues = url.searchParams.getAll("download");
   return downloadValues.length === 1 && downloadValues[0] === "1";
+}
+
+export function deriveLocalOrigin(localHost, localPort) {
+  const originHost = isIP(localHost) === 6 ? `[${localHost}]` : localHost;
+  return `http://${originHost}:${localPort}`;
+}
+
+export function isTask4QuerySuffixedRoute(method, pathname, search) {
+  if (search.length === 0) return false;
+  if (method === "POST" && STUDIO_PUBLISH_PATH.test(pathname)) return true;
+  if (method === "GET" && STUDIO_VERSION_PATH.test(pathname)) return true;
+  const publicVersion = method === "GET" ? PUBLIC_VERSION_PATH.exec(pathname) : null;
+  if (publicVersion?.[1] === undefined) return false;
+  const versionNumber = Number(publicVersion[1]);
+  return Number.isSafeInteger(versionNumber) && versionNumber > 0;
 }
 
 export function writeLiveJsonResponse(
@@ -74,7 +108,7 @@ export function writeLiveJsonResponse(
     "cache-control": "no-store",
     ...headers
   });
-  const payload = JSON.stringify(body);
+  const payload = body === null ? undefined : JSON.stringify(body);
   if (typeof onFinished === "function") {
     response.end(payload, onFinished);
   } else {
@@ -104,10 +138,15 @@ export function writeLiveRequestBodyError(
   );
 }
 
-export async function readLiveJsonBody(request, pathname) {
+export async function readLiveJsonBody(request, pathname, method = "POST") {
   const maxBytes =
     pathname === "/api/public/events"
       ? PUBLIC_CAMPAIGN_EVENT_BODY_MAX_BYTES
+      : (
+        (method === "POST" && (pathname === "/api/studio/campaigns" || STUDIO_PUBLISH_PATH.test(pathname))) ||
+        (method === "PATCH" && /^\/api\/studio\/campaigns\/(campaign_[0-9a-f-]+|gasok-demo)$/u.test(pathname))
+      )
+        ? STUDIO_CAMPAIGN_BODY_MAX_BYTES
       : 64 * 1024;
   const declaredLength = request.headers?.["content-length"];
   if (
@@ -188,6 +227,26 @@ export async function readLiveJsonBody(request, pathname) {
   });
 }
 
+export function assertHostedLiveSchemaState({ mode, store }) {
+  if (mode === "local") return;
+  try {
+    const schemaState = evaluateLiveSchemaState({
+      ...store.getSchemaState(),
+      requiredMigrations: ALL_REQUIRED_LIVE_MIGRATIONS
+    });
+    if (!schemaState.ok) {
+      throw new Error(`Hosted live schema state failed: ${schemaState.reason}`);
+    }
+  } catch (error) {
+    try {
+      store.close();
+    } catch (_closeError) {
+      // Preserve the schema failure that made the hosted runtime unusable.
+    }
+    throw error;
+  }
+}
+
 function parseEnvFileContent(content) {
   const parsed = {};
   for (const rawLine of content.split(/\r?\n/u)) {
@@ -249,9 +308,163 @@ function requireExternalHostedDbPath(configuredPath) {
   return dbPath;
 }
 
+export function initializeStudioAuthApi({
+  store,
+  studioAuthReadiness,
+  nowIso
+}) {
+  try {
+    if (studioAuthReadiness.enabled) {
+      applyStudioAuthBootstrap({
+        repository: store.studioAuth,
+        config: studioAuthReadiness.config,
+        existingTenantIds: [
+          ...new Set(store.listRuns().map((run) => run.tenantId ?? "local"))
+        ],
+        nowIso
+      });
+      return createStudioAuthApiHandler({
+        service: createStudioAuthService({
+          repository: store.studioAuth,
+          config: studioAuthReadiness.config
+        }),
+        origin: studioAuthReadiness.config.origin,
+        secureCookie: studioAuthReadiness.config.secureCookie
+      });
+    }
+    return async () => ({
+      status: 503,
+      body: { error: "studio_auth_unavailable" },
+      headers: {}
+    });
+  } catch (error) {
+    try {
+      store.close();
+    } catch (_closeError) {
+      // Preserve the initialization failure that made the runtime unusable.
+    }
+    throw error;
+  }
+}
+
+export function initializeStudioCampaignApi({
+  store,
+  studioAuthReadiness,
+  rateLimiter
+}) {
+  try {
+    if (studioAuthReadiness.enabled) {
+      const service = createStudioCampaignService({
+        repository: store.studioCampaigns
+      });
+      service.bootstrapBaseline(studioAuthReadiness.config.organizationId);
+      const studioAuthService = createStudioAuthService({
+        repository: store.studioAuth,
+        config: studioAuthReadiness.config
+      });
+      return createStudioCampaignApiHandler({
+        service,
+        authenticateSession: studioAuthService.authenticateSession,
+        origin: studioAuthReadiness.config.origin,
+        secureCookie: studioAuthReadiness.config.secureCookie,
+        consumeMutation(context) {
+          return rateLimiter.consume({
+            bucket: liveRateLimitBucket({
+              kind: "studio", value: context.sessionId, tenantId: context.tenantId
+            }),
+            limit: LIVE_RATE_LIMIT_POLICY.studioMutationPerSessionPerMinute,
+            windowMs: 60_000
+          });
+        }
+      });
+    }
+    return async () => ({
+      status: 503,
+      body: { error: "studio_campaign_unavailable" },
+      headers: {}
+    });
+  } catch (error) {
+    try {
+      store.close();
+    } catch (_closeError) {
+      // Preserve the initialization failure that made the runtime unusable.
+    }
+    throw error;
+  }
+}
+
+export function initializeStudioCampaignVersionApis({
+  store,
+  studioAuthReadiness,
+  rateLimiter
+}) {
+  const schemaState = evaluateLiveSchemaState({
+    ...store.getSchemaState(),
+    requiredMigrations: ALL_REQUIRED_LIVE_MIGRATIONS
+  });
+  if (!schemaState.ok) {
+    return {
+      publicApi: async () => ({
+        status: 503,
+        body: { error: "service_unavailable" },
+        headers: { "cache-control": "no-store" }
+      }),
+      studioApi: async () => ({
+        status: 503,
+        body: { error: "service_unavailable" },
+        headers: {}
+      })
+    };
+  }
+
+  const service = createStudioCampaignVersionService({
+    repository: store.studioCampaignVersions
+  });
+  const publicApi = createPublicCampaignVersionApiHandler({ service });
+  if (!studioAuthReadiness.enabled) {
+    return {
+      publicApi,
+      studioApi: async () => ({
+        status: 503,
+        body: { error: "service_unavailable" },
+        headers: {}
+      })
+    };
+  }
+
+  const studioAuthService = createStudioAuthService({
+    repository: store.studioAuth,
+    config: studioAuthReadiness.config
+  });
+  return {
+    publicApi,
+    studioApi: createStudioCampaignVersionApiHandler({
+      service,
+      authenticateSession: studioAuthService.authenticateSession,
+      origin: studioAuthReadiness.config.origin,
+      secureCookie: studioAuthReadiness.config.secureCookie,
+      consumeMutation(context) {
+        return rateLimiter.consume({
+          bucket: liveRateLimitBucket({
+            kind: "studio", value: context.sessionId, tenantId: context.tenantId
+          }),
+          limit: LIVE_RATE_LIMIT_POLICY.studioMutationPerSessionPerMinute,
+          windowMs: 60_000
+        });
+      }
+    })
+  };
+}
+
 async function startLiveServer() {
   const loadedEnv =
     liveMode === "local" ? loadLocalEnv(process.env) : { effectiveEnv: { ...process.env }, loadedEnvFiles: [] };
+  const localOrigin = deriveLocalOrigin(host, port);
+  const studioAuthReadiness = evaluateStudioAuthConfig({
+    env: loadedEnv.effectiveEnv,
+    mode: liveMode,
+    localOrigin
+  });
   const readiness = buildRedactedLiveEnvReadiness({
     GIWA_SEPOLIA_RPC_URL: loadedEnv.effectiveEnv.GIWA_SEPOLIA_RPC_URL,
     GIWA_EXPLORER_TX_URL_TEMPLATE: loadedEnv.effectiveEnv.GIWA_EXPLORER_TX_URL_TEMPLATE,
@@ -291,7 +504,9 @@ async function startLiveServer() {
     mode: liveMode,
     mockMode,
     host,
-    authReady: liveMode === "local" || credentialHashes.length > 0,
+    authReady:
+      liveMode === "local" ||
+      (credentialHashes.length > 0 && studioAuthReadiness.ok),
     tenantReady: true,
     rateLimitReady: true,
     requestSafetyReady: true,
@@ -307,6 +522,8 @@ async function startLiveServer() {
         loadedEnvFiles: loadedEnv.loadedEnvFiles,
         liveMode,
         liveMockMode: mockMode,
+        studioAuthReadiness: studioAuthReadiness.readiness,
+        studioAuthEnabled: studioAuthReadiness.enabled,
         hostedPolicy
       },
       null,
@@ -341,7 +558,7 @@ async function startLiveServer() {
   const deployment = JSON.parse(readFileSync(deploymentPath, "utf8"));
   const campaignSignerAccount = serverEnv === null ? null : privateKeyToAccount(serverEnv.campaignSignerPrivateKey);
   const publicBaseUrl =
-    liveMode === "local" ? `http://${host}:${port}` : serverEnv?.publicOrigin;
+    liveMode === "local" ? localOrigin : serverEnv?.publicOrigin;
   if (publicBaseUrl === undefined) {
     throw new Error("Validated hosted public origin is unavailable");
   }
@@ -366,6 +583,12 @@ async function startLiveServer() {
         });
 
   const store = createSqliteLiveStore(dbPath);
+  assertHostedLiveSchemaState({ mode: liveMode, store });
+  const studioAuthApi = initializeStudioAuthApi({
+    store,
+    studioAuthReadiness,
+    nowIso: new Date().toISOString()
+  });
   const retentionMs =
     serverEnv?.incompleteRunRetentionHours === undefined
       ? null
@@ -388,6 +611,16 @@ async function startLiveServer() {
   }
   const verificationJobs = createMemoryVerificationJobQueue({ now: () => new Date().toISOString() });
   const rateLimiter = createMemoryLiveRateLimiter({ nowMs: () => Date.now() });
+  const studioCampaignApi = initializeStudioCampaignApi({
+    store,
+    studioAuthReadiness,
+    rateLimiter
+  });
+  const studioCampaignVersionApis = initializeStudioCampaignVersionApis({
+    store,
+    studioAuthReadiness,
+    rateLimiter
+  });
   const receiptClient =
     serverEnv === null
       ? null
@@ -475,6 +708,13 @@ async function startLiveServer() {
       }
     ];
     const route = classifyLiveRateLimitRoute(request.method ?? "GET", url.pathname);
+    if (route?.kind === "auth") {
+      inputs.push({
+        bucket: liveRateLimitBucket({ kind: "auth", value: clientIp }),
+        limit: LIVE_RATE_LIMIT_POLICY.authPerIpPerMinute,
+        windowMs: 60_000
+      });
+    }
     if (route?.kind === "create") {
       inputs.push({
         bucket: liveRateLimitBucket({ kind: "create", value: clientIp }),
@@ -517,27 +757,32 @@ async function startLiveServer() {
     return CAPABILITY_PATTERN.test(trimmed) ? trimmed : null;
   }
 
-  function publicPath(pathname) {
-    const decoded = decodeURIComponent(pathname);
-    const requested =
-      decoded === "/"
-        ? "/landing.html"
-        : decoded === "/live"
+function publicPath(pathname, search = "") {
+  const decoded = decodeURIComponent(pathname);
+  const CAMPAIGN_VERSION_PUBLIC_PATH = /^\/campaign\/campaign_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/v\/[1-9][0-9]*$/u;
+  const requested =
+    decoded === "/"
+      ? "/landing.html"
+        : CAMPAIGN_VERSION_PUBLIC_PATH.test(decoded) && search === ""
+          ? "/campaign.html"
+          : decoded === "/live"
           ? "/live.html"
           : decoded === "/giwa-demo"
             ? "/giwa-demo.html"
             : decoded === "/demo"
               ? "/demo.html"
-              : decoded === "/user" ||
+              : decoded === "/studio"
+                ? "/studio.html"
+                : decoded === "/user" ||
                   decoded === "/user/receipts" ||
                   decoded === "/user/help" ||
                   decoded.startsWith("/user/receipt/")
-                ? "/user.html"
-                : decoded === "/evidence" ||
-                    decoded === "/partner" ||
-                    decoded.startsWith("/receipt/")
-                  ? "/index.html"
-                  : decoded;
+                  ? "/user.html"
+                  : decoded === "/evidence" ||
+                      decoded === "/partner" ||
+                      decoded.startsWith("/receipt/")
+                    ? "/index.html"
+                    : decoded;
     const normalized = normalize(requested).replace(/^(\.\.[/\\])+/, "");
     return join(publicDir, normalized);
   }
@@ -576,7 +821,9 @@ async function startLiveServer() {
       const body = buildLiveReadinessBody({
         mode: liveMode,
         envReady: (readiness.ok || (liveMode === "local" && mockMode)) && hostedReadiness.ok,
-        authReady: liveMode === "local" || credentialHashes.length > 0,
+        authReady:
+          liveMode === "local" ||
+          (credentialHashes.length > 0 && studioAuthReadiness.ok),
         tenantReady: partnerTenantId.trim().length > 0,
         repositoryReady: schemaState.ok,
         rateLimitReady: true,
@@ -588,14 +835,26 @@ async function startLiveServer() {
         originReady: originReady,
         verifierReady: receiptClient !== null,
         schemaReady: schemaState.ok,
-        missingKeys: [...readiness.missing, ...hostedReadiness.missing],
-        invalidKeys: [...readiness.invalid, ...hostedReadiness.invalid]
+        missingKeys: [
+          ...readiness.missing,
+          ...hostedReadiness.missing,
+          ...studioAuthReadiness.missing
+        ],
+        invalidKeys: [
+          ...readiness.invalid,
+          ...hostedReadiness.invalid,
+          ...studioAuthReadiness.invalid
+        ]
       });
       writeLiveJsonResponse(response, body.ready ? 200 : 503, body);
       return;
     }
 
     if (url.pathname.startsWith("/api/")) {
+      if (isTask4QuerySuffixedRoute(request.method ?? "GET", url.pathname, url.search)) {
+        writeLiveJsonResponse(response, 404, { error: "not_found" });
+        return;
+      }
       const routeClass = classifyLiveApiRoute(request.method ?? "GET", url.pathname);
       if (!consumeRateLimits(preAuthRateLimitInputs(request, url), response, id)) return;
       const safety = evaluateLiveRequestSafety({
@@ -610,21 +869,11 @@ async function startLiveServer() {
         return;
       }
 
-      let auth = null;
-      if (routeClass === "partner" && liveMode !== "local") {
-        const authResult = authenticateLiveRequest({ headers: request.headers, credentials });
-        if (!authResult.ok) {
-          writeLiveJsonResponse(response, authResult.status, { error: authResult.code, requestId: id });
-          return;
-        }
-        auth = authResult.context;
-        if (!consumeRateLimits([partnerRateLimitInput(auth)], response, id)) return;
-      }
       let parsedBody;
       try {
         parsedBody =
-          request.method === "POST"
-            ? await readLiveJsonBody(request, url.pathname)
+          request.method === "POST" || request.method === "PATCH"
+            ? await readLiveJsonBody(request, url.pathname, request.method)
             : undefined;
       } catch (error) {
         const status =
@@ -640,6 +889,116 @@ async function startLiveServer() {
           writeLiveJsonResponse(response, status, body);
         }
         return;
+      }
+
+      if (routeClass === "auth") {
+        const result = await studioAuthApi({
+          method: request.method ?? "GET",
+          pathname: url.pathname,
+          origin:
+            typeof request.headers.origin === "string"
+              ? request.headers.origin
+              : undefined,
+          cookie:
+            typeof request.headers.cookie === "string"
+              ? request.headers.cookie
+              : undefined,
+          body: parsedBody,
+          requestId: id
+        });
+        writeLiveJsonResponse(response, result.status, result.body, result.headers);
+        console.log(
+          JSON.stringify(
+            redactLiveLogEvent({
+              event: "live.api.request",
+              requestId: id,
+              method: request.method,
+              pathname: url.pathname,
+              status: result.status,
+              errorCode:
+                typeof result.body?.error === "string"
+                  ? result.body.error
+                  : null,
+              tenantId: null,
+              durationMs: Date.now() - startedAt
+            })
+          )
+        );
+        return;
+      }
+
+      if (routeClass === "studio") {
+        const handler = STUDIO_VERSION_PATH.test(url.pathname) || STUDIO_PUBLISH_PATH.test(url.pathname)
+          ? studioCampaignVersionApis.studioApi
+          : studioCampaignApi;
+        const result = await handler({
+          method: request.method ?? "GET",
+          pathname: url.pathname,
+          origin:
+            typeof request.headers.origin === "string"
+              ? request.headers.origin
+              : undefined,
+          cookie:
+            typeof request.headers.cookie === "string"
+              ? request.headers.cookie
+              : undefined,
+          body: parsedBody,
+          requestId: id
+        });
+        writeLiveJsonResponse(response, result.status, result.body, result.headers);
+        console.log(
+          JSON.stringify(
+            redactLiveLogEvent({
+              event: "live.api.request",
+              requestId: id,
+              method: request.method,
+              pathname: url.pathname,
+              status: result.status,
+              errorCode:
+                typeof result.body?.error === "string"
+                  ? result.body.error
+                  : null,
+              tenantId: null,
+              durationMs: Date.now() - startedAt
+            })
+          )
+        );
+        return;
+      }
+
+      if (routeClass === "campaign-version-public") {
+        const result = await studioCampaignVersionApis.publicApi({
+          method: request.method ?? "GET",
+          pathname: url.pathname,
+          requestId: id
+        });
+        writeLiveJsonResponse(response, result.status, result.body, result.headers);
+        console.log(
+          JSON.stringify(
+            redactLiveLogEvent({
+              event: "live.api.request",
+              requestId: id,
+              method: request.method,
+              pathname: url.pathname,
+              status: result.status,
+              errorCode: typeof result.body?.error === "string" ? result.body.error : null,
+              tenantId: null,
+              durationMs: Date.now() - startedAt
+            })
+          )
+        );
+        return;
+      }
+
+      let auth = null;
+      if (routeClass === "partner" && liveMode !== "local") {
+        const authResult = authenticateLiveRequest({ headers: request.headers, credentials });
+        if (!authResult.ok) {
+          writeLiveJsonResponse(response, authResult.status, { error: authResult.code, requestId: id });
+          return;
+        }
+        auth = authResult.context;
+        if (!consumeRateLimits([partnerRateLimitInput(auth)], response, id)) return;
       }
       const result = await api({
         method: request.method ?? "GET",
@@ -669,7 +1028,7 @@ async function startLiveServer() {
       return;
     }
 
-    const filePath = publicPath(url.pathname);
+    const filePath = publicPath(url.pathname, url.search);
     if (!filePath.startsWith(publicDir) || !existsSync(filePath)) {
       response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
       response.end("Not found");

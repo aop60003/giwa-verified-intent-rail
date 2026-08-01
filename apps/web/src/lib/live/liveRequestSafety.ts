@@ -14,7 +14,7 @@ export type LiveRequestSafetyResult =
       code: "origin_not_allowed" | "method_not_allowed" | "unsupported_media_type";
     };
 
-const ALLOWED_METHODS = new Set(["GET", "POST"]);
+const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH"]);
 
 function isJsonContentType(value: string | undefined): boolean {
   if (value === undefined) return false;
@@ -29,7 +29,7 @@ export function evaluateLiveRequestSafety(input: LiveRequestSafetyInput): LiveRe
 
   if (
     input.pathname.startsWith("/api/") &&
-    input.method === "POST" &&
+    (input.method === "POST" || input.method === "PATCH") &&
     input.allowedOrigins.length > 0 &&
     (input.origin === undefined || !input.allowedOrigins.includes(input.origin))
   ) {
@@ -38,7 +38,7 @@ export function evaluateLiveRequestSafety(input: LiveRequestSafetyInput): LiveRe
 
   if (
     input.pathname.startsWith("/api/") &&
-    input.method === "POST" &&
+    (input.method === "POST" || input.method === "PATCH") &&
     !isJsonContentType(input.contentType)
   ) {
     return { ok: false, status: 415, code: "unsupported_media_type" };

@@ -55,7 +55,7 @@ describe("commercial user route mapping", () => {
     expect(telemetryCall).not.toContain("x-giwa-run-capability");
   });
 
-  it("applies client and route limits before request parsing or partner authentication", () => {
+  it("applies client and route limits before parsing, then dispatches auth before partner authentication", () => {
     const source = readWebFile("scripts/serve-live.mjs");
     const preAuthLimitIndex = source.indexOf("preAuthRateLimitInputs(", source.indexOf("const server ="));
     const safetyIndex = source.indexOf("evaluateLiveRequestSafety(", source.indexOf("const server ="));
@@ -64,15 +64,18 @@ describe("commercial user route mapping", () => {
       source.indexOf("const server =")
     );
     const authenticateIndex = source.indexOf("authenticateLiveRequest(", source.indexOf("const server ="));
+    const authRouteIndex = source.indexOf('routeClass === "auth"', source.indexOf("const server ="));
     const partnerLimitIndex = source.indexOf("partnerRateLimitInput(", authenticateIndex);
 
     expect(preAuthLimitIndex).toBeGreaterThan(-1);
     expect(preAuthLimitIndex).toBeLessThan(safetyIndex);
     expect(preAuthLimitIndex).toBeLessThan(readBodyIndex);
     expect(preAuthLimitIndex).toBeLessThan(authenticateIndex);
+    expect(readBodyIndex).toBeLessThan(authRouteIndex);
+    expect(authRouteIndex).toBeLessThan(authenticateIndex);
     expect(partnerLimitIndex).toBeGreaterThan(authenticateIndex);
-    expect(partnerLimitIndex).toBeLessThan(readBodyIndex);
     expect(source.match(/preAuthRateLimitInputs\(/gu)).toHaveLength(2);
+    expect(source).toMatch(/if \(route\?\.kind === "auth"\)[\s\S]{0,350}authPerIpPerMinute/u);
     expect(source).toMatch(/if \(route\?\.kind === "create"\)[\s\S]{0,350}createRunPerIpPerMinute/u);
     expect(source).toMatch(/if \(route\?\.kind === "verify"\)[\s\S]{0,350}verifyPerRunPerMinute/u);
   });

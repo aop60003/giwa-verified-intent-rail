@@ -23,12 +23,46 @@ are locally complete. This is local-advisory evidence only: no source freeze
 commit, protected-CI result for that source, deployment approval, public
 staging migration, backfill, or chain transaction is implied.
 
-The [full platform evolution design](docs/superpowers/specs/2026-07-31-giwa-full-platform-evolution-design.md)
-routes later local product work to Release 3 product design and responsive
-accessibility. Release 3 must receive its own reviewed implementation plan and
-must not begin by weakening the Release 1 or Release 2 privacy, replay, or
-evidence-integrity boundaries. The GASOK staging runbook remains the separate
-authority for any later approved public rollout.
+The [Release 3 local completion freeze](docs/implementation/giwa-release-3-local-completion-freeze.md)
+records the locally verified shared Dossier presentation, responsive reflow,
+keyboard focus, self-hosted font, and reduced-motion boundary. Release 3 is
+local-advisory evidence only and does not authorize Git integration or public
+deployment.
+
+The [Release 4 wallet-session Studio design](docs/superpowers/specs/2026-08-01-giwa-release-4-wallet-session-studio-design.md),
+[implementation plan](docs/superpowers/plans/2026-08-01-giwa-release-4-wallet-session-studio.md),
+and [local completion freeze](docs/implementation/giwa-release-4-wallet-session-studio-local-completion-freeze.md)
+record the locally verified application-defined EIP-191 Owner challenge,
+eight-hour server session, additive organization auth storage, and read-only
+`/studio` surface. This remains local-advisory evidence only. The next product
+slice must begin with a separately reviewed Release 4 campaign/role design; it
+must not infer campaign mutation or broader partner authority from this login
+slice. The GASOK staging runbook remains the separate authority for any later
+approved public rollout.
+
+The approved [Release 4 Owner Campaign Draft design](docs/superpowers/specs/2026-08-01-giwa-release-4-owner-campaign-drafts-design.md),
+[implementation plan](docs/superpowers/plans/2026-08-01-giwa-release-4-owner-campaign-drafts.md),
+and [local completion freeze](docs/implementation/giwa-release-4-owner-campaign-drafts-local-completion-freeze.md)
+record the local-only extension: an authenticated Owner may create and edit
+organization-scoped, SQLite-backed `mockVaultDeposit` Drafts in `/studio`.
+The fixed published baseline remains read-only. Drafts are currently
+disconnected from public Campaign Studio, Manifest/Receipt creation, and
+execution. This remains local-advisory evidence only; it does not authorize Git
+integration, deployment, hosted configuration, real wallet authentication, or
+chain activity.
+
+The approved [Release 4 Owner Campaign Publishing design](docs/superpowers/specs/2026-08-01-giwa-release-4-owner-campaign-publishing-design.md),
+[implementation plan](docs/superpowers/plans/2026-08-01-giwa-release-4-owner-campaign-publishing.md),
+and [local completion freeze](docs/implementation/giwa-release-4-owner-campaign-publishing-local-completion-freeze.md)
+record the locally verified immutable Published Version and exact public-preview
+boundary. An Owner may publish one saved `mockVaultDeposit` Draft revision;
+the control requires a strict successful Version-history load, the Draft stays
+mutable, and every earlier Version stays unchanged. Failed or malformed history
+keeps publishing unavailable instead of assuming an empty sequence. The preview
+does not activate participant execution, create a Manifest or Receipt, request
+a wallet signature, call RPC, or take a chain action. This remains local-advisory
+evidence only and does not authorize Git integration, protected CI, deployment,
+or hosted migration.
 
 ## Current GASOK Staging Pack
 
@@ -71,6 +105,8 @@ Current public experience:
 | `/user` | five-stage participant journey |
 | `/user/receipt/:hash` | participant Receipt and Exact Execution Seal |
 | `/user/receipts` | browser-local matched execution history |
+| `/studio` | Owner-authenticated Campaign Draft and public-preview workspace |
+| `/campaign/:campaignId/v/:versionNumber` | exact immutable Published Version preview |
 | `/partner` | public-safe read-only Campaign Studio |
 | `/evidence` | exact-hash public Proof Ledger |
 | `/receipt/:hash` | public technical Receipt |

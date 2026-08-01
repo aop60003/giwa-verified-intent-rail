@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
 
 import {
@@ -255,6 +255,49 @@ async function createMatchedRunAndEvidence(input: {
 }
 
 describe("live API contracts", () => {
+  it("rejects query-suffixed Task 4 routes before any route handler dispatch", async () => {
+    const serveScriptPath = resolve(process.cwd(), "scripts/serve-live.mjs");
+    const serveScriptUrl = `file:///${serveScriptPath.replace(/\\/gu, "/")}`;
+    const adapter = (await import(serveScriptUrl)) as {
+      isTask4QuerySuffixedRoute?: (method: string, pathname: string, search: string) => boolean;
+    };
+    expect(typeof adapter.isTask4QuerySuffixedRoute).toBe("function");
+    const wouldDispatch = vi.fn();
+    const campaignId = "campaign_00000000-0000-4000-8000-000000000001";
+    for (const [method, pathname] of [
+      ["POST", `/api/studio/campaigns/${campaignId}/publish`],
+      ["GET", `/api/studio/campaigns/${campaignId}/versions`],
+      ["GET", `/api/public/campaigns/${campaignId}/versions/1`]
+    ] as const) {
+      if (!adapter.isTask4QuerySuffixedRoute!(method, pathname, "?anything=1")) {
+        wouldDispatch(method, pathname);
+      }
+    }
+    expect(wouldDispatch).not.toHaveBeenCalled();
+    expect(adapter.isTask4QuerySuffixedRoute!("GET", "/api/public/config", "?anything=1")).toBe(false);
+    expect(adapter.isTask4QuerySuffixedRoute!("GET", `/api/public/campaigns/${campaignId}/versions/1`, "")).toBe(false);
+  });
+
+  it("keeps campaign publication paths outside the legacy manifest and verifier flow", async () => {
+    const store = createMemoryLiveStore();
+    const issueManifest = vi.fn();
+    const api = createLiveApiHandler({
+      store,
+      now: () => "2026-08-01T00:00:00.000Z",
+      issueManifest
+    });
+    const campaignId = "campaign_00000000-0000-4000-8000-000000000001";
+
+    await expect(api({
+      method: "GET",
+      pathname: `/api/public/campaigns/${campaignId}/versions/1`,
+      requestId: "task7_legacy_boundary"
+    })).resolves.toEqual({ status: 404, body: { error: "not_found" } });
+    expect(issueManifest).not.toHaveBeenCalled();
+    expect(store.listRuns()).toEqual([]);
+    expect(store.getVerificationJobForRun("run_task7")).toBeUndefined();
+  });
+
   it("creates a run and returns a wallet-bound manifest summary", async () => {
     const api = createLiveApiHandler({
       store: createMemoryLiveStore(),
@@ -1062,7 +1105,8 @@ describe("live API contracts", () => {
     const adapter = (await import(serveScriptUrl)) as {
       readLiveJsonBody?: (
         request: BodyRequest,
-        pathname: string
+        pathname: string,
+        method?: string
       ) => Promise<unknown>;
       writeLiveRequestBodyError?: (
         request: { destroy(): void },
@@ -1135,6 +1179,71 @@ describe("live API contracts", () => {
     await expectTooLarge(overEventBound);
     await expectTooLarge(overEventBound, "1");
     await expectTooLarge("", "513");
+
+    const studioBoundary = JSON.stringify({ pad: "x".repeat(4_086) });
+    const studioOversized = JSON.stringify({ pad: "x".repeat(4_087) });
+    expect(new TextEncoder().encode(studioBoundary).byteLength).toBe(4_096);
+    expect(new TextEncoder().encode(studioOversized).byteLength).toBe(4_097);
+    for (const method of ["POST", "PATCH"] as const) {
+      const pathname =
+        method === "POST"
+          ? "/api/studio/campaigns"
+          : "/api/studio/campaigns/gasok-demo";
+      await expect(
+        readLiveJsonBody(
+          request(studioBoundary, "4096"),
+          pathname,
+          method
+        )
+      ).resolves.toEqual({ pad: "x".repeat(4_086) });
+      await expect(
+        readLiveJsonBody(
+          request(studioOversized, "4097"),
+          pathname,
+          method
+        )
+      ).rejects.toMatchObject({
+        message: "request_body_too_large",
+        statusCode: 413
+      });
+      for (const declaredLength of [undefined, "1"]) {
+        await expect(
+          readLiveJsonBody(
+            request(studioOversized, declaredLength),
+            pathname,
+            method
+          )
+        ).rejects.toMatchObject({
+          message: "request_body_too_large",
+          statusCode: 413
+        });
+      }
+    }
+    const campaignId = "campaign_00000000-0000-4000-8000-000000000001";
+    await expect(
+      readLiveJsonBody(
+        request(studioBoundary, "4096"),
+        `/api/studio/campaigns/${campaignId}/publish`,
+        "POST"
+      )
+    ).resolves.toEqual({ pad: "x".repeat(4_086) });
+    await expect(
+      readLiveJsonBody(
+        request(studioOversized, "4097"),
+        `/api/studio/campaigns/${campaignId}/publish`,
+        "POST"
+      )
+    ).rejects.toMatchObject({
+      message: "request_body_too_large",
+      statusCode: 413
+    });
+    await expect(
+      readLiveJsonBody(
+        request(studioOversized, "4097"),
+        "/api/studio/campaigns/gasok-demo",
+        "GET"
+      )
+    ).resolves.toEqual({ pad: "x".repeat(4_087) });
 
     const ordinaryBody = JSON.stringify({ pad: "x".repeat(65_526) });
     const oversizedOrdinaryBody = JSON.stringify({

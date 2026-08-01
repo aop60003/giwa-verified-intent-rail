@@ -458,6 +458,9 @@ describe("public artifact scanner", () => {
       [
         { path: "apps/web/public/index.html", content: "<html></html>" },
         { path: "apps/web/public/demo-control-room.js", content: "console.log('safe')" },
+        { path: "apps/web/public/fonts/OFL.txt", content: "Open Font License\n" },
+        { path: "apps/web/public/fonts/pretendard-subset.woff2", content: new Uint8Array([0, 1, 2, 3]) },
+        { path: "apps/web/public/matched-receipt-seal.png", content: new Uint8Array([4, 5, 6, 7]) },
         { path: "docs/evidence/giwa-sepolia-mvp-evidence.schema.md", content: "# Schema\n" },
         { path: "docs/evidence/giwa-sepolia-mvp-evidence.json", content: "{\"noPrivateKeys\":true}\n" }
       ],
@@ -466,6 +469,7 @@ describe("public artifact scanner", () => {
 
     expect(selectPublicArtifactScanEntries(manifest).map((entry) => entry.path)).toEqual([
       "apps/web/public/demo-control-room.js",
+      "apps/web/public/fonts/OFL.txt",
       "apps/web/public/index.html",
       "docs/evidence/giwa-sepolia-mvp-evidence.json"
     ]);

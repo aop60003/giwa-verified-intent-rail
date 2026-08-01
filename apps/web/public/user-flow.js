@@ -1049,11 +1049,33 @@ function flowStateClass() {
   return "user-state pending";
 }
 
-function stepIcon(state) {
-  if (state === "complete") return "✓";
-  if (state === "active") return "→";
-  if (state === "blocked") return "!";
-  return "·";
+function stepPresentation(state) {
+  if (state === "complete") return { icon: "check", label: "완료" };
+  if (state === "active") return { icon: "clock-3", label: "진행 중" };
+  if (state === "blocked") {
+    return { icon: "triangle-alert", label: "확인 필요" };
+  }
+  return { icon: "clock-3", label: "대기" };
+}
+
+function renderHashDisclosure(label, value) {
+  return view("details", { className: "hash-disclosure" }, [
+    view("summary", {}, [
+      view("span", { text: label }),
+      view("span", {
+        className: "mono hash-visual",
+        text: shortHash(value)
+      }),
+      globalThis.GiwaProtocolDossier.createLineIcon(
+        document,
+        "chevron-down"
+      )
+    ]),
+    view("code", {
+      className: "mono hash-full",
+      text: value ?? "확인 중"
+    })
+  ]);
 }
 
 function progressSteps() {
@@ -1085,16 +1107,39 @@ function renderStatusRail() {
     view(
       "ol",
       { className: "status-rail user-status-rail" },
-      progressSteps().map(([id, label, detail, state]) =>
-        view("li", { className: `status-step ${state}`, "data-step": id }, [
-          view("span", { className: "status-icon", text: stepIcon(state), title: state }),
-          view("span", { className: "status-body" }, [
-            view("strong", { text: label }),
-            view("span", { text: detail }),
-            view("em", { text: id === "standard_rpc_receipt_found" ? "Standard RPC evidence" : "Evaluator step" })
-          ])
-        ])
-      )
+      progressSteps().map(([id, label, detail, state]) => {
+        const presentation = stepPresentation(state);
+        return view(
+          "li",
+          { className: `status-step ${state}`, "data-step": id },
+          [
+            view(
+              "span",
+              { className: "status-icon", title: presentation.label },
+              [
+                globalThis.GiwaProtocolDossier.createLineIcon(
+                  document,
+                  presentation.icon
+                ),
+                view("span", {
+                  className: "sr-only",
+                  text: presentation.label
+                })
+              ]
+            ),
+            view("span", { className: "status-body" }, [
+              view("strong", { text: label }),
+              view("span", { text: detail }),
+              view("em", {
+                text:
+                  id === "standard_rpc_receipt_found"
+                    ? "Standard RPC evidence"
+                    : "Evaluator step"
+              })
+            ])
+          ]
+        );
+      })
     )
   ]);
 }
@@ -1494,47 +1539,14 @@ function renderJourneyCanvas(projection, actions, action) {
 }
 
 function renderProtocolTopBar(activeView) {
-  const views = [
-    ["mission", "Mission"],
-    ["execution", "Execution"],
-    ["receipt", "Receipt"]
-  ];
-  return view("header", {
-    className: `protocol-product-bar protocol-product-bar-${activeView}`
-  }, [
-    view("a", {
-      className: "protocol-brand",
-      href: "/",
-      text: "GIWA Verified Intent Rail"
-    }),
-    view(
-      "nav",
-      {
-        className: "protocol-view-nav",
-        "aria-label": "현재 참여 단계"
-      },
-      views.map(([id, label]) =>
-        view("span", {
-          className: id === activeView ? "is-active" : "",
-          "aria-current": id === activeView ? "page" : null,
-          text: label
-        })
-      )
-    ),
-    view("div", { className: "protocol-bar-meta" }, [
-      view("span", {
-        className: "protocol-network",
-        text: "GIWA Sepolia · Testnet"
-      }),
-      view("span", {
-        className: "protocol-wallet",
-        text:
-          walletState.account === null
-            ? "지갑 연결"
-            : shortHash(walletState.account)
-      })
-    ])
-  ]);
+  const protocolViews = new Set(["mission", "execution", "receipt"]);
+  return globalThis.GiwaProtocolDossier.createHeader(document, {
+    activeView: protocolViews.has(activeView) ? activeView : "mission",
+    walletLabel:
+      walletState.account === null
+        ? "지갑 미연결"
+        : shortHash(walletState.account)
+  });
 }
 
 function renderPublicJourney(stages) {
@@ -3601,6 +3613,16 @@ function verificationBundleMetadata(items) {
   );
 }
 
+function renderDisclosureSummary(text) {
+  return view("summary", {}, [
+    view("span", { text }),
+    globalThis.GiwaProtocolDossier.createLineIcon(
+      document,
+      "chevron-down"
+    )
+  ]);
+}
+
 function renderVerificationBundle(publicProof) {
   const bundle = publicProof?.bundle ?? null;
   const receiptHash = bundle?.identity?.receiptHash ?? null;
@@ -3668,7 +3690,7 @@ function renderVerificationBundle(publicProof) {
     view("p", { className: "notice", text: bundle.notice }),
     view("div", { className: "verification-bundle-disclosures" }, [
       view("details", { className: "verification-bundle-disclosure" }, [
-        view("summary", { text: "Manifest 및 서명" }),
+        renderDisclosureSummary("Manifest 및 서명"),
         field("Manifest signature", bundle.manifest.signature),
         field("Recovered signer", bundle.manifest.recoveredSigner),
         field(
@@ -3678,7 +3700,7 @@ function renderVerificationBundle(publicProof) {
         field("Intent hash", bundle.identity.intentHash)
       ]),
       view("details", { className: "verification-bundle-disclosure" }, [
-        view("summary", { text: "Verifier input" }),
+        renderDisclosureSummary("Verifier input"),
         field("Verifier input hash", bundle.verifierInput.verifierInputHash),
         field("Verifier version", bundle.verifierInput.verifierVersion),
         field(
@@ -3692,7 +3714,7 @@ function renderVerificationBundle(publicProof) {
         field("Block hash", bundle.verification.depositBlockHash)
       ]),
       view("details", { className: "verification-bundle-disclosure" }, [
-        view("summary", { text: "Decoded logs" }),
+        renderDisclosureSummary("Decoded logs"),
         ...(bundle.decodedLogs.length === 0
           ? [view("p", { className: "muted", text: "공개 가능한 decoded log가 없습니다." })]
           : bundle.decodedLogs.map((log) =>
@@ -3706,13 +3728,13 @@ function renderVerificationBundle(publicProof) {
             ))
       ]),
       view("details", { className: "verification-bundle-disclosure" }, [
-        view("summary", { text: "Receipt canonical payload" }),
+        renderDisclosureSummary("Receipt canonical payload"),
         field("Receipt hash", bundle.receipt.receiptHash),
         field("Schema version", bundle.receipt.schemaVersion),
         field("Verifier version", bundle.receipt.verifierVersion)
       ]),
       view("details", { className: "verification-bundle-disclosure" }, [
-        view("summary", { text: "독립 재검증" }),
+        renderDisclosureSummary("독립 재검증"),
         view("p", {
           className: "muted",
           text: "다운로드한 JSON만 사용하며 DB, RPC 또는 비공개 API에 연결하지 않습니다."
@@ -4193,18 +4215,21 @@ async function renderReceiptRoute() {
     className: "matched-receipt-technical"
   }, [
     view("summary", { text: "Technical details" }),
-    field("Receipt hash", receiptHash),
-    field("Intent hash", receiptModel?.intentHash ?? null),
-    field("Deposit transaction", depositTxHash),
-    field("Wallet", wallet),
-    field("Target", target),
-    field("Asset", asset),
+    renderHashDisclosure("Receipt hash", receiptHash),
+    renderHashDisclosure("Intent hash", receiptModel?.intentHash ?? null),
+    renderHashDisclosure("Deposit transaction", depositTxHash),
+    renderHashDisclosure("Wallet", wallet),
+    renderHashDisclosure("Target", target),
+    renderHashDisclosure("Asset", asset),
     field("Amount", amountBaseUnits),
     field("Network", networkName),
     field("Block number", blockNumber),
-    field("Block hash", blockHash),
+    renderHashDisclosure("Block hash", blockHash),
     field("Verification snapshot", matched ? `${verification.confirmationDepth} confirmations observed` : null),
-    field("Verifier input hash", matched ? verification.verifierInputHash : null),
+    renderHashDisclosure(
+      "Verifier input hash",
+      matched ? verification.verifierInputHash : null
+    ),
     field("Issued time", issuedTime),
     view("p", {
       className: "notice user-safety-notice",

@@ -71,6 +71,48 @@ describe("live hosted health and readiness", () => {
     expect(serialized).not.toContain("https://");
   });
 
+  it("redacts Studio organization and Owner configuration keys exactly", () => {
+    const body = buildLiveReadinessBody({
+      ...allReady,
+      authReady: false,
+      missingKeys: [
+        "GIWA_LIVE_STUDIO_OWNER_WALLETS",
+        "GIWA_LIVE_PARTNER_TENANT_ID"
+      ],
+      invalidKeys: ["GIWA_LIVE_STUDIO_ORGANIZATION_NAME"]
+    });
+    const serialized = JSON.stringify(body);
+
+    expect(body.missingKeys).toEqual([
+      "studio-owner-list",
+      "studio-organization"
+    ]);
+    expect(body.invalidKeys).toEqual(["studio-organization-name"]);
+    expect(serialized).not.toContain("GIWA_LIVE_STUDIO_OWNER_WALLETS");
+    expect(serialized).not.toContain("GIWA_LIVE_PARTNER_TENANT_ID");
+    expect(serialized).not.toContain("GIWA_LIVE_STUDIO_ORGANIZATION_NAME");
+    expect(serialized).not.toContain("0x1234");
+    expect(serialized).not.toContain("tenant_private");
+    expect(serialized).not.toContain("Private Organization");
+  });
+
+  it("keeps readiness counts consistent when evaluators report the same key", () => {
+    const body = buildLiveReadinessBody({
+      ...allReady,
+      envReady: false,
+      missingKeys: ["GIWA_LIVE_PUBLIC_ORIGIN", "GIWA_LIVE_PUBLIC_ORIGIN"],
+      invalidKeys: [
+        "GIWA_LIVE_STUDIO_OWNER_WALLETS",
+        "GIWA_LIVE_STUDIO_OWNER_WALLETS"
+      ]
+    });
+
+    expect(body.missingKeys).toEqual(["hosted-public-origin"]);
+    expect(body.missingKeyCount).toBe(body.missingKeys.length);
+    expect(body.invalidKeys).toEqual(["studio-owner-list"]);
+    expect(body.invalidKeyCount).toBe(body.invalidKeys.length);
+  });
+
   it("requires every existing and expanded readiness check", () => {
     expect(buildLiveReadinessBody(allReady).ready).toBe(true);
     const checkInputs = [

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Wallet-authenticated organization Campaign Draft management for the GIWA Sepolia testnet."
+    />
+    <title>Campaign Draft management · GIWA Verified Intent Rail</title>
+    <link
+      rel="preload"
+      href="/fonts/pretendard-giwa-subset.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/pretendard.css" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main id="studio-app" class="app-shell studio-shell">
+      <section class="loading-panel" aria-live="polite" aria-busy="true">
+        <p class="eyebrow">GIWA Verified Intent Rail · Studio</p>
+        <h1>Loading authenticated Campaign Draft management</h1>
+      </section>
+    </main>
+    <dialog id="studio-publish-confirmation" class="studio-publish-dialog" aria-labelledby="studio-publish-title">
+      <form method="dialog" class="studio-publish-dialog-content">
+        <p class="eyebrow">Public preview confirmation</p>
+        <h2 id="studio-publish-title">Publish public preview</h2>
+        <div data-studio-publish-facts></div>
+        <p class="studio-publish-warning">Published Versions are immutable public previews.</p>
+        <p class="studio-publish-boundary">No transaction, Manifest, verification, or Receipt is created.</p>
+        <div class="studio-publish-actions">
+          <button type="button" class="studio-secondary-action" data-studio-publish-cancel>Cancel</button>
+          <button type="button" class="studio-primary-action" data-studio-publish-submit>Publish public preview</button>
+        </div>
+      </form>
+    </dialog>
+    <script src="/protocol-dossier.js"></script>
+    <script type="module" src="/studio.js"></script>
+  </body>
+</html>

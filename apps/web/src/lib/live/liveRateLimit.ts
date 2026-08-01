@@ -15,19 +15,25 @@ export type MemoryLiveRateLimiter = {
 };
 
 export type LiveRateLimitBucketInput = {
-  kind: "ip" | "create" | "credential" | "tenant" | "wallet" | "verify";
+  kind: "ip" | "auth" | "create" | "credential" | "tenant" | "wallet" | "verify" | "studio";
   value: string;
   tenantId?: string;
 };
 
 export const LIVE_RATE_LIMIT_POLICY = {
   generalPerIpPerMinute: 120,
+  authPerIpPerMinute: 20,
   createRunPerIpPerMinute: 12,
   verifyPerRunPerMinute: 10,
-  partnerPerCredentialPerMinute: 60
+  partnerPerCredentialPerMinute: 60,
+  studioMutationPerSessionPerMinute: 30
 } as const;
 
-export type LiveRateLimitRoute = { kind: "create" } | { kind: "verify"; runId: string } | null;
+export type LiveRateLimitRoute =
+  | { kind: "auth" }
+  | { kind: "create" }
+  | { kind: "verify"; runId: string }
+  | null;
 
 export type LiveClientIpInput = {
   socketAddress: string | undefined;
@@ -45,6 +51,10 @@ export function liveRateLimitBucket(input: LiveRateLimitBucketInput): string {
 }
 
 export function classifyLiveRateLimitRoute(method: string, pathname: string): LiveRateLimitRoute {
+  if (
+    method === "POST" &&
+    (pathname === "/api/auth/challenge" || pathname === "/api/auth/verify")
+  ) return { kind: "auth" };
   if (method === "POST" && pathname === "/api/runs") return { kind: "create" };
   if (method !== "POST") return null;
   const matched = /^\/api\/runs\/([^/]+)\/verify$/u.exec(pathname);
