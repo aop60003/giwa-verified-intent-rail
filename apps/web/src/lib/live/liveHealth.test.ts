@@ -51,7 +51,7 @@ describe("live hosted health and readiness", () => {
     expect(body.missingKeyCount).toBe(3);
     expect(body.missingKeys).toEqual(["giwa-rpc-endpoint", "server-role-signer", "hosted-public-origin"]);
     expect(body.checks).toEqual({
-      env: "missing",
+      runtimeConfig: "missing",
       auth: "ok",
       tenant: "ok",
       repository: "missing",
@@ -69,6 +69,7 @@ describe("live hosted health and readiness", () => {
     expect(serialized).not.toContain("CAMPAIGN_SIGNER_PRIVATE_KEY");
     expect(serialized).not.toContain("PRIVATE_KEY");
     expect(serialized).not.toContain("https://");
+    expect(serialized).not.toMatch(/"env"/u);
   });
 
   it("redacts Studio organization and Owner configuration keys exactly", () => {

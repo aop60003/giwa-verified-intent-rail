@@ -80,7 +80,7 @@ export function buildLiveReadinessBody(input: LiveReadinessInput): {
     ready,
     mode: input.mode,
     checks: {
-      env: status(input.envReady),
+      runtimeConfig: status(input.envReady),
       auth: status(input.authReady),
       tenant: status(input.tenantReady),
       repository: status(input.repositoryReady),
