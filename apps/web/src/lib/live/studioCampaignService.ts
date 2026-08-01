@@ -30,8 +30,11 @@ type StudioCampaignServiceErrorCode =
   | "revision_conflict";
 
 export class StudioCampaignServiceError extends Error {
-  constructor(public readonly code: StudioCampaignServiceErrorCode) {
+  readonly code: StudioCampaignServiceErrorCode;
+
+  constructor(code: StudioCampaignServiceErrorCode) {
     super(code);
+    this.code = code;
   }
 }
 
